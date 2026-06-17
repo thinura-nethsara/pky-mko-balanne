@@ -1,12 +1,16 @@
 <p align="center">
-  <img src="https://cdn.phototourl.com/free/2026-06-17-4e4d78af-364b-4047-b535-fa9de8a86079.jpg" alt="VISPER MD Logo" width="650"/>
+  <img src="https://cdn.phototourl.com/free/2026-06-17-4e4d78af-364b-4047-b535-fa9de8a86079.jpg" alt="VISPER MD Logo" width="650" style="animation: pulse 2s infinite; border-radius: 20px;"/>
 </p>
 
-<h1 align="center">VISPER MD</h1>
+<h1 align="center">
+  <span style="background: linear-gradient(45deg, #25D366, #128C7E, #075E54, #25D366); background-size: 300% 300%; animation: gradient 3s ease infinite; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+    VISPER MD
+  </span>
+</h1>
 
 <p align="center">
   <a href="https://visper-md-session-backend.up.railway.app/">
-    <img src="https://img.shields.io/badge/📱-GET_SESSION_ID-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Get Session ID"/>
+    <img src="https://img.shields.io/badge/📱-GET_SESSION_ID-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Get Session ID" style="animation: shimmer 2s infinite;"/>
   </a>
 </p>
 
@@ -43,28 +47,29 @@
 - 🧩 **260+ Commands** – Extensive library for all your needs.
 
 ---
-🧑‍💻 VISPER INC TEAM
+
+## 🧑‍💻 VISPER INC TEAM
 
 <p align="center">
   <table>
     <tr>
       <td align="center">
-        <img src="https://files.catbox.moe/6qrvto.jpg" width="100" style="border-radius: 50%; border: 3px solid #25D366;"/><br/>
+        <img src="https://files.catbox.moe/6qrvto.jpg" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
         <strong>Pathum Rajapakshe</strong><br/>
         <sub>Lead Developer / Project Manager</sub>
       </td>
       <td align="center">
-        <img src="https://ui-avatars.com/api/?name=Thinura+Nethsara&background=25D366&color=fff&size=100" width="100" style="border-radius: 50%; border: 3px solid #25D366;"/><br/>
+        <img src="https://ui-avatars.com/api/?name=Thinura+Nethsara&background=25D366&color=fff&size=100" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
         <strong>Thinura Nethsara</strong><br/>
         <sub>Core Developer</sub>
       </td>
       <td align="center">
-        <img src="https://ui-avatars.com/api/?name=Vihaga+MR+ERROR&background=25D366&color=fff&size=100" width="100" style="border-radius: 50%; border: 3px solid #25D366;"/><br/>
+        <img src="https://ui-avatars.com/api/?name=Vihaga+MR+ERROR&background=25D366&color=fff&size=100" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
         <strong>Vihaga (MR ERROR)</strong><br/>
         <sub>Senior Developer / Bug Fixer</sub>
       </td>
       <td align="center">
-        <img src="https://ui-avatars.com/api/?name=Poorna+Thilakshana&background=25D366&color=fff&size=100" width="100" style="border-radius: 50%; border: 3px solid #25D366;"/><br/>
+        <img src="https://ui-avatars.com/api/?name=Poorna+Thilakshana&background=25D366&color=fff&size=100" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
         <strong>Poorna Thilakshana</strong><br/>
         <sub>UI/UX Designer & Tester</sub>
       </td>
@@ -72,6 +77,43 @@
   </table>
 </p>
 
+<p align="center">
+  Made with ❤️ by the <strong>VISPER INC TEAM</strong>
+</p>
+
+<style>
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; box-shadow: 0 0 20px #25D366; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes shimmer {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(1.3) drop-shadow(0 0 10px #25D366); }
+    100% { filter: brightness(1); }
+  }
+  
+  img[alt="VISPER MD Logo"] {
+    animation: pulse 3s ease-in-out infinite;
+  }
+  
+  h1 span {
+    animation: gradient 4s ease infinite;
+  }
+  
+  a img[alt="Get Session ID"] {
+    animation: shimmer 2s ease-in-out infinite;
+  }
+</style>
+
+---
 
 ## 🚀 Setup Guide
 
