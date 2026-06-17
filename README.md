@@ -1,7 +1,5 @@
 <p align="center">
-  <a href="https://cdn.phototourl.com/free/2026-06-17-4e4d78af-364b-4047-b535-fa9de8a86079.jpg">
-    <img alt="VISPER-MD Banner" height="400" src="https://files.catbox.moe/lq2oe7.png">
-  </a>
+  <img src="https://cdn.phototourl.com/free/2026-06-17-4e4d78af-364b-4047-b535-fa9de8a86079.jpg" alt="VISPER-MD Logo" width="280" style="border-radius: 20px;" />
 </p>
 
 <p align="center">
