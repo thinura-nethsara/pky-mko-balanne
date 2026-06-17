@@ -78,40 +78,10 @@
 </p>
 
 <p align="center">
-  Made with ❤️ by the <strong>VISPER INC TEAM</strong>
+  CREATED BY <strong>VISPER INC TEAM</strong>
 </p>
 
-<style>
-  @keyframes pulse {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.8; box-shadow: 0 0 20px #25D366; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  
-  @keyframes gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  
-  @keyframes shimmer {
-    0% { filter: brightness(1); }
-    50% { filter: brightness(1.3) drop-shadow(0 0 10px #25D366); }
-    100% { filter: brightness(1); }
-  }
-  
-  img[alt="VISPER MD Logo"] {
-    animation: pulse 3s ease-in-out infinite;
-  }
-  
-  h1 span {
-    animation: gradient 4s ease infinite;
-  }
-  
-  a img[alt="Get Session ID"] {
-    animation: shimmer 2s ease-in-out infinite;
-  }
-</style>
+
 
 ---
 
