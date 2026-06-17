@@ -63,7 +63,5 @@
     "ytsearch-venom": "latest",
     "@octokit/rest": "^19.0.5"
   },
-  "overrides": {
-    "css-select": "^5.1.0"
-  }
+
 }
