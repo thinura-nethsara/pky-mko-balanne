@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&pause=1000&color=25D366&center=true&vCenter=true&random=false&width=600&lines=WhatsApp+Multi-Device+Bot;%F0%9F%8E%AF+Your+Movie+Companion;%F0%9F%9A%80+Super+Fast+%26+Stable;%F0%9F%92%9A+Powered+by+Baileys" alt="Typing Animation" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&pause=1000&color=25D366&center=true&vCenter=true&random=false&width=600&lines=BEST+MOVIE+BOT+IN+SRI+LANKA+%231%F0%9F%94%A5;WhatsApp+Multi-Device+Bot;%F0%9F%8E%AF+Your+Movie+Companion;%F0%9F%9A%80+Super+Fast+%26+Stable" alt="Typing Animation" />
 </p>
 
 <p align="center">
@@ -76,12 +76,6 @@
     </tr>
   </table>
 </p>
-
-<p align="center">
-  CREATED BY <strong>VISPER INC TEAM</strong>
-</p>
-
-
 
 ---
 
