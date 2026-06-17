@@ -18,7 +18,7 @@
   <a href="#-features">Features</a> •
   <a href="#-setup-guide">Setup</a> •
   <a href="#-deployment">Deployment</a> •
-  <a href="#-team-members">Team</a> •
+  <a href="#-visper-inc-team">Team</a> •
   <a href="#-disclaimer">Disclaimer</a>
 </p>
 
@@ -43,14 +43,35 @@
 - 🧩 **260+ Commands** – Extensive library for all your needs.
 
 ---
-
-## 📸 Bot Logo
+🧑‍💻 VISPER INC TEAM
 
 <p align="center">
-  <img src="https://cdn.phototourl.com/free/2026-06-17-4e4d78af-364b-4047-b535-fa9de8a86079.jpg" alt="Bot Logo" width="650"/>
+  <table>
+    <tr>
+      <td align="center">
+        <img src="https://files.catbox.moe/6qrvto.jpg" width="150" style="border-radius: 50%; border: 3px solid #25D366;"/><br/>
+        <strong>Pathum Rajapakshe</strong><br/>
+        <sub>Lead Developer / Project Manager</sub>
+      </td>
+      <td align="center">
+        <img src="https://ui-avatars.com/api/?name=Thinura+Nethsara&background=25D366&color=fff&size=150" width="150" style="border-radius: 50%; border: 3px solid #25D366;"/><br/>
+        <strong>Thinura Nethsara</strong><br/>
+        <sub>Core Developer</sub>
+      </td>
+      <td align="center">
+        <img src="https://ui-avatars.com/api/?name=Vihaga+MR+ERROR&background=25D366&color=fff&size=150" width="150" style="border-radius: 50%; border: 3px solid #25D366;"/><br/>
+        <strong>Vihaga (MR ERROR)</strong><br/>
+        <sub>Senior Developer / Bug Fixer</sub>
+      </td>
+      <td align="center">
+        <img src="https://ui-avatars.com/api/?name=Poorna+Thilakshana&background=25D366&color=fff&size=150" width="150" style="border-radius: 50%; border: 3px solid #25D366;"/><br/>
+        <strong>Poorna Thilakshana</strong><br/>
+        <sub>UI/UX Designer & Tester</sub>
+      </td>
+    </tr>
+  </table>
 </p>
 
----
 
 ## 🚀 Setup Guide
 
