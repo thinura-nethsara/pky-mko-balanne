@@ -14,17 +14,9 @@
   </a>
 </p>
 
-<!-- Red Text SVG for "BEST MOVIE BOT IN SRI LANKA #1🔥" -->
+<!-- Typing Animation with First Line in RED -->
 <p align="center">
-  <svg xmlns="http://www.w3.org/2000/svg" width="650" height="45" viewBox="0 0 650 45">
-    <text x="50%" y="32" font-family="Fira Code, monospace" font-size="24" font-weight="bold" fill="#FF0000" text-anchor="middle">
-      BEST MOVIE BOT IN SRI LANKA #1🔥
-    </text>
-  </svg>
-</p>
-
-<p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&pause=1000&color=25D366&center=true&vCenter=true&random=false&width=600&lines=WhatsApp+Multi-Device+Bot;%F0%9F%8E%AF+Your+Movie+Companion;%F0%9F%9A%80+Super+Fast+%26+Stable;%F0%9F%92%9A+Powered+by+Baileys" alt="Typing Animation" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&pause=1000&color=FF0000&center=true&vCenter=true&random=false&width=600&lines=BEST+MOVIE+BIT+IN+SRI+LANKA+%231%F0%9F%94%A5;WhatsApp+Multi-Device+Bot;%F0%9F%8E%AF+Your+Movie+Companion;%F0%9F%9A%80+Super+Fast+%26+Stable" alt="Typing Animation" />
 </p>
 
 <p align="center">
