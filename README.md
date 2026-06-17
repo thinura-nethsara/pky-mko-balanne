@@ -60,7 +60,7 @@
         <sub>Lead Developer / Project Manager</sub>
       </td>
       <td align="center">
-        <img src="https://ui-avatars.com/api/?name=Thinura+Nethsara&background=25D366&color=fff&size=100" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
+        <img src="https://files.catbox.moe/609bf7.jpeg" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
         <strong>Thinura Nethsara</strong><br/>
         <sub>Core Developer</sub>
       </td>
