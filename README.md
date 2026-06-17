@@ -65,7 +65,7 @@
         <sub>Core Developer</sub>
       </td>
       <td align="center">
-        <img src="https://ui-avatars.com/api/?name=Vihaga+MR+ERROR&background=25D366&color=fff&size=100" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
+        <img src="https://i.ibb.co/SwhxWbt1/my.jpg" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
         <strong>Vihaga (MR ERROR)</strong><br/>
         <sub>Senior Developer / Bug Fixer</sub>
       </td>
