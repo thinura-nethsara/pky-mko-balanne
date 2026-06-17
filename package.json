@@ -64,6 +64,6 @@
     "@octokit/rest": "^19.0.5"
   },
   "overrides": {
-    "css-select": "4.1.0"
+    "css-select": "5.1.0"
   }
 }
