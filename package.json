@@ -34,7 +34,7 @@
     "megajs": "latest",
     "mongoose": "latest",
     "mumaker": "^2.0.0",
-    "google-tts-api": "^2.0.2"
+    "google-tts-api": "^2.0.2",
     "node-cache": "latest",
     "node-fetch": "latest",
     "pino": "latest",
