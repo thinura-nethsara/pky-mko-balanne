@@ -11,7 +11,7 @@
   "dependencies": {
     "@adiwajshing/keyed-db": "latest",
     "@ffmpeg-installer/ffmpeg": "latest",
-    "@whiskeysockets/baileys": "github:AmilaPrabathKumara/Baileys-Latest#fix-leak-upload",
+    "@whiskeysockets/baileys": "latest",
     "figlet": "^1.7.0",
     "adm-zip": "latest",
     "axios": "latest",
@@ -34,6 +34,7 @@
     "megajs": "latest",
     "mongoose": "latest",
     "mumaker": "^2.0.0",
+    "google-tts-api": "^2.0.2"
     "node-cache": "latest",
     "node-fetch": "latest",
     "pino": "latest",
