@@ -93,6 +93,6 @@ Generate a pair code to obtain your session string.
 ### 3. Configure
 Edit the `config.js` file or set environment variables:
 ```javascript
-sessionID: 'YOUR_SESSION_ID_HERE',
-OWNER_NUMBER: '94xxxxxxxxxx',
-PREFIX: '.',
+module.exports = {
+SESSION_ID:'YOUR_SESSION_ID_HERE',
+
