@@ -85,24 +85,38 @@ cmd({
     pattern: "gdrive",
     alias: ["gd"],
     react: '📑',
-    desc: "Download googledrive files.",
+    desc: "Download Google Drive files.",
     category: "download",
     use: '.gdrive <googledrive link>',
     filename: __filename
 },
 async(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
-try{
-  if (!q) return await  reply('*Please give me googledrive url !!*')   
-let res = await fg.GDriveDl(q.replace('https://drive.usercontent.google.com/download?id=', 'https://drive.google.com/file/d/').replace('&export=download' , '/view'))
-reply(`*🗃️ VISPER GDRIVE DOWNLODER 🗃️* \n\n*📃 File name:*  ${res.fileName}
-*💈 File Size:* ${res.fileSize}
-*🕹️ File type:* ${res.mimetype}
-
-${config.FOOTER}`)		
-conn.sendMessage(from, { document: { url: res.downloadUrl }, fileName: res.fileName, mimetype: res.mimetype, caption: res.fileName.replace('[Cinesubz.co]' , '[visper-MOVIES.]') +'\n\n> *•ᴠɪsᴘᴇʀ-ᴍᴅ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ•*'}, { quoted: mek })
+try {
+  if (!q) return await reply('*Please give me a Google Drive URL !!*');
+  
+  // Use the new API
+  const apiUrl = `https://www.ominisave.com/api/gdrive?url=${encodeURIComponent(q)}`;
+  const response = await fetch(apiUrl);
+  const data = await response.json();
+  
+  if (!data.status) throw new Error('API returned error');
+  
+  const { fileName, fileSize, download } = data.result;
+  
+  // Send info message
+  await reply(`*🗃️ VISPER GDRIVE DOWNLOADER 🗃️*\n\n*📃 File name:* ${fileName}\n*💈 File Size:* ${fileSize || 'Unknown'}\n*🕹️ File type:* ${fileName.split('.').pop() || 'Unknown'}\n\n${config.FOOTER}`);
+  
+  // Send the file
+  await conn.sendMessage(from, {
+    document: { url: download },
+    fileName: fileName,
+    mimetype: 'application/octet-stream', // or detect from extension
+    caption: fileName.replace('[Cinesubz.co]', '[visper-MOVIES.]') + '\n\n> *•ᴠɪsᴘᴇʀ-ᴍᴅ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ•*'
+  }, { quoted: mek });
+  
 } catch (e) {
-reply('*Error !!*')
-l(e)
+  reply('*Error downloading file. Please check the URL and try again.*');
+  console.error(e);
 }
 })
 
