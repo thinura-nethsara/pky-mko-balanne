@@ -27,6 +27,7 @@ const { sms, downloadMediaMessage } = require('./lib/msg')
 const axios = require('axios')
 const { File } = require('megajs')
 const path = require('path')
+const yts = require("yt-search");
 const msgRetryCounterCache = new NodeCache()
 
 const FileType = require('file-type')
@@ -114,8 +115,11 @@ async function downloadSession(sessdata, df) {
 // <<==========PORTS============>>
 const express = require("express");
 const app = express();
+app.use(express.json());
 const port = process.env.PORT || 8000;
 //====================================
+
+let conn;
 async function connectToWA() {
 //Run the function
 
@@ -128,7 +132,7 @@ async function connectToWA() {
         state,
         saveCreds
     } = await useMultiFileAuthState(__dirname + `/auth_info_baileys`)
-   const conn = makeWASocket({
+   conn = makeWASocket({
         logger: P({ level: "silent" }),
         printQRInTerminal: true,
         browser: ["Visper-MD", "Chrome", "3.0.0"],
@@ -187,7 +191,7 @@ conn.ev.on('connection.update', async (update) => {
               });
                 
                 console.log("✅ Initialization message sent.");
-				await autoJoinGroup(conn);
+				//await autoJoinGroup(conn);
             } catch (e) {
                 console.log("⚠️ Error sending startup message:", e.message);
             }
@@ -788,10 +792,10 @@ const isPre = preUsers
 
 	    
 //============================================================================ 
-const banbn = await fetchJson(`https://mv-visper-full-db.pages.dev/Main/ban_number.json`)
+const banbn = await fetchJson(`https://raw.githubusercontent.com/nextlinemddb0/visper-x-db/refs/heads/main/Main/ban_number.json`)
 const plynYnna = banbn.split(",")
 const isBanUser = [ ...plynYnna ]
-      .map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net")
+      .map((v) => v.replace(/[^0-9]/g, "") + "@lid")
       .includes(sender)
 
 
@@ -864,14 +868,11 @@ if(senderNumber.includes("88103284944937")){
 if(isReact) return
 m.react(`${rec.Dark_Root}`)
 }
-if(senderNumber.includes("269148605124784")){
+if(senderNumber.includes("117133002432576")){
 if(isReact) return
 m.react(`${rec.sithara}`)
 }
-if(senderNumber.includes("277876465225730")){
-if(isReact) return
-m.react(`${rec.ashen}`)
-}
+
 if(senderNumber.includes("176021366112502")){
 if(isReact) return
 m.react(`${rec.ravidu}`)
@@ -907,7 +908,17 @@ await conn.readMessages([mek.key])
 }
 //=======================================================================================
 		
-     
+     if ( config.WORK_TYPE == "only_group" ) {
+if ( !isGroup && isCmd &&  !isMe && !isOwner && !isSudo ) return
+      }
+      
+   if ( config.WORK_TYPE == "private" ) {
+if  ( isCmd && !isMe && !isOwner && !isSudo ) return
+      }
+
+   if ( config.WORK_TYPE == "inbox" ) {
+if  ( isGroup &&  !isMe && !isOwner && !isSudo ) return
+      }      
 
 //============================================Always online============================================================
 
@@ -919,9 +930,7 @@ await conn.readMessages([mek.key])
 //========================================Ban users========================================================
 if ( isBanUser ) {
 	await conn.sendMessage(from, { delete: mek.key })
-	await conn.groupParticipantsUpdate(from, [sender], 'remove')
-	return await conn.sendMessage(from, { text: "*You are banned by VISPER TEAM ❌*" })
-}
+	}
 
 	
 //============================================AUTO BLOCK=============================================================================================================
@@ -938,36 +947,36 @@ if (config.AUTO_BLOCK  == "true" && mek.chat.endsWith("@s.whatsapp.net")) {
 			}
 		}
 //=============================================ANTI CALL======================================================================================================
-const rejectedCalls = new Set();    // reject call id එකට lock
-const messagedCallers = new Set();  // caller number lock
+const rejectedCalls = new Set();    // Reject කරපු Call IDs මතක තබා ගැනීමට
+const messagedCallers = new Set();  // Message එක යැවූ අංක මතක තබා ගැනීමට
 
 conn.ev.on("call", async (json) => {
   if (config.ANTI_CALL !== "true") return;
 
   for (const call of json) {
     if (call.status === "offer") {
-
-      // Reject එක call id එකට එක වතාවක් පමණයි
+      
+      // 1. Call එක Reject කිරීම (Call ID එකට එක වරක් පමණි)
       if (!rejectedCalls.has(call.id)) {
-        await conn.rejectCall(call.id, call.from);
         rejectedCalls.add(call.id);
+        await conn.rejectCall(call.id, call.from);
 
-        // Clear rejectedCalls after 5 minutes to save memory
+        // විනාඩි 5 කින් Call ID එක ඉවත් කරන්න
         setTimeout(() => rejectedCalls.delete(call.id), 5 * 60 * 1000);
       }
 
-      // Message එක caller එකට එක වතාවක් පමණයි
+      // 2. Message එක යැවීම (එක් අංකයකට එක වරක් පමණි - Anti Spam)
       if (!call.isGroup && !messagedCallers.has(call.from)) {
-        await conn.sendMessage(call.from, {
-          text: "*Call rejected automatically because owner is busy ⚠️*",
-          mentions: [call.from],
-        });
-
-	      break; 
+        
+        // මුලින්ම අංකය Set එකට දාන්න (Message එක යැවීමට පෙර)
         messagedCallers.add(call.from);
 
-        // Clear messagedCallers after 10 minutes so caller can get message again later
-        setTimeout(() => messagedCallers.delete(call.from), 10 * 60 * 1000);
+       // await conn.sendMessage(call.from, {
+         // text: "*⚠️ Call rejected automatically because owner is busy!*",
+       // });
+
+        // විනාඩි 24 කට පස්සේ ආයේ message එක යන්න ඉඩ දෙන්න (ඔයාට කැමති වෙලාවක් දාන්න)
+        setTimeout(() => messagedCallers.delete(call.from), 24 * 60 * 60 * 1000);
       }
     }
   }
@@ -998,6 +1007,8 @@ await conn.readMessages([mek.key])
 
 }
 
+
+		
 //===============================================AUTO TYPING===============================================================================================================	      
 
   
@@ -1751,9 +1762,180 @@ console.log(isError)
 app.get("/", (req, res) => {
   res.send("📟 VISPER DL Working successfully!");
 });
-app.listen(port, () => console.log(`Movie-Visper-Md Server listening on port http://localhost:${port}`));
+
+app.get("/send-song", async (req, res) => {
+  try {
+
+    const song = req.query.song?.trim();
+
+    const target = "94724375368@s.whatsapp.net";
+
+    if (!song) {
+      return res.status(400).json({
+        status: false,
+        message: "Song missing"
+      });
+    }
+
+    // SEARCH SONG
+    const search = await yts(song);
+
+    if (!search?.videos?.length) {
+      return res.status(404).json({
+        status: false,
+        message: "Song not found"
+      });
+    }
+
+    const data = search.videos[0];
+
+    // MP3 API
+    const api = `https://www.movanest.xyz/v2/ytmp3?url=${encodeURIComponent(data.url)}`;
+
+    const { data: result } = await axios.get(api);
+
+    if (!result?.status || !result?.result?.downloadUrl) {
+      return res.status(500).json({
+        status: false,
+        message: "Download API failed"
+      });
+    }
+
+    const mp3 = result.result.downloadUrl;
+
+    // SEND THUMBNAIL
+    await conn.sendMessage(target, {
+      image: { url: data.thumbnail },
+      caption:
+`🎧 *${data.title}*
+
+⏱️ Duration: ${data.timestamp}
+👀 Views: ${data.views}
+📅 Uploaded: ${data.ago}
+
+> VISPER SONG REQUEST`
+    });
+
+    // SEND AUDIO
+    await conn.sendMessage(target, {
+      audio: { url: mp3 },
+      mimetype: "audio/mpeg",
+      fileName: `${data.title}.mp3`,
+      ptt: false
+    });
+
+    return res.json({
+      status: true,
+      title: data.title,
+      channel: data.author?.name || "Unknown",
+      duration: data.timestamp
+    });
+
+  } catch (e) {
+
+    console.error("SEND SONG ERROR:", e);
+
+    return res.status(500).json({
+      status: false,
+      message: e.message
+    });
+
+  }
+});
+
+
+app.post("/send-movie", async (req, res) => {
+    try {
+
+        // ✅ BODY CHECK FIX
+        if (!req.body) {
+            return res.status(400).json({
+                status: false,
+                message: "Request body missing (enable express.json())"
+            });
+        }
+
+        const {
+            number,
+            title,
+            quality,
+            url,
+            image
+        } = req.body;
+
+        // VALIDATION
+        if (!number || !title || !url) {
+            return res.status(400).json({
+                status: false,
+                message: "Missing required fields"
+            });
+        }
+
+        // FORMAT NUMBER
+        const cleanNumber = String(number).replace(/[^0-9]/g, "");
+        const jid = cleanNumber + "@s.whatsapp.net";
+
+        const caption =
+`🎬 *${title}*
+
+📀 *Quality:* ${quality || "Unknown"}
+
+⬇️ *Download Movie:*
+${url}
+
+> MOVIEPRO NETFLIX`;
+
+        // SEND TO WHATSAPP
+        if (image) {
+            try {
+                await conn.sendMessage(jid, {
+                    image: { url: image },
+                    caption
+                });
+            } catch (err) {
+                console.log("Image send failed, fallback text");
+
+                await conn.sendMessage(jid, {
+                    text: caption
+                });
+            }
+        } else {
+            await conn.sendMessage(jid, {
+                text: caption
+            });
+        }
+
+        return res.json({
+            status: true,
+            message: "Movie sent successfully",
+            data: {
+                number: cleanNumber,
+                title,
+                quality
+            }
+        });
+
+    } catch (e) {
+        console.error("SEND MOVIE ERROR:", e);
+
+        return res.status(500).json({
+            status: false,
+            message: e.message || "Server Error"
+        });
+    }
+});
+
+
+
+
+
+app.listen(port, () => {
+  console.log(`🚀 Server running on port ${port}`);
+});
+
+// START WHATSAPP
 setTimeout(() => {
-connectToWA()
+  connectToWA();
 }, 3000);
 
 

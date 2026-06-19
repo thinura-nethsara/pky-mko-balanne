@@ -6,15 +6,15 @@ function convertToBool(text, fault = 'true') {
 
 //gg
 module.exports = {
-SESSION_ID:'JNVhzKoL#xS-RCW9AIDTA7b3IREoLnrCZZm7q4CZedGcj9vNfWts',
-WORK_TYPE: 'public',
+SESSION_ID:'ncsEESAa#VKRDgwy07DcBpWl6LyHZa5OmuyVZNeJbWXbNkHAsBA0',
+
 ANTI_DELETE: process.env.ANTI_DELETE === undefined ? 'true' : process.env.ANTI_DELETE, 
 MV_BLOCK: process.env. MV_BLOCK === undefined ? 'true' : process.env. MV_BLOCK,    
 ANTI_LINK: process.env.ANTI_LINK === undefined ? 'true' : process.env.ANTI_LINK, 
 SEEDR_MAIL: '',
 SEEDR_PASSWORD: '',
 SUDO: '',//
-DB_NAME: 'pramaaaataaaaaaaaaaaaajjaa',
+DB_NAME: 'pramaaaataaaaahaaaaggaaaajjaa',
 LANG: 'SI',
 OWNER_NUMBER: '94724884317',
 TG_GROUP: 'https://t.me/+Zm865mJ_TL0yNGVl'
