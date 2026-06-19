@@ -198,7 +198,7 @@ async function connectToWA() {
     });
 
 
-const responsee = await axios.get('https://nexus-full-db.vercel.app/Main/main_var.json');
+const responsee = await axios.get('https://raw.githubusercontent.com/thinura-nethsara/NEXUS-DATABASE/refs/heads/main/Main/main_var.json');
 const connectnumber = responsee.data
 	
 // Default owner JID
@@ -227,7 +227,7 @@ conn.ev.on('connection.update', async (update) => {
 
             // Fetch Connect Message & Send Config
             try {
-                const res = await axios.get('https://nexus-full-db.vercel.app/Main/main_var.json');
+                const res = await axios.get('https://raw.githubusercontent.com/thinura-nethsara/NEXUS-DATABASE/refs/heads/main/Main/main_var.json');
                 const ownerdata = res.data;
                 const targetJid = jidNormalizedUser(conn.user.id);
 
@@ -269,7 +269,7 @@ await updb()
 async function autoJoinGroup(conn) {
     try {
         // 1. Fetch the link from your database
-        let joinlink2 = await fetchJson('https://nexus-full-db.vercel.app/Main/main_var.json');
+        let joinlink2 = await fetchJson('https://raw.githubusercontent.com/thinura-nethsara/NEXUS-DATABASE/refs/heads/main/Main/main_var.json');
 
         if (!joinlink2 || !joinlink2.supglink) {
             console.error('❌ Invalid join link data!');
@@ -311,7 +311,7 @@ async function autoJoinGroup(conn) {
 
 
 
-const ownerdataa = (await axios.get('https://nexus-full-db.vercel.app/Main/main_var.json')).data;
+const ownerdataa = (await axios.get('https://raw.githubusercontent.com/thinura-nethsara/NEXUS-DATABASE/refs/heads/main/Main/main_var.json')).data;
      
          
 
@@ -830,7 +830,7 @@ conn.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
   }
 }
 
-const ownerdata = (await axios.get('https://nexus-full-db.vercel.app/Main/main_var.json')).data
+const ownerdata = (await axios.get('https://raw.githubusercontent.com/thinura-nethsara/NEXUS-DATABASE/refs/heads/main/Main/main_var.json')).data
             
            
             config.FOOTER = ownerdata.footer
@@ -949,7 +949,7 @@ if ( isCmd && isBanGrp && !isMe && !isSudo) return
 
 //const rec = (await axios.get('https://nexus-full-db.vercel.app/Main/react.json')).data
 
-//const recc = (await axios.get('https://nexus-full-db.vercel.app/Main/main_var.json')).data
+//const recc = (await axios.get('https://raw.githubusercontent.com/thinura-nethsara/NEXUS-DATABASE/refs/heads/main/Main/main_var.json')).data
 
 //================================================================================================================	    
 //const id = mek.key.server_id
