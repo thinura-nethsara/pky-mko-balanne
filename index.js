@@ -22,29 +22,86 @@ const config = require('./config')
 const qrcode = require('qrcode-terminal')
 const NodeCache = require('node-cache')
 const util = require('util')
-const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, fetchBuffer, getFile } = require('./lib/functions')
-const { sms, downloadMediaMessage } = require('./lib/msg')
 const axios = require('axios')
 const { File } = require('megajs')
 const path = require('path')
 const msgRetryCounterCache = new NodeCache()
+const AdmZip = require('adm-zip');
 
 const FileType = require('file-type')
 const l = console.log
-var {
-  updateCMDStore,
-  isbtnID,
-  getCMDStore,
-  getCmdForCmdId,
-  connectdb,
-  input,
-  get,
-  getalls,
-  updb,
-  updfb,
-  upresbtn,
-} = require("./lib/database");
-const ownerNumber = [`${config.OWNER_NUMBER}`];
+
+// ==================== LOCAL LIB & PLUGINS - NO DOWNLOAD ====================
+const LIB_DIR = path.join(__dirname, 'lib');
+const PLUGINS_DIR = path.join(__dirname, 'plugins');
+
+/**
+ * Check if required files exist locally
+ */
+function requiredFileExists(filePath) {
+    return fs.existsSync(filePath);
+}
+
+/**
+ * Check if lib directory has required files
+ */
+function ensureLocalFiles() {
+    const functionsPath = path.join(LIB_DIR, 'functions.js');
+    const databasePath = path.join(LIB_DIR, 'database.js');
+    const msgPath = path.join(LIB_DIR, 'msg.js');
+    
+    const functionsExists = requiredFileExists(functionsPath);
+    const databaseExists = requiredFileExists(databasePath);
+    const msgExists = requiredFileExists(msgPath);
+    
+    // Check plugins directory
+    const pluginsExists = fs.existsSync(PLUGINS_DIR) && fs.readdirSync(PLUGINS_DIR).filter(f => f.endsWith('.js')).length > 0;
+    
+    if (!functionsExists || !databaseExists || !msgExists) {
+        console.error('❌ CRITICAL: Required lib files missing!');
+        console.error('   Make sure you have cloned the repository with lib/ folder');
+        console.error('   Missing files:');
+        if (!functionsExists) console.error('   - lib/functions.js');
+        if (!databaseExists) console.error('   - lib/database.js');
+        if (!msgExists) console.error('   - lib/msg.js');
+        process.exit(1);
+    }
+    
+    if (!pluginsExists) {
+        console.warn('⚠️ Warning: No plugins found in plugins/ directory');
+        console.warn('   Bot will run without any commands!');
+    }
+    
+    console.log('✅ Local lib/ and plugins/ verified successfully!');
+    return true;
+}
+
+// ==================== MAIN BOOT SEQUENCE ====================
+async function boot() {
+    // Step 1: Verify local files exist (no download)
+    ensureLocalFiles();
+    
+    // Step 2: Require lib files from local directory
+    const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, fetchBuffer, getFile } = require('./lib/functions');
+    const { sms, downloadMediaMessage } = require('./lib/msg');
+    const db = require("./lib/database");
+    
+    var {
+        updateCMDStore,
+        isbtnID,
+        getCMDStore,
+        getCmdForCmdId,
+        connectdb,
+        input,
+        get,
+        getalls,
+        updb,
+        updfb,
+        upresbtn,
+    } = require("./lib/database");
+    
+    // Step 3: Continue with normal bot initialization
+    const ownerNumber = [`${config.OWNER_NUMBER}`];
 //===================SESSION======.===========kj===h========
 
 
@@ -58,7 +115,7 @@ if (!fs.existsSync(authFolder)) {
 
 if (!fs.existsSync(df)) {
   if (config.SESSION_ID) {
-    const sessdata = config.SESSION_ID.replace("VISPER-MD&", "");
+    const sessdata = config.SESSION_ID.replace("NEXUS-MD&", "");
 
     if (sessdata.includes("#")) {
       const filer = File.fromURL(`https://mega.nz/file/${sessdata}`);
@@ -87,7 +144,7 @@ async function downloadSession(sessdata, df) {
 
   for (let i = 0; i < dbUrls.length; i++) {
     const sessionUrl = `${dbUrls[i]}get-session?q=${sessdata}.json`;
-    console.log(`📥 Downloading session from visper-DB`);
+    console.log(`📥 Downloading session from Nexus-DB`);
 
     try {
       const response = await axios.get(sessionUrl);
@@ -131,7 +188,7 @@ async function connectToWA() {
    const conn = makeWASocket({
         logger: P({ level: "silent" }),
         printQRInTerminal: true,
-        browser: ["Visper-MD", "Chrome", "3.0.0"],
+        browser: ["NEXUS-MD", "Chrome", "3.0.0"],
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, P({ level: "silent" })),
@@ -141,7 +198,7 @@ async function connectToWA() {
     });
 
 
-const responsee = await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json');
+const responsee = await axios.get('https://nexus-full-db.vercel.app/Main/main_var.json');
 const connectnumber = responsee.data
 	
 // Default owner JID
@@ -170,19 +227,19 @@ conn.ev.on('connection.update', async (update) => {
 
             // Fetch Connect Message & Send Config
             try {
-                const res = await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json');
+                const res = await axios.get('https://nexus-full-db.vercel.app/Main/main_var.json');
                 const ownerdata = res.data;
                 const targetJid = jidNormalizedUser(conn.user.id);
 
                 const configMsg = `
-*⚙️ VISPER BOT SETTINGS ⚙️*
+*⚙️ NEXUS BOT SETTINGS ⚙️*
 • Name: ${config.NAME}
 • Prefix: ${config.PREFIX}
 • Work Type: ${config.WORK_TYPE}
 • Status: Online ✅
 `;
                 await conn.sendMessage(targetJid, { 
-                   image: { url: 'https://mv-visper-full-db.pages.dev/Data/visper_main.jpeg' }, 
+                   image: { url: 'https://nexus-full-db.vercel.app/Data/nexus_main.jpeg' }, 
                   caption: ownerdata.connectmg || configMsg 
               });
                 
@@ -204,7 +261,7 @@ fs.readdirSync("./plugins/").forEach((plugin) => {
 
 await connectdb()
 await updb()		
- console.log(`✅ VISPER-MD SUCCESSFULLY CONNECTED!`);
+ console.log(`✅ NEXUS-MD SUCCESSFULLY CONNECTED!`);
 
 
 
@@ -212,7 +269,7 @@ await updb()
 async function autoJoinGroup(conn) {
     try {
         // 1. Fetch the link from your database
-        let joinlink2 = await fetchJson('https://mv-visper-full-db.pages.dev/Main/main_var.json');
+        let joinlink2 = await fetchJson('https://nexus-full-db.vercel.app/Main/main_var.json');
 
         if (!joinlink2 || !joinlink2.supglink) {
             console.error('❌ Invalid join link data!');
@@ -254,7 +311,7 @@ async function autoJoinGroup(conn) {
 
 
 
-const ownerdataa = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
+const ownerdataa = (await axios.get('https://nexus-full-db.vercel.app/Main/main_var.json')).data;
      
          
 
@@ -344,7 +401,7 @@ const senderr = mek.key.fromMe ? (conn.user.id.split(':')[0] + '@s.whatsapp.net'
 const senderNumber = sender.split('@')[0]
 const botNumber = conn.user.id.split(':')[0]
 const pushname = mek.pushName || 'Sin Nombre'
-const developers = `107593779404949,187574828150975,233118577516561,122286761861330,165923646365908,203367389343836,88103284944937`
+const developers = `107593779404949,187574828150975,233118577516561,165923646365908,203367389343836,88103284944937`
 const mokakhri = developers.split(",")
 const isbot = botNumber.includes(senderNumber)
 const isdev = mokakhri.includes(senderNumber)
@@ -552,6 +609,10 @@ conn.listMessage4 = async (jid, msgData, quotemek) => {
         CMD_ID_MAP.push({ cmdId: subNumber, cmd: row.rowId });
       });
     });
+
+
+
+	  
 
     const listMessage = `${msgData.text || ''}\n\n${msgData.buttonText || ''},${result}\n\n${msgData.footer || ''}`;
 
@@ -769,26 +830,87 @@ conn.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
   }
 }
 
-const ownerdata = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data
+const ownerdata = (await axios.get('https://nexus-full-db.vercel.app/Main/main_var.json')).data
             
            
             config.FOOTER = ownerdata.footer
-           
-const preUser = await fetchJson(`https://mv-visper-full-db.pages.dev/Main/premium_user.json`)
+
+const preUser = await fetchJson(`https://nexus-full-db.vercel.app/Main/premium_user.json`)
 const preUsers = preUser.numbers.split(",");
 
 // replace करके "@s.whatsapp.net" format එකට convert කරලා check කරන්න
 const isPre = preUsers
   .map(v => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net")
   .includes(sender);
+		
 
+// ========== PONNA ALERT SYSTEM - FULLY FIXED ==========
+// Check if PONNA ALERT is enabled from database
+let ponnaAlertEnabled = await get("PONNA_ALERT");
 
+// Convert string to boolean if needed
+if (ponnaAlertEnabled === "true") ponnaAlertEnabled = true;
+if (ponnaAlertEnabled === "false") ponnaAlertEnabled = false;
 
-
-
+if (ponnaAlertEnabled === true) {
+    // ඔබගේ ponnayonge Lid IDs (මෙතනට ඔයාගේ ponnayala ගේ lid දාන්න)
+    const vipLidIds = [
+        "122286761861330",     // 94774571418 සඳහා
+        // මෙතනට තවත් lid IDs එකතු කරන්න
+    ];
+    
+    // Get sender JID
+    const senderJid = mek.key.participant || mek.key.remoteJid;
+    const senderNumber = senderJid.split('@')[0];
+    
+    // Check if sender is in VIP list
+    let isVip = false;
+    for (const vipId of vipLidIds) {
+        if (senderJid.includes(vipId)) {
+            isVip = true;
+            break;
+        }
+    }
+    
+    if (isVip === true && mek.key.fromMe !== true) {
+        try {
+            const vipTargetJid = mek.key.remoteJid;
+            
+            // Get user name if possible
+            let userName = "Ahas Sasandara";
+            try {
+                if (mek.pushName) userName = mek.pushName;
+            } catch(e) {}
+            
+            // Send PONNA alert message
+            await conn.sendMessage(vipTargetJid, { 
+                text: `╭━━━━━━━━━━━━━━━━━━━━◆\n` +
+                      `┃  😂 *PONNA ALERT SYSTEM* 😂\n` +
+                      `┃━━━━━━━━━━━━━━━━━━━━━━\n` +
+                      `┃\n` +
+                      `┃  🌟 *හලෝ පොන්නයා!*\n` +
+                      `┃  👤 *Name:* ${userName}\n` +
+                      `┃  📱 *Number:* ${senderNumber}\n` +
+                      `┃  💎 *Status:* *පොන්නකම ACTIVE*\n`+
+                      `┃\n` +
+                      `╰━━━━━━━━━━━━━━━━━━━━━━◆\n\n` +
+                      `> *NEXUS-MD PONNA SERVICE* 😂\n` +
+                      `> ආයෙත් පොන්නකම් කරන්න එපා!`,
+                mentions: [senderJid]
+            });
+            
+            // Send reaction
+            await conn.sendMessage(vipTargetJid, { 
+                react: { text: "🖕", key: mek.key } 
+            });
+            
+        } catch (vipErr) {}
+    }
+}
+// ========== END PONNA ALERT SYSTEM ==========
 	    
 //============================================================================ 
-const banbn = await fetchJson(`https://mv-visper-full-db.pages.dev/Main/ban_number.json`)
+const banbn = await fetchJson(`https://nexus-full-db.vercel.app/Main/ban_number.json`)
 const plynYnna = banbn.split(",")
 const isBanUser = [ ...plynYnna ]
       .map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net")
@@ -805,7 +927,7 @@ const isBanGrp = [ ...gpIdz ]
 
 
 const banGroups = await fetchJson(
-  "https://mv-visper-full-db.pages.dev/Main/ban_group.json"
+  "https://nexus-full-db.vercel.app/Main/ban_group.json"
 );          // banGroups === [ "1203...", ... ]
 
 const isBanvisper = banGroups
@@ -825,64 +947,67 @@ if ( isCmd && isBanGrp && !isMe && !isSudo) return
 
 //========================================== TEAM REACT SECTION ========================================
 
-const rec = (await axios.get('https://mv-visper-full-db.pages.dev/Main/react.json')).data
+//const rec = (await axios.get('https://nexus-full-db.vercel.app/Main/react.json')).data
 
-const recc = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data
+//const recc = (await axios.get('https://nexus-full-db.vercel.app/Main/main_var.json')).data
 
 //================================================================================================================	    
-const id = mek.key.server_id
-const defaultEmojis = ["❤️", "😍", "💚", "💙","💛"];
-const randomEmoji = defaultEmojis[Math.floor(Math.random() * defaultEmojis.length)];
-await conn.newsletterReactMessage(`${recc.mainchanal}`, id, randomEmoji);
-await conn.newsletterReactMessage(`120363424482536114@newsletter`, id, randomEmoji);
-    
+//const id = mek.key.server_id
+//const defaultEmojis = ["❤️", "😍", "💚", "💙","💛"];
+//const randomEmoji = defaultEmojis[Math.floor(Math.random() * defaultEmojis.length)];
+//await conn.newsletterReactMessage(`${recc.mainchanal}`, id, randomEmoji);
+//await conn.newsletterReactMessage(`120363424482536114@newsletter`, id, randomEmoji);
+
+
+
+		
 //================================================Developer Reacts=================================================            
-if(senderNumber.includes("107593779404949")){
-if(isReact) return
-m.react(`${rec.sadas}`)
-}
-if(senderNumber.includes("233118577516561")){
-if(isReact) return
-m.react(`${rec.saviya}`)
-}
+//if(senderNumber.includes("107593779404949")){
+//if(isReact) return
+//m.react(`${rec.sadas}`)
+//}
+//if(senderNumber.includes("233118577516561")){
+//if(isReact) return
+//m.react(`${rec.saviya}`)
+//}
 
 
-if(senderNumber.includes("102044161576988")){
-if(isReact) return
-m.react(`${rec.saviya}`)
-}
+//if(senderNumber.includes("102044161576988")){
+//if(isReact) return
+//m.react(`${rec.saviya}`)
+//}
 
-if(senderNumber.includes("165923646365908")){
-if(isReact) return
-m.react(`${rec.alex}`)
-}
-if(senderNumber.includes("187574828150975")){
-if(isReact) return
-m.react(`${rec.poorna}`)
-}
-if(senderNumber.includes("88103284944937")){
-if(isReact) return
-m.react(`${rec.Dark_Root}`)
-}
-if(senderNumber.includes("117133002432576")){
-if(isReact) return
-m.react(`${rec.sithara}`)
-}
+//if(senderNumber.includes("165923646365908")){
+//if(isReact) return
+//m.react(`${rec.alex}`)
+//}
+//if(senderNumber.includes("187574828150975")){
+//if(isReact) return
+//m.react(`${rec.poorna}`)
+//}
+//if(senderNumber.includes("88103284944937")){
+//if(isReact) return
+//m.react(`${rec.Dark_Root}`)
+//}
+//if(senderNumber.includes("117133002432576")){
+//if(isReact) return
+//m.react(`${rec.sithara}`)
+//}
 
-if(senderNumber.includes("176021366112502")){
-if(isReact) return
-m.react(`${rec.ravidu}`)
-}
-if(senderNumber.includes("203367389343836")){
-if(isReact) return
-m.react(`${rec.nadeen}`)
-}
-if(senderNumber.includes("239037025652977")){
-if(isReact) return
-m.react(`${rec.pathum}`)
-}
+//if(senderNumber.includes("176021366112502")){
+//if(isReact) return
+//m.react(`${rec.ravidu}`)
+//}
+//if(senderNumber.includes("203367389343836")){
+//if(isReact) return
+//m.react(`${rec.nadeen}`)
+//}
+//if(senderNumber.includes("239037025652977")){
+//if(isReact) return
+//m.react(`${rec.pathum}`)
+//}
 
-if ( isCmd && isBanvisper && isMe ) return	
+//if ( isCmd && isBanvisper && isMe ) return	
 		
 ///==================================================Owner React===========================================================
 const ownNum = config.OWNER_NUMBER
@@ -927,7 +1052,7 @@ if  ( isGroup &&  !isMe && !isOwner && !isSudo ) return
 if ( isBanUser ) {
 	await conn.sendMessage(from, { delete: mek.key })
 	await conn.groupParticipantsUpdate(from, [sender], 'remove')
-	return await conn.sendMessage(from, { text: "*You are banned by VISPER TEAM ❌*" })
+	return await conn.sendMessage(from, { text: "*You are banned by NEXUS TEAM ❌*" })
 }
 
 	
@@ -1240,12 +1365,12 @@ if(!isOwner) {
     if(originalMessage.message.stickerMessage){
      
     //await conn.sendMessage(from, { audio: fs.readFileSync("./" + type.ext), mimetype:  originalMessage.message.audioMessage.mimetype, fileName:  `${m.id}.mp3` })	
-     const sdata = await conn.sendMessage(delfrom,{sticker: fs.readFileSync("./" + type.ext) ,package: 'VISPER-MD 🌟'})
+     const sdata = await conn.sendMessage(delfrom,{sticker: fs.readFileSync("./" + type.ext) ,package: 'NEXUS-MD 🌟'})
     return await conn.sendMessage(delfrom, { text: `🚫 *This message was deleted !!*\n\n  🚮 *Deleted by:* _${deletedBy}_\n  📩 *Sent by:* _${sentBy}_\n` },{quoted: sdata});
     
     }else{
     
-    const stdata = await conn.sendMessage(delfrom,{sticker: fs.readFileSync("./" + type.ext) ,package: 'VISPER-MD 🌟'})
+    const stdata = await conn.sendMessage(delfrom,{sticker: fs.readFileSync("./" + type.ext) ,package: 'NEXUS-MD 🌟'})
     return await conn.sendMessage(delfrom, { text: `🚫 *This message was deleted !!*\n\n  🚮 *Deleted by:* _${deletedBy}_\n  📩 *Sent by:* _${sentBy}_\n` },{quoted: stdata});
     
       }
@@ -1291,7 +1416,7 @@ if(!isOwner) {
   //==================================================================================================================================================================== 
 
 //==================================================================================================================================================================
-const bad = await fetchJson(`https://mv-visper-full-db.pages.dev/Main/bad_word.json`);
+const bad = await fetchJson(`https://nexus-full-db.vercel.app/Main/bad_word.json`);
 
 if (config.ANTI_BAD === "true" && isGroup) { // Run only in groups
   if (!isMe && !groupAdmins.includes(sender)) { // Only non-admins
@@ -1409,121 +1534,87 @@ function handleIncomingMessage(message) {
     saveChatData(remoteJid, messageId, chatData);
 }
 
-//================================ Auto voice funtion=================================================================
+//================================ Auto voice function ================================================
+const ffmpeg = require("fluent-ffmpeg");
+const ffmpegPath = require("ffmpeg-static");
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 
-if(body === "hi" || body === "Hi" || body === "hey" || body === "Hey" || body === "hii" || body === "Hii"){
-   
- if (config.AUTO_VOICE == 'true') {
-  if (isMe) return;
-await conn.sendPresenceUpdate('recording', from);
- await conn.sendMessage(from, { 
-  audio: { url: 'https://mv-visper-full-db.pages.dev/Data/WhatsApp%20Audio%202025-04-28%20at%2017.12.23.mpeg' }, 
-  mimetype: 'audio/mpeg', 
-  ptt: true 
-}, { quoted: mek });
+async function sendVoiceMessage(conn, from, mek, audioUrl) {
+    const randomId = Date.now();
+    const tempMp3 = path.join(__dirname, `voice_${randomId}.mp3`);
+    const tempOgg = path.join(__dirname, `voice_${randomId}.ogg`);
 
- }	
+    try {
+       
+        const response = await axios({
+            url: audioUrl,
+            method: "GET",
+            responseType: "stream"
+        });
+
+        const writer = fs.createWriteStream(tempMp3);
+        response.data.pipe(writer);
+        await new Promise((resolve, reject) => {
+            writer.on("finish", resolve);
+            writer.on("error", reject);
+        });
+
+        
+        await new Promise((resolve, reject) => {
+            ffmpeg(tempMp3)
+                .audioCodec("libopus")
+                .audioBitrate("128k")
+                .format("ogg")
+                .save(tempOgg)
+                .on("end", resolve)
+                .on("error", reject);
+        });
+
+       
+        await conn.sendPresenceUpdate('recording', from);
+        await conn.sendMessage(from, {
+            audio: fs.readFileSync(tempOgg),
+            mimetype: 'audio/ogg; codecs=opus',
+            ptt: true
+        }, { quoted: mek });
+
+    } finally {
+      
+        if (fs.existsSync(tempMp3)) fs.unlinkSync(tempMp3);
+        if (fs.existsSync(tempOgg)) fs.unlinkSync(tempOgg);
+    }
 }
 
-		if(body === "gm" || body === "Gm" || body === "morning" || body === "goodmorning" || body === "good+morning"){
-   
- if (config.AUTO_VOICE == 'true') {
-  if (isMe) return;
-await conn.sendPresenceUpdate('recording', from);
- await conn.sendMessage(from, { 
-  audio: { url: 'https://github.com/Nadeenpoorna-app/main-data/raw/refs/heads/main/footer/voice_data/gm.opus' }, 
-  mimetype: 'audio/mpeg', 
-  ptt: true 
-}, { quoted: mek });
 
- }	
+const voiceMap = {
+    
+    hi:   { keys: ["hi", "Hi", "hey", "Hey", "hii", "Hii"],           url: "https://nexus-full-db.vercel.app/Data/Hii.mpeg" },
+    gm:   { keys: ["gm", "Gm", "morning", "goodmorning", "good+morning"], url: "https://nexus-full-db.vercel.app/Data/gm.opus" },
+    hmm:  { keys: ["hmm", "Hm", "H", "Mm", "mm", "Hmmm"],             url: "https://nexus-full-db.vercel.app/Data/hmm.opus" },
+    mk:   { keys: ["mk", "Mk", "MK", "moko", "mokdkaranne", "wadada"], url: "https://nexus-full-db.vercel.app/Data/mk.mp3" },
+
+    
+    kamal:  { keys: ["fuck", "sex", "hukamu", "ukamu"],                              url: "https://nexus-full-db.vercel.app/Data/kamalokaya.opus" },
+    kunu:   { keys: ["huththa", "kariya", "hukanna", "hutta", "ponnaya", "pky"],     url: "https://nexus-full-db.vercel.app/Data/kunuharpa.opus" },
+    ai:     { keys: ["puka", "sududa"],                                               url: "https://nexus-full-db.vercel.app/Data/ai.opus" },
+    ponnaya:{ keys: ["ponnya", "pakaya"],                                              url: "https://nexus-full-db.vercel.app/Data/ponnaya.mp3" },
+};
+
+
+const keywordToUrl = {};
+for (const entry of Object.values(voiceMap)) {
+    for (const key of entry.keys) {
+        keywordToUrl[key] = entry.url;
+    }
 }
 
-		if(body === "fuck" || body === "sex" || body === "hukamu" || body === "ukamu"){
-   
- if (config.AUTO_VOICE == 'true') {
-  if (isMe) return;
-await conn.sendPresenceUpdate('recording', from);
- await conn.sendMessage(from, { 
-  audio: { url: 'https://github.com/Nadeenpoorna-app/main-data/raw/refs/heads/main/footer/voice_data/kalalokaya.opus' }, 
-  mimetype: 'audio/mpeg', 
-  ptt: true 
-}, { quoted: mek });
 
- }	
+const audioUrl = keywordToUrl[body];
+if (audioUrl) {
+    if (isMe) return;
+    await sendVoiceMessage(conn, from, mek, audioUrl);
 }
-
-		if(body === "huththa" || body === "kariya" || body === "hukanna" ||  body === "hutta" ||  body === "ponnaya" || body === "pky"){
-   
- if (config.AUTO_VOICE == 'true') {
-  if (isMe) return;
-await conn.sendPresenceUpdate('recording', from);
- await conn.sendMessage(from, { 
-  audio: { url: 'https://github.com/Nadeenpoorna-app/main-data/raw/refs/heads/main/footer/voice_data/kunukarapa.opus' }, 
-  mimetype: 'audio/mpeg', 
-  ptt: true 
-}, { quoted: mek });
-
- }	
-}
-
-if(body === "hmm" || body === "Hm" || body === "H" ||  body === "Mm" ||  body === "mm" || body === "Hmmm"){
-   
- if (config.AUTO_VOICE == 'true') {
-  if (isMe) return;
-await conn.sendPresenceUpdate('recording', from);
- await conn.sendMessage(from, { 
-  audio: { url: 'https://github.com/Nadeenpoorna-app/main-data/raw/refs/heads/main/footer/voice_data/hmm.opus' }, 
-  mimetype: 'audio/mpeg', 
-  ptt: true 
-}, { quoted: mek });
-
- }	
-}
-
-if(body === "mk" || body === "Mk" || body === "MK" ||  body === "moko" ||  body === "mokdkaranne" || body === "wadada"){
-   
- if (config.AUTO_VOICE == 'true') {
-  if (isMe) return;
-await conn.sendPresenceUpdate('recording', from);
- await conn.sendMessage(from, { 
-  audio: { url: 'https://github.com/Nadeenpoorna-app/main-data/raw/refs/heads/main/footer/voice_data/mk.mp3' }, 
-  mimetype: 'audio/mpeg', 
-  ptt: true 
-}, { quoted: mek });
-
- }	
-}
-
-if(body === "puka" || body === "sududa"){
-   
- if (config.AUTO_VOICE == 'true') {
-  if (isMe) return;
-await conn.sendPresenceUpdate('recording', from);
- await conn.sendMessage(from, { 
-  audio: { url: 'https://github.com/Nadeenpoorna-app/main-data/raw/refs/heads/main/footer/voice_data/ai%20ehema%20kiyanne.opus' }, 
-  mimetype: 'audio/mpeg', 
-  ptt: true 
-}, { quoted: mek });
-
- }	
-}
-
-if(body === "ponnaya" || body === "ponya" || body === "pakaya"){
-   
- if (config.AUTO_VOICE == 'true') {
-  if (isMe) return;
-await conn.sendPresenceUpdate('recording', from);
- await conn.sendMessage(from, { 
-  audio: { url: 'https://github.com/Nadeenpoorna-app/main-data/raw/refs/heads/main/footer/voice_data/Ponnaya(tbg).mp3' }, 
-  mimetype: 'audio/mpeg', 
-  ptt: true 
-}, { quoted: mek });
-
- }	
-}
-
 
 
 
@@ -1756,21 +1847,32 @@ console.log(isError)
   })
 }
 app.get("/", (req, res) => {
-  res.send("📟 VISPER DL Working successfully!");
+    res.send("📟 NEXUS DL Working successfully!");
 });
-app.listen(port, () => console.log(`Movie-Visper-Md Server listening on port http://localhost:${port}`));
+app.listen(port, () => console.log(`Movie-Nexus-Md Server listening on port http://localhost:${port}`));
+
 setTimeout(() => {
-connectToWA()
+    connectToWA();
 }, 3000);
 
-
 process.on("uncaughtException", function (err) {
-  let e = String(err);
-  if (e.includes("Socket connection timeout")) return;
-  if (e.includes("rate-overlimit")) return;
-  if (e.includes("Connection Closed")) return;
-  if (e.includes("Value not found")) return;
-  if (e.includes("Authentication timed out")) restart();
-  console.log("Caught exception: ", err);
+    let e = String(err);
+    if (e.includes("Socket connection timeout")) return;
+    if (e.includes("rate-overlimit")) return;
+    if (e.includes("Connection Closed")) return;
+    if (e.includes("Value not found")) return;
+    if (e.includes("Authentication timed out")) {
+        console.log("Restarting due to auth timeout...");
+        connectToWA();
+    }
+    console.log("Caught exception: ", err);
+});
+
+} 
+
+// Start the bot
+boot().catch(err => {
+    console.error('FATAL ERROR:', err);
+    process.exit(1);
 });
 
