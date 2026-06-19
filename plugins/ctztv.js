@@ -7,7 +7,7 @@ const fetch = require('node-fetch');
 const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions')
 
 let isUploadingTv = false;
-const API_KEY = 'c86dfd5f2fa97dd7';
+const API_KEY = '82406ca340409d44';
 
 async function getResizedThumb(url) {
     try {

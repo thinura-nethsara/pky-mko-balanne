@@ -121,18 +121,15 @@ async (conn, mek, m, { from, q, reply }) => {
     try {
         if (!q) return await reply("⚠️ Please provide a Mega.nz URL!");
 
-       
- 
-        const apiUrl = `https://api-dark-shan-yt.koyeb.app/download/meganz?url=${encodeURIComponent(q)}&apikey=c86dfd5f2fa97dd7`;
+        const apiUrl = `https://sadaslk-fast-mega-dl.vercel.app/mega?q=${encodeURIComponent(q)}`;
         const response = await axios.get(apiUrl);
         const data = response.data;
 
         if (!data.status) {
-            return await reply(`❌ *API Error:* ${data.error || "Unable to fetch data"}`);
+            return await reply(`❌ *API Error:* ${data.error}`);
         }
 
-        
-        const fileData = data.data.result[0]; 
+        const fileData = data.result;
         const fileSizeMB = (fileData.size / (1024 * 1024)).toFixed(2);
 
         await reply(
@@ -141,12 +138,10 @@ async (conn, mek, m, { from, q, reply }) => {
             `📁 *Size:* ${fileSizeMB} MB`
         );
 
-        
+        // Mimetype detect
         const ext = fileData.name.split('.').pop().toLowerCase();
         const mimeTypes = {
             mp4: "video/mp4",
-            mkv: "video/x-matroska", 
-            rar: "application/x-rar-compressed",
             pdf: "application/pdf",
             zip: "application/zip",
             rar: "application/x-rar-compressed",
@@ -183,7 +178,6 @@ async (conn, mek, m, { from, q, reply }) => {
         await reply(`❌ *Error occurred:* ${e.response?.data?.error || e.message}`);
     }
 });
-
 
 
 
