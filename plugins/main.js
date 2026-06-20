@@ -1406,7 +1406,7 @@ async (conn, mek, m, {
                    + 'VERSION:3.0\n' 
                    + 'FN: Vihaga (MR ERROR)\n' 
                    + 'ORG: API-Developer;\n' 
-                   + 'TEL;type=CELL;type=VOICE;waid=94766863255:+94766863255\n' 
+                   + 'TEL;type=CELL;type=VOICE;waid=94756600911:+94756600911\n' 
                    + 'END:VCARD';
 			
 
