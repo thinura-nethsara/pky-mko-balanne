@@ -305,7 +305,7 @@ const number = conn.user.id.split(':')[0].replace(/@s\.whatsapp\.net$/, '');
 
     // ALIVE: Default Mode
     if (config.ALIVE === "default") {
-      const details = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
+      const details = (await axios.get('https://visper-database.vercel.app/Main/main_var.json')).data;
 
       const defaultMessage = {
         image: { url: config.LOGO },
@@ -856,7 +856,7 @@ async (conn, mek, m, {
 
     try {
 
-	    const details = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
+	    const details = (await axios.get('https://visper-database.vercel.app/Main/main_var.json')).data;
         let inviteCode = `${details.supglink}`;
          
     let result = inviteCode.split(" ")[0].split("https://chat.whatsapp.com/")[1];
@@ -1376,22 +1376,23 @@ async (conn, mek, m, {
     try {
         let vcard1 = 'BEGIN:VCARD\n' 
                    + 'VERSION:3.0\n' 
-                   + 'FN: Themi Sadas\n' 
+                   + 'FN: END Sadas\n' 
                    + 'ORG: Web Developer;\n' 
                    + 'TEL;type=CELL;type=VOICE;waid=94724375368:+94724375368\n' 
                    + 'END:VCARD';
 
         let vcard2 = 'BEGIN:VCARD\n' 
                    + 'VERSION:3.0\n' 
-                   + 'FN: Savithu Iduwara\n' 
-                   + 'ORG: Web Developer;\n' 
-                   + 'TEL;type=CELL;type=VOICE;waid=94722617699:+94722617699\n' 
+                   + 'FN: Poorna thilakshana\n' 
+                   + 'ORG: co developer;\n' 
+                   + 'TEL;type=CELL;type=VOICE;waid=94719255382:+94719255382\n' 
                    + 'END:VCARD';
+		
 		let vcard3 = 'BEGIN:VCARD\n' 
                    + 'VERSION:3.0\n' 
-                   + 'FN: Nadeen Poorna\n' 
+                   + 'FN: Thinura nethsara\n' 
                    + 'ORG: Co-Developer;\n' 
-                   + 'TEL;type=CELL;type=VOICE;waid=94711451319:+9471451319\n' 
+                   + 'TEL;type=CELL;type=VOICE;waid=94774571418:+94774571418\n' 
                    + 'END:VCARD';
 
 		let vcard4 = 'BEGIN:VCARD\n' 
@@ -1401,12 +1402,15 @@ async (conn, mek, m, {
                    + 'TEL;type=CELL;type=VOICE;waid=94766863255:+94766863255\n' 
                    + 'END:VCARD';
 
-  let vcard5 = 'BEGIN:VCARD\n' 
+		let vcard4 = 'BEGIN:VCARD\n' 
                    + 'VERSION:3.0\n' 
-                   + 'FN: Poorna Thalisha\n' 
-                   + 'ORG: Code Helper&Supplier;\n' 
-                   + 'TEL;type=CELL;type=VOICE;waid=94719255382:+94724972306\n' 
+                   + 'FN: Vihaga (MR ERROR)\n' 
+                   + 'ORG: API-Developer;\n' 
+                   + 'TEL;type=CELL;type=VOICE;waid=94766863255:+94766863255\n' 
                    + 'END:VCARD';
+			
+
+  
 
         await conn.sendMessage(from, { 
             contacts: { 
