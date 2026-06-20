@@ -241,7 +241,8 @@ async (conn, m, mek, { from, isPre, q, prefix, isMe, isSudo, isOwner, reply }) =
     }
 });
 
-// =============================================
+
+ // =============================================
 // BDL – Get Movie Details & Download Links
 // =============================================
 cmd({
@@ -257,48 +258,109 @@ async (conn, m, mek, { from, q, isMe, isSudo, isOwner, prefix, reply }) => {
 
         let sadas = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/info?q=${encodeURIComponent(urll)}&apiKey=${CINESUBZ_API_KEY}`);
 
+        // Log the full response to console (for debugging)
+        console.log('🔍 Full Info API Response:', JSON.stringify(sadas, null, 2));
+
         if (!sadas || !sadas.data) {
             return await reply('*Invalid response from server.*');
         }
 
         const movieData = sadas.data;
 
-        // Recursively search for an array of link objects
-        function findLinkArray(obj) {
+        // --- Intelligent link finder ---
+        function findLinks(obj) {
             if (typeof obj !== 'object' || obj === null) return null;
-            if (Array.isArray(obj) && obj.length > 0) {
-                if (obj.some(item => item.link || item.url || item.download_link)) {
+
+            // If this object has a link-like property and is an array, treat it as a link list
+            if (Array.isArray(obj)) {
+                // Check if any item has a link-like property
+                const hasLink = obj.some(item => 
+                    item && typeof item === 'object' && 
+                    Object.keys(item).some(k => /link|url|src|file|download/i.test(k))
+                );
+                if (hasLink) {
                     return obj;
                 }
+                // Otherwise, search each item
+                for (let item of obj) {
+                    const found = findLinks(item);
+                    if (found) return found;
+                }
+                return null;
             }
+
+            // Object: iterate keys
             for (let key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     const val = obj[key];
-                    if (Array.isArray(val) && val.some(item => item.link || item.url || item.download_link)) {
+                    // If key itself is link-related and val is array, return it
+                    if (/links|sources|downloads|files|qualities/i.test(key) && Array.isArray(val)) {
                         return val;
                     }
-                    const found = findLinkArray(val);
+                    const found = findLinks(val);
                     if (found) return found;
                 }
             }
             return null;
         }
 
-        let dlLinks = findLinkArray(movieData);
+        let dlLinks = findLinks(movieData);
         if (!dlLinks || dlLinks.length === 0) {
-            // Log the entire structure to console for debugging
-            console.log('No links found. Full response:', JSON.stringify(movieData, null, 2));
+            // If still nothing, try common known keys directly (fallback)
+            const fallbackKeys = ['dl_links', 'download_links', 'links', 'sources', 'downloads'];
+            for (let key of fallbackKeys) {
+                if (movieData[key] && Array.isArray(movieData[key]) && movieData[key].length > 0) {
+                    dlLinks = movieData[key];
+                    break;
+                }
+            }
+        }
+
+        if (!dlLinks || dlLinks.length === 0) {
+            console.log('❌ No links found in the response.');
             return await reply('*No valid download links found.*');
         }
 
         // Normalize each link object
-        dlLinks = dlLinks.map(item => ({
-            link: item.link || item.url || item.download_link || '',
-            quality: item.quality || item.resolution || 'Unknown',
-            size: item.size || item.file_size || 'N/A'
-        })).filter(item => item.link);
+        dlLinks = dlLinks.map(item => {
+            // Find the first property that looks like a URL
+            let link = '';
+            let quality = 'Unknown';
+            let size = 'N/A';
+
+            for (let key in item) {
+                const val = item[key];
+                if (typeof val === 'string') {
+                    if (val.match(/^https?:\/\//)) {
+                        link = val;
+                    } else if (/quality|res/i.test(key)) {
+                        quality = val;
+                    } else if (/size|filesize/i.test(key)) {
+                        size = val;
+                    }
+                }
+            }
+
+            // If no link found, try to use item.link or item.url directly
+            if (!link && item.link) link = item.link;
+            if (!link && item.url) link = item.url;
+            if (!link && item.download_link) link = item.download_link;
+            if (!link && item.src) link = item.src;
+            if (!link && item.file) link = item.file;
+
+            // If quality not set, try item.quality, item.resolution
+            if (quality === 'Unknown' && item.quality) quality = item.quality;
+            if (quality === 'Unknown' && item.resolution) quality = item.resolution;
+
+            // If size not set, try item.size, item.filesize
+            if (size === 'N/A' && item.size) size = item.size;
+            if (size === 'N/A' && item.filesize) size = item.filesize;
+
+            return { link, quality, size };
+        }).filter(item => item.link); // Remove invalid
 
         if (dlLinks.length === 0) {
+            console.log('❌ No valid links after normalization.');
             return await reply('*No valid download links found.*');
         }
 
@@ -384,7 +446,7 @@ async (conn, m, mek, { from, q, isMe, isSudo, isOwner, prefix, reply }) => {
         console.log(e);
         await conn.sendMessage(from, { text: '🚩 *Error !!*' }, { quoted: mek });
     }
-});
+});           
 
 // =============================================
 // CDL – Download & Upload Movie
