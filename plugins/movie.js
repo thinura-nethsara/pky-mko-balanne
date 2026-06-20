@@ -115,11 +115,9 @@ text: "*`You are not a premium user⚠️`*\n\n" +
     } else {
   
       const buttons = sources.map(src => ({
-        buttonId: prefix + src.cmd + ' '  q,
-        buttonText: { displayText: `_${src.name} Results 🍿_` },
+        buttonId: prefix + src.cmd + ' '  q,        buttonText: { displayText: `_${src.name} Results 🍿_` },
         type: 1
       }));
-
       return await conn.buttonMessage2(from, {
         image: { url: 'https://nadeen-botzdatabse.vercel.app/MovieZoneX.png' },
         caption,
@@ -141,7 +139,8 @@ text: "*`You are not a premium user⚠️`*\n\n" +
 
             
                    
-// Define API key (can be moved to config)
+
+    // Define API key (can be moved to config)
 const CINESUBZ_API_KEY = '50d7ce3f5137b97bc64d220a3f6a33ed';
 
 cmd({
@@ -174,7 +173,6 @@ try {
 
     if(!q) return await reply('*please give me text !..*');
 
-    // NEW SEARCH API
     let url = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/search?q=${encodeURIComponent(q)}&apiKey=${CINESUBZ_API_KEY}`);
 
     if (!url || !url.data || url.data.length === 0) {
@@ -264,10 +262,8 @@ try {
     const urll = q.split("&")[0];
     const im = q.split("&")[1];
 
-    // NEW INFO API
     let sadas = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/info?q=${encodeURIComponent(urll)}&apiKey=${CINESUBZ_API_KEY}`);
 
-    // Check if data exists
     if (!sadas || !sadas.data) {
         return await reply('*Invalid response from server.*');
     }
@@ -292,7 +288,6 @@ try {
         type: 1
     });
 
-    // Use movieData.dl_links
     movieData.dl_links.forEach((v) => {
         rows.push({
             buttonId: prefix + `cdl ${im}±${v.link}±${movieData.title}\n\n*\`[ ${v.quality} ]\`*`,
@@ -388,7 +383,6 @@ async (conn, mek, m, { from, q, isMe, reply }) => {
         const datas = q.split("±")[1];
         const dat = q.split("±")[2];
 
-        // NEW DOWNLOAD API
         let sadas = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/dl?q=${encodeURIComponent(datas)}&apiKey=${CINESUBZ_API_KEY}`);
 
         if (!sadas || !sadas.data || !sadas.data.dl_link) {
@@ -440,7 +434,6 @@ async (conn, m, mek, { from, q, isMe, reply }) => {
         if (!url || !imgUrl) 
             return await reply('❌ *Invalid format! Example:*\n_bdetails https://movieurl.com&https://imageurl.com_');
 
-        // NEW INFO API (reuse)
         let sadas = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/info?q=${encodeURIComponent(url)}&apiKey=${CINESUBZ_API_KEY}`);
         let details = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
 
@@ -472,3 +465,4 @@ async (conn, m, mek, { from, q, isMe, reply }) => {
 });
             
 
+        
