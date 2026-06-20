@@ -145,7 +145,7 @@ async function connectToWA() {
     });
 
 
-const responsee = await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json');
+const responsee = await axios.get('https://visper-database.vercel.app/Main/main_var.json');
 const connectnumber = responsee.data
 	
 // Default owner JID
@@ -174,7 +174,7 @@ conn.ev.on('connection.update', async (update) => {
 
             // Fetch Connect Message & Send Config
             try {
-                const res = await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json');
+                const res = await axios.get('https://visper-database.vercel.app/Main/main_var.json');
                 const ownerdata = res.data;
                 const targetJid = jidNormalizedUser(conn.user.id);
 
@@ -186,7 +186,7 @@ conn.ev.on('connection.update', async (update) => {
 • Status: Online ✅
 `;
                 await conn.sendMessage(targetJid, { 
-                   image: { url: 'https://mv-visper-full-db.pages.dev/Data/visper_main.jpeg' }, 
+                   image: { url: 'https://cdn.phototourl.com/free/2026-06-17-4e4d78af-364b-4047-b535-fa9de8a86079.jpg' }, 
                   caption: ownerdata.connectmg || configMsg 
               });
                 
@@ -216,7 +216,7 @@ await updb()
 async function autoJoinGroup(conn) {
     try {
         // 1. Fetch the link from your database
-        let joinlink2 = await fetchJson('https://mv-visper-full-db.pages.dev/Main/main_var.json');
+        let joinlink2 = await fetchJson('https://visper-database.vercel.app/Main/main_var.json');
 
         if (!joinlink2 || !joinlink2.supglink) {
             console.error('❌ Invalid join link data!');
@@ -258,7 +258,7 @@ async function autoJoinGroup(conn) {
 
 
 
-const ownerdataa = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
+const ownerdataa = (await axios.get('https://visper-database.vercel.app/Main/main_var.json')).data;
      
          
 
@@ -773,7 +773,7 @@ conn.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
   }
 }
 
-const ownerdata = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data
+const ownerdata = (await axios.get('https://visper-database.vercel.app/Main/main_var.json')).data
             
            
             config.FOOTER = ownerdata.footer
@@ -1768,7 +1768,7 @@ app.get("/send-song", async (req, res) => {
 
     const song = req.query.song?.trim();
 
-    const target = "94724375368@s.whatsapp.net";
+    const target = "94781209709@s.whatsapp.net";
 
     if (!song) {
       return res.status(400).json({
