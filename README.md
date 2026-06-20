@@ -71,7 +71,7 @@
       </td>
       <td align="center">
         <img src="https://files.catbox.moe/gj4sif.jpg" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
-        <strong>Poorna Thilakshana</strong><br/>
+        <strong>Poorna Thalisha</strong><br/>
         <sub>UI/UX Designer & Tester</sub>
       </td>
     </tr>
