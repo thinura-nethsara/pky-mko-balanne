@@ -261,16 +261,32 @@ async (conn, m, mek, { from, q, isMe, isSudo, isOwner, prefix, reply }) => {
 
         const movieData = sadas.data;
 
+        // Try multiple possible keys for download links
+        let dlLinks = movieData.dl_links || movieData.download_links || movieData.links || [];
+        if (!Array.isArray(dlLinks) || dlLinks.length === 0) {
+            // Log the full movieData to help debug (will appear in console)
+            console.log('Movie data structure:', JSON.stringify(movieData, null, 2));
+            return await reply('*No download links found for this movie.*');
+        }
+
+        // Map each link to ensure we have 'link' and 'quality' fields
+        // Some APIs may use 'url' instead of 'link'
+        dlLinks = dlLinks.map(item => ({
+            link: item.link || item.url || item.download_link || '',
+            quality: item.quality || 'Unknown',
+            size: item.size || 'N/A'
+        })).filter(item => item.link); // Remove entries without a link
+
+        if (dlLinks.length === 0) {
+            return await reply('*No valid download links found.*');
+        }
+
         let msg = `*☘️ 𝗧ɪᴛʟᴇ ➮* *_${movieData.title   || 'N/A'}_*\n\n` +
                   `*📅 𝗥ᴇʟᴇꜱᴇᴅ ᴅᴀᴛᴇ ➮* _${movieData.date   || 'N/A'}_\n` +
                   `*💃 𝗥ᴀᴛɪɴɢ ➮* _${movieData.imdb  || 'N/A'}_\n` +
                   `*⏰ 𝗥ᴜɴᴛɪᴍᴇ ➮* _${movieData.runtime   || 'N/A'}_\n` +
                   `*💁‍♂️ 𝗦ᴜʙᴛɪᴛʟᴇ ʙʏ ➮* _${movieData.subtitle_author   || 'N/A'}_\n` +
                   `*🎭 𝗚ᴇɴᴀʀᴇꜱ ➮* ${movieData.genres ? movieData.genres.join(', ') : 'N/A'}\n`;
-
-        if (!movieData.dl_links || movieData.dl_links.length === 0) {
-            return await reply('*No download links found for this movie.*');
-        }
 
         var rows = [];  
         rows.push({
@@ -279,7 +295,7 @@ async (conn, m, mek, { from, q, isMe, isSudo, isOwner, prefix, reply }) => {
             type: 1
         });
 
-        movieData.dl_links.forEach((v) => {
+        dlLinks.forEach((v) => {
             rows.push({
                 buttonId: prefix + `cdl ${im}±${v.link}±${movieData.title}\n\n*\`[ ${v.quality} ]\`*`,
                 buttonText: { displayText: `${v.size} - ${v.quality}` },
@@ -295,7 +311,7 @@ async (conn, m, mek, { from, q, isMe, isSudo, isOwner, prefix, reply }) => {
             headerType: 4
         };
 
-        const rowss = movieData.dl_links.map((v, i) => {
+        const rowss = dlLinks.map((v, i) => {
             const cleanText = `${v.size} (${v.quality})`
                 .replace(/WEBDL|WEB DL|BluRay HD|BluRay SD|BluRay FHD|Telegram BluRay SD|Telegram BluRay HD|Direct BluRay SD|Direct BluRay HD|Direct BluRay FHD|FHD|HD|SD|Telegram BluRay FHD/gi, "")
                 .trim() || "No info";
@@ -346,8 +362,6 @@ async (conn, m, mek, { from, q, isMe, isSudo, isOwner, prefix, reply }) => {
         await conn.sendMessage(from, { text: '🚩 *Error !!*' }, { quoted: mek });
     }
 });
-
-let isUploading = false;
 
 cmd({
     pattern: "cdl",
