@@ -134,25 +134,27 @@ async (conn, mek, m, { from, q, reply }) => {
     try {
         if (!q) return await reply("⚠️ Please provide a Mega.nz URL!");
 
-        const apiUrl = `https://sadaslk-fast-mega-dl.vercel.app/mega?q=${encodeURIComponent(q)}`;
-        const response = await axios.get(apiUrl);
-        const data = response.data;
+        // Dynamic import for megajs (ESM compatibility)
+        const { default: mega } = await import('megajs');
 
-        if (!data.status) {
-            return await reply(`❌ *API Error:* ${data.error}`);
-        }
+        // Create file object from URL
+        const file = mega({ url: q });
+        
+        // Load file attributes (name, size, etc.)
+        await file.loadAttributes();
 
-        const fileData = data.result;
-        const fileSizeMB = (fileData.size / (1024 * 1024)).toFixed(2);
+        const fileName = file.name;
+        const fileSize = file.size;
+        const fileSizeMB = (fileSize / (1024 * 1024)).toFixed(2);
 
         await reply(
             `⏳ *Downloading from Mega.nz...*\n\n` +
-            `📄 *File:* ${fileData.name}\n` +
+            `📄 *File:* ${fileName}\n` +
             `📁 *Size:* ${fileSizeMB} MB`
         );
 
-        // Mimetype detect
-        const ext = fileData.name.split('.').pop().toLowerCase();
+        // Detect mimetype from extension
+        const ext = fileName.split('.').pop().toLowerCase();
         const mimeTypes = {
             mp4: "video/mp4",
             pdf: "application/pdf",
@@ -160,35 +162,47 @@ async (conn, mek, m, { from, q, reply }) => {
             rar: "application/x-rar-compressed",
             "7z": "application/x-7z-compressed",
             jpg: "image/jpeg",
+            jpeg: "image/jpeg",
             png: "image/png",
-            mp3: "audio/mpeg"
+            mp3: "audio/mpeg",
+            mkv: "video/x-matroska",
+            apk: "application/vnd.android.package-archive",
+            doc: "application/msword",
+            docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            xls: "application/vnd.ms-excel",
+            xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ppt: "application/vnd.ms-powerpoint",
+            pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         };
-
         const mimetype = mimeTypes[ext] || "application/octet-stream";
-        const dllink = fileData.download;
 
+        // Get the download stream
+        const stream = file.download();
+
+        // Send as document
         await conn.sendMessage(
             from,
             {
-                document: { url: dllink },
+                document: stream,
+                fileName: fileName,
                 mimetype: mimetype,
-                fileName: `${fileData.name}`,
                 caption:
-                    `*Name:* ${fileData.name}\n` +
-                    `*Type:* ${mimetype}\n` +
-                    `*Size:* ${fileSizeMB} MB\n\n` +
+                    `*Name:* ${fileName}\n` +
+                    `*Size:* ${fileSizeMB} MB\n` +
+                    `*Type:* ${mimetype}\n\n` +
                     `${config.FOOTER}`
             },
             { quoted: mek }
         );
 
+        // React with success
         await conn.sendMessage(from, {
-            react: { text: "✔️", key: mek.key }
+            react: { text: "✅", key: mek.key }
         });
 
     } catch (e) {
         console.error(e);
-        await reply(`❌ *Error occurred:* ${e.response?.data?.error || e.message}`);
+        await reply(`❌ *Error occurred:* ${e.message || 'Invalid Mega URL or network issue.'}`);
     }
 });
 
