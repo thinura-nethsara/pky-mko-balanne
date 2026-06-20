@@ -134,9 +134,8 @@ async (conn, mek, m, { from, q, reply }) => {
     try {
         if (!q) return await reply("⚠️ Please provide a Mega.nz URL!");
 
-        // File object එක හදන්න
-        const file = File.fromURL(q); // හෝ new File({ url: q })
-        
+        const { File } = require('megajs');
+        const file = File.fromURL(q);
         await file.loadAttributes();
 
         const fileName = file.name;
@@ -149,34 +148,30 @@ async (conn, mek, m, { from, q, reply }) => {
             `📁 *Size:* ${fileSizeMB} MB`
         );
 
+        // 🔥 STREAM එක BUFFER එකට CONVERT කරන්න
+        const stream = file.download();
+        const chunks = [];
+        for await (const chunk of stream) {
+            chunks.push(chunk);
+        }
+        const buffer = Buffer.concat(chunks);
+
+        // Mimetype හඳුනාගැනීම
         const ext = fileName.split('.').pop().toLowerCase();
         const mimeTypes = {
-            mp4: "video/mp4",
-            pdf: "application/pdf",
-            zip: "application/zip",
-            rar: "application/x-rar-compressed",
-            "7z": "application/x-7z-compressed",
-            jpg: "image/jpeg",
-            jpeg: "image/jpeg",
-            png: "image/png",
-            mp3: "audio/mpeg",
-            mkv: "video/x-matroska",
-            apk: "application/vnd.android.package-archive",
-            doc: "application/msword",
-            docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            xls: "application/vnd.ms-excel",
-            xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            ppt: "application/vnd.ms-powerpoint",
-            pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            mp4: "video/mp4", pdf: "application/pdf", zip: "application/zip",
+            rar: "application/x-rar-compressed", "7z": "application/x-7z-compressed",
+            jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png",
+            mp3: "audio/mpeg", mkv: "video/x-matroska",
+            apk: "application/vnd.android.package-archive"
         };
         const mimetype = mimeTypes[ext] || "application/octet-stream";
 
-        const stream = file.download();
-
+        // BUFFER එක එවන්න
         await conn.sendMessage(
             from,
             {
-                document: stream,
+                document: buffer,
                 fileName: fileName,
                 mimetype: mimetype,
                 caption:
