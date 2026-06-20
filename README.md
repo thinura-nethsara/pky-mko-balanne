@@ -70,7 +70,7 @@
         <sub>Senior Developer / Bug Fixer</sub>
       </td>
       <td align="center">
-        <img src="https://ui-avatars.com/api/?name=Poorna+Thilakshana&background=25D366&color=fff&size=100" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
+        <img src="https://files.catbox.moe/gijq3x.jpg" width="100" style="border-radius: 50%; border: 3px solid #25D366; transition: transform 0.3s;"/><br/>
         <strong>Poorna Thilakshana</strong><br/>
         <sub>UI/UX Designer & Tester</sub>
       </td>
