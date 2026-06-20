@@ -134,13 +134,9 @@ async (conn, mek, m, { from, q, reply }) => {
     try {
         if (!q) return await reply("⚠️ Please provide a Mega.nz URL!");
 
-        // Dynamic import for megajs (ESM compatibility)
-        const { default: mega } = await import('megajs');
-
-        // Create file object from URL
-        const file = mega({ url: q });
+        // File object එක හදන්න
+        const file = File.fromURL(q); // හෝ new File({ url: q })
         
-        // Load file attributes (name, size, etc.)
         await file.loadAttributes();
 
         const fileName = file.name;
@@ -153,7 +149,6 @@ async (conn, mek, m, { from, q, reply }) => {
             `📁 *Size:* ${fileSizeMB} MB`
         );
 
-        // Detect mimetype from extension
         const ext = fileName.split('.').pop().toLowerCase();
         const mimeTypes = {
             mp4: "video/mp4",
@@ -176,10 +171,8 @@ async (conn, mek, m, { from, q, reply }) => {
         };
         const mimetype = mimeTypes[ext] || "application/octet-stream";
 
-        // Get the download stream
         const stream = file.download();
 
-        // Send as document
         await conn.sendMessage(
             from,
             {
@@ -195,7 +188,6 @@ async (conn, mek, m, { from, q, reply }) => {
             { quoted: mek }
         );
 
-        // React with success
         await conn.sendMessage(from, {
             react: { text: "✅", key: mek.key }
         });
@@ -205,7 +197,6 @@ async (conn, mek, m, { from, q, reply }) => {
         await reply(`❌ *Error occurred:* ${e.message || 'Invalid Mega URL or network issue.'}`);
     }
 });
-
 
 
 
