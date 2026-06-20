@@ -137,10 +137,10 @@ text: "*`You are not a premium user⚠️`*\n\n" +
 
 
 
-            
-                   
+   // =============================================
+// CINESUBZ MOVIE PLUGIN (FULLY UPDATED)
+// =============================================
 
-    // Define API key (can be moved to config)
 const CINESUBZ_API_KEY = '50d7ce3f5137b97bc64d220a3f6a33ed';
 
 cmd({
@@ -151,7 +151,7 @@ cmd({
     use: ".baiscopes 2025",
     filename: __filename
 },
-async (conn, m, mek, { from, isPre, q, prefix, isMe,isSudo, isOwner, reply }) => {
+async (conn, m, mek, { from, isPre, q, prefix, isMe, isSudo, isOwner, reply }) => {
 try {
     const pr = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
     const isFree = pr.mvfree === "true";
@@ -462,7 +462,9 @@ async (conn, m, mek, { from, q, isMe, reply }) => {
         console.error('Error:', error);
         await conn.sendMessage(from, '⚠️ *An error occurred. Please try again later.*', { quoted: mek });
     }
-});
-            
+});         
+                 
 
+    
+            
         
