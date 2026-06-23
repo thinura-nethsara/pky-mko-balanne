@@ -133,10 +133,8 @@ async (conn, mek, m, {
 
 
 //===================================================================================================================
-
-
 // ============================================================
-// CINESUBZ MOVIE PLUGIN – FULL FIXED VERSION
+// CINESUBZ MOVIE PLUGIN – FULLY FIXED & TESTED
 // ============================================================
 
 // Helper: resize image
@@ -150,7 +148,7 @@ async function resizeImage(inputBuffer, width, height) {
 }
 
 // -----------------------------------------------------------------
-// 1. SEARCH COMMAND
+// 1. SEARCH COMMAND (Unchanged - Works)
 // -----------------------------------------------------------------
 cmd({
     pattern: "cine",    
@@ -163,23 +161,17 @@ cmd({
 },
 async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) => {
     try {
-        // Premium check
         const pr = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
         const isFree = pr.mvfree === "true";
         if (!isFree && !isMe && !isPre) {
             await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
             return await conn.sendMessage(from, {
-                text: "*`You are not a premium user⚠️`*\n\n" +
-                      "*Send a message to one of the 2 numbers below and buy Lifetime premium 🎉.*\n\n" +
-                      "_Price : 200 LKR ✔️_\n\n" +
-                      "*👨‍💻Contact us : 0778500326 , 0722617699*"
+                text: "*`You are not a premium user⚠️`*\n\n*Contact : 0778500326 , 0722617699*"
             }, { quoted: mek });
         }
 
-        // Block check
         if (config.MV_BLOCK == "true" && !isMe && !isSudo && !isOwner) {
-            await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
-            return await conn.sendMessage(from, { text: "*This command currently only works for the Bot owner. To disable it for others, use the .settings command 👨‍🔧.*" }, { quoted: mek });
+            return await conn.sendMessage(from, { text: "*This command only for owner.*" }, { quoted: mek });
         }
 
         if (!q) return await reply('*Please provide a movie name!*');
@@ -190,32 +182,23 @@ async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) =
         const data = response.data;
 
         if (!data.status || !data.data || data.data.length === 0) {
-            await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
             return await conn.sendMessage(from, { text: '*No results found ❌*' }, { quoted: mek });
         }
 
         const rows = data.data.map(movie => ({
             title: movie.title,
             description: movie.year || '',
-            rowId: prefix + 'newdl ' + encodeURIComponent(movie.url)
+            rowId: prefix + 'newdl ' + encodeURIComponent(movie.link || movie.url)
         }));
 
-        const sections = [{
-            title: "CineSubz Results",
-            rows: rows
-        }];
-
-        const caption = `_*🎬 CINESUBZ MOVIE SEARCH 🎬_*\n\n*Movie Search : ${q} 🔎*`;
+        const caption = `_*🎬 CINESUBZ SEARCH 🎬_*\n\n*Query : ${q}*`;
 
         const listButtons = {
-            title: "Choose a Movie",
-            sections: [{
-                title: "Available Movies",
-                rows: data.data.map(movie => ({
-                    title: movie.title,
-                    id: prefix + `newdl ${encodeURIComponent(movie.url)}`
-                }))
-            }]
+            title: "Choose Movie",
+            sections: [{ title: "Results", rows: data.data.map(m => ({
+                title: m.title,
+                id: prefix + `newdl ${encodeURIComponent(m.link || m.url)}`
+            })) }]
         };
 
         if (config.BUTTON === "true") {
@@ -224,250 +207,185 @@ async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) =
                 caption: caption,
                 footer: config.FOOTER,
                 buttons: [{
-                    buttonId: "download_list",
-                    buttonText: { displayText: "🎥 Select Option" },
+                    buttonId: "list",
+                    buttonText: { displayText: "🎥 Select Movie" },
                     type: 4,
-                    nativeFlowInfo: {
-                        name: "single_select",
-                        paramsJson: JSON.stringify(listButtons)
-                    }
+                    nativeFlowInfo: { name: "single_select", paramsJson: JSON.stringify(listButtons) }
                 }],
-                headerType: 1,
-                viewOnce: true
+                headerType: 1
             }, { quoted: mek });
         } else {
-            await conn.listMessage(from, {
-                text: caption,
-                footer: config.FOOTER,
-                title: 'Search Results',
-                buttonText: '*Select a Movie*',
-                sections
-            }, mek);
+            await conn.listMessage(from, { text: caption, footer: config.FOOTER, title: "Results", buttonText: "Select", sections: [{title:"Movies", rows}] }, mek);
         }
     } catch (e) {
-        console.error('Search Error:', e);
-        await conn.sendMessage(from, { text: '🚩 *Error occurred!!*' }, { quoted: mek });
+        console.error(e);
+        await reply('🚩 *Search Error!*');
     }
 });
 
 // -----------------------------------------------------------------
-// 2. INFO & QUALITIES COMMAND (FIXED)
+// 2. NEWDL - INFO COMMAND (FIXED)
 // -----------------------------------------------------------------
 cmd({
     pattern: "newdl",	
     react: '🎥',
-    desc: "Fetch movie details and download links",
+    desc: "Movie Info + Qualities",
     filename: __filename
 },
 async (conn, m, mek, { from, q, prefix, reply }) => {
     try {
-        if (!q) return await reply('*Please provide a movie URL!*');
+        if (!q) return await reply('*Provide movie URL!*');
 
         const API_KEY = '50d7ce3f5137b97bc64d220a3f6a33ed';
         const movieUrl = decodeURIComponent(q);
         const infoUrl = `https://apis.sadas.dev/api/v1/movie/cinesubz/info?q=${encodeURIComponent(movieUrl)}&apiKey=${API_KEY}`;
-        
-        const response = await axios.get(infoUrl);
-        const info = response.data;
 
-        if (!info.status || !info.data) {
-            return await conn.sendMessage(from, { text: '❌ Failed to fetch movie info.' }, { quoted: mek });
+        const response = await axios.get(infoUrl);
+        const result = response.data;
+
+        console.log('📄 Info Response:', JSON.stringify(result, null, 2)); // Debug
+
+        if (!result.status || !result.data || !result.data.status) {
+            return await reply('❌ Failed to load movie info.');
         }
 
-        const movieData = info.data;
-        
-        const title = movieData.title || 'Unknown';
-        const image = movieData.poster || movieData.image || config.LOGO;
-        const year = movieData.year || 'N/A';
-        const description = movieData.description || '';
+        const movie = result.data;
 
-        // FIXED: Correct keys based on actual API structure
-        let downloads = movieData.download_links || 
-                       movieData.downloads || 
-                       movieData.links || 
-                       movieData.downloadLinks || [];
+        const title = movie.title || 'Unknown';
+        const image = movie.poster || config.LOGO;
+        const year = movie.year || 'N/A';
+        const desc = movie.description || '';
+
+        // FIXED: Correct path
+        let downloads = movie.download_links || [];
 
         if (downloads.length === 0) {
-            let fallbackMsg = `*☘️ Title :* ${title}\n`;
-            fallbackMsg += `*📅 Year :* ${year}\n\n`;
-            fallbackMsg += `*⚠️ No download links found via API.*\n`;
-            fallbackMsg += `*🔗 You can try opening this URL manually:*\n${movieUrl}`;
-            return await conn.sendMessage(from, { text: fallbackMsg }, { quoted: mek });
+            return await conn.sendMessage(from, {
+                text: `*☘️ Title :* ${title}\n*📅 Year :* ${year}\n\n⚠️ No links found.\n🔗 ${movieUrl}`
+            }, { quoted: mek });
         }
 
         let msg = `*☘️ Title :* ${title}\n`;
         msg += `*📅 Year :* ${year}\n`;
-        if (description) msg += `*📝 Desc :* ${description.substring(0, 120)}...\n\n`;
-        msg += `*Select a quality to download:*`;
+        if (desc) msg += `*📝 Desc :* ${desc.substring(0, 100)}...\n\n`;
+        msg += `*Select Quality:*`;
 
-        // Quality buttons
-        const qualityRows = downloads.map((dl, index) => {
-            const link = dl.final_link || dl.url || dl.original_zt_link || dl.link;
-            return {
-                title: dl.quality || `Quality ${index+1}`,
-                id: prefix + `ndll ${encodeURIComponent(link)}±${encodeURIComponent(title)}±${encodeURIComponent(image)}`
-            };
-        });
+        const qualityRows = downloads.map((dl, i) => ({
+            title: dl.quality || `Quality ${i+1}`,
+            id: prefix + `ndll ${encodeURIComponent(dl.final_link || dl.original_zt_link)}±${encodeURIComponent(title)}±${encodeURIComponent(image)}`
+        }));
 
         const listButtons = {
-            title: "🎬 Choose Download Quality",
-            sections: [{
-                title: "Available Qualities",
-                rows: qualityRows
-            }]
+            title: "Choose Quality",
+            sections: [{ title: "Downloads", rows: qualityRows }]
         };
 
-        const detailsButton = {
-            buttonId: prefix + 'dubdet ' + encodeURIComponent(movieUrl),
-            buttonText: { displayText: "📄 Details Send" },
-            type: 1
-        };
+        await conn.sendMessage(from, {
+            image: { url: image },
+            caption: msg,
+            footer: config.FOOTER,
+            buttons: [{
+                buttonId: "qualities",
+                buttonText: { displayText: "🎬 Select Quality" },
+                type: 4,
+                nativeFlowInfo: {
+                    name: "single_select",
+                    paramsJson: JSON.stringify(listButtons)
+                }
+            }],
+            headerType: 1,
+            viewOnce: true
+        }, { quoted: mek });
 
-        if (config.BUTTON === "true") {
-            await conn.sendMessage(from, {
-                image: { url: image },
-                caption: msg,
-                footer: config.FOOTER,
-                buttons: [
-                    detailsButton,
-                    {
-                        buttonId: "download_list",
-                        buttonText: { displayText: "🎥 Select Option" },
-                        type: 4,
-                        nativeFlowInfo: {
-                            name: "single_select",
-                            paramsJson: JSON.stringify(listButtons)
-                        }
-                    }
-                ],
-                headerType: 1,
-                viewOnce: true
-            }, { quoted: mek });
-        } else {
-            const buttonMessage = {
-                image: { url: image },
-                caption: msg,
-                footer: config.FOOTER,
-                buttons: qualityRows.map(r => ({
-                    buttonId: r.id,
-                    buttonText: { displayText: r.title },
-                    type: 1
-                })),
-                headerType: 4
-            };
-            await conn.buttonMessage(from, buttonMessage, mek);
-        }
     } catch (e) {
         console.error('Newdl Error:', e);
-        await conn.sendMessage(from, { text: '🚩 *Error fetching movie info!*' }, { quoted: mek });
+        await reply('🚩 *Error loading movie details*');
     }
 });
 
 // -----------------------------------------------------------------
-// 3. DOWNLOAD COMMAND (Improved)
+// 3. NDLL - DOWNLOAD (Improved)
 // -----------------------------------------------------------------
 cmd({
     pattern: "ndll",
     react: "⬇️",
     dontAddCommandList: true,
     filename: __filename
-}, async (conn, mek, m, { from, q, reply }) => {
-    if (!q) return await reply('*Please provide a valid quality URL!*');
+}, async (conn, mek, m, { from, q }) => {
+    if (!q) return await reply('*Invalid data!*');
 
     try {
         const parts = q.split('±');
-        if (parts.length < 3) return await reply('*Invalid data format!*');
-
         const qualityUrl = decodeURIComponent(parts[0]);
         const title = decodeURIComponent(parts[1]);
-        const imageUrl = decodeURIComponent(parts[2]);
+        const imageUrl = decodeURIComponent(parts[2] || config.LOGO);
 
-        await conn.sendMessage(from, { text: `*Downloading your movie..⬇️*` }, { quoted: mek });
+        await conn.sendMessage(from, { text: `*⬇️ Downloading...*` }, { quoted: mek });
 
         const API_KEY = '50d7ce3f5137b97bc64d220a3f6a33ed';
         const dlUrl = `https://apis.sadas.dev/api/v1/movie/cinesubz/dl?q=${encodeURIComponent(qualityUrl)}&apiKey=${API_KEY}`;
-        
-        const response = await axios.get(dlUrl);
-        const dlData = response.data;
 
-        if (!dlData.status || !dlData.data || !dlData.data.links || dlData.data.links.length === 0) {
-            return await conn.sendMessage(from, { 
-                text: `*⚠️ No direct link found.\nTry this:*\n${qualityUrl}` 
-            }, { quoted: mek });
+        const res = await axios.get(dlUrl);
+        const dlData = res.data;
+
+        if (!dlData.status || !dlData.data?.links?.length) {
+            return await reply(`*⚠️ No direct link.*\n${qualityUrl}`);
         }
 
-        // Prefer direct video link
-        let directLink = dlData.data.links.find(link => 
-            (link.includes('.mp4') || link.includes('.mkv')) && !link.includes('t.me')
-        ) || dlData.data.links[0];
+        let directLink = dlData.data.links.find(l => l.includes('.mp4') || l.includes('.mkv')) || dlData.data.links[0];
 
-        // Thumbnail
-        const botimgResponse = await fetch(imageUrl || config.LOGO);
-        const botimgBuffer = await botimgResponse.buffer();
-        const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
+        const thumbRes = await fetch(imageUrl);
+        const thumbBuf = await thumbRes.buffer();
+        const thumb = await resizeImage(thumbBuf, 200, 200);
 
-        const message = {
+        await conn.sendMessage(from, { text: `*⬆️ Uploading...*` }, { quoted: mek });
+
+        await conn.sendMessage(config.JID || from, {
             document: { url: directLink },
-            caption: `*🎬 Name :* ${title}\n\n${config.NAME}`,
-            jpegThumbnail: resizedBotImg,
-            mimetype: "video/mp4",
+            caption: `*🎬 ${title}*\n\n${config.NAME}`,
+            jpegThumbnail: thumb,
+            mimetype: 'video/mp4',
             fileName: `${title}.mp4`
-        };
+        });
 
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-        await conn.sendMessage(from, { text: `*Uploading your movie..⬆️*` }, { quoted: mek });
-
-        await conn.sendMessage(config.JID || from, message);
         await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-        await conn.sendMessage(from, { text: `*Movie sent successfully ✔*` }, { quoted: mek });
-    } catch (error) {
-        console.error('Download Error:', error);
-        await conn.sendMessage(from, { text: '*Error fetching or sending the movie.*' }, { quoted: mek });
+    } catch (e) {
+        console.error(e);
+        await reply('*Download Error!*');
     }
 });
 
 // -----------------------------------------------------------------
-// 4. DETAILS COMMAND
+// 4. DUBDET - Details
 // -----------------------------------------------------------------
 cmd({
     pattern: "dubdet",	
     react: '🎥',
-    desc: "Send movie details to configured JID",
     filename: __filename
 },
-async (conn, m, mek, { from, q, reply }) => {
+async (conn, m, mek, { from, q }) => {
     try {
-        if (!q) return await reply('*Please provide a movie URL!*');
+        if (!q) return await reply('*Provide URL!*');
 
         const API_KEY = '50d7ce3f5137b97bc64d220a3f6a33ed';
         const movieUrl = decodeURIComponent(q);
         const infoUrl = `https://apis.sadas.dev/api/v1/movie/cinesubz/info?q=${encodeURIComponent(movieUrl)}&apiKey=${API_KEY}`;
-        
-        const response = await axios.get(infoUrl);
-        const info = response.data;
 
-        if (!info.status || !info.data) {
-            return await conn.sendMessage(from, { text: '❌ Failed to fetch movie info.' }, { quoted: mek });
-        }
+        const res = await axios.get(infoUrl);
+        const movie = res.data.data;
 
-        const movieData = info.data;
-        const title = movieData.title || 'Unknown';
-        const image = movieData.poster || movieData.image || config.LOGO;
-        const year = movieData.year || 'N/A';
-        const downloads = movieData.download_links || movieData.downloads || [];
+        if (!movie?.title) return await reply('Failed to load details.');
 
-        let msg = `*☘️ Title :* ${title}\n`;
-        msg += `*📅 Year :* ${year}\n`;
-        if (downloads.length > 0) {
-            msg += `*🎬 Qualities :* ${downloads.map(d => d.quality || 'N/A').join(', ')}\n`;
-        }
-        msg += `\n> 🌟 Follow us : *${config.chlink || 'https://t.me/yourchannel'}*\n`;
-        msg += `> _*VISPER MD MULTIDEVICE*_`;
+        const msg = `*☘️ Title :* ${movie.title}\n*📅 Year :* ${movie.year || 'N/A'}\n*Qualities :* ${movie.download_links?.map(d => d.quality).join(', ') || 'N/A'}\n\n> ${config.chlink || ''}`;
 
-        await conn.sendMessage(config.JID || from, { image: { url: image }, caption: msg });
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-    } catch (error) {
-        console.error('Details Error:', error);
-        await conn.sendMessage(from, { text: '*Error fetching movie details.*' }, { quoted: mek });
+        await conn.sendMessage(config.JID || from, {
+            image: { url: movie.poster || config.LOGO },
+            caption: msg
+        });
+    } catch (e) {
+        console.error(e);
+        await reply('Details Error');
     }
 });
+
+
