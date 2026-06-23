@@ -3,7 +3,6 @@ const { cmd, commands } = require('../command')
 const axios = require('axios');
 const sharp = require('sharp');
 const Seedr = require("seedr");
-const { scrapercine, getDownloadLink } = require('../lib/yts'); 
 const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions')
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const { Buffer } = require('buffer'); 
@@ -11,21 +10,10 @@ const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
 const fileType = require("file-type")
-const { x_search, x_info_dl } = require('../lib/newm'); 
 const l = console.log
 const https = require("https")
 const { URL } = require('url');
-const cinesubz_tv = require('sadasytsearch');
-const { cinesubz_info, cinesubz_tv_firstdl, cinesubz_tvshow_info } = require('../lib/cineall');
-const download = require('../lib/yts'); 
-const { pirate_search, pirate_dl } = require('../lib/pirates');
-const { gettep, down } = require('../lib/animeheaven');
-const { sinhalasub_search, sinhalasub_info, sinhalasub_dl } = require('../lib/sinhalasubli');
-const { sinhalasubb_search, sinhalasubtv_info, sinhalasubtv_dl } = require('../lib/sinhalasubtv');
-const { slanimeclub_search, slanimeclub_ep, slanimeclub_dl, slanimeclub_mv_search, slanime_mv_info } = require('../lib/slanimeclub');
 const { sizeFormatter} = require('human-readable');
-const { xfull_search, xfull_dl } = require('../lib/plusmv');
-const { search, getep, dl } = require('darksadasyt-anime')
 
 
 cmd({
