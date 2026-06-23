@@ -117,7 +117,7 @@ async (conn, mek, m, {
       }));
 
       return await conn.buttonMessage2(from, {
-        image: { url: 'https://mv-visper-full-db.pages.dev/Data/visper_main.jpeg' },
+        image: { url: 'https://mv-visper-full-db.pages.de/Data/visper_main.jpeg' },
         caption,
         footer: config.FOOTER,
         buttons,
@@ -135,10 +135,9 @@ async (conn, mek, m, {
 //===================================================================================================================
 
 
-
-// =======================================================
-// CINESUBZ MOVIE PLUGIN – Replace the existing code
-// =======================================================
+// ============================================================
+// CINESUBZ MOVIE PLUGIN – Full code with better error handling
+// ============================================================
 
 // Helper: resize image (keep your existing function)
 async function resizeImage(inputBuffer, width, height) {
@@ -154,7 +153,7 @@ async function resizeImage(inputBuffer, width, height) {
 // 1. SEARCH COMMAND
 // -----------------------------------------------------------------
 cmd({
-    pattern: "pupilvideo",    
+    pattern: "cine",    
     react: '🔎',
     category: "movie",
     alias: ["sinhalafilm"],
@@ -189,6 +188,8 @@ async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) =
         const searchUrl = `https://apis.sadas.dev/api/v1/movie/cinesubz/search?q=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
         const response = await axios.get(searchUrl);
         const data = response.data;
+
+        console.log('🔍 Search Response:', JSON.stringify(data, null, 2)); // Debug
 
         if (!data.status || !data.data || data.data.length === 0) {
             await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
@@ -258,7 +259,7 @@ async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) =
 });
 
 // -----------------------------------------------------------------
-// 2. INFO & QUALITIES COMMAND
+// 2. INFO & QUALITIES COMMAND (Fixed)
 // -----------------------------------------------------------------
 cmd({
     pattern: "newdl",	
@@ -276,19 +277,42 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         const response = await axios.get(infoUrl);
         const info = response.data;
 
+        console.log('📄 Info Response:', JSON.stringify(info, null, 2)); // Debug
+
         if (!info.status || !info.data) {
             return await conn.sendMessage(from, { text: '❌ Failed to fetch movie info.' }, { quoted: mek });
         }
 
-        const { title, image, year, downloads } = info.data;
+        const movieData = info.data;
+        let title = movieData.title || 'Unknown';
+        let image = movieData.image || config.LOGO;
+        let year = movieData.year || 'N/A';
 
-        let msg = `*☘️ Title :* ${title || 'N/A'}\n`;
-        msg += `*📅 Year :* ${year || 'N/A'}\n\n`;
-        msg += `*Select a quality to download:*`;
-
-        if (!downloads || downloads.length === 0) {
-            return await conn.sendMessage(from, { text: '❌ No download links available for this movie.' }, { quoted: mek });
+        // Try to extract download links from various possible keys
+        let downloads = movieData.downloads || movieData.links || movieData.downloadLinks || [];
+        if (downloads.length === 0) {
+            // Maybe the links are directly inside data as an array?
+            // Check if any key holds an array of objects with 'url' and 'quality'
+            for (let key of Object.keys(movieData)) {
+                if (Array.isArray(movieData[key]) && movieData[key].length > 0 && movieData[key][0].url) {
+                    downloads = movieData[key];
+                    break;
+                }
+            }
         }
+
+        // If no downloads, send a fallback message with the movie info and a manual link
+        if (!downloads || downloads.length === 0) {
+            let fallbackMsg = `*☘️ Title :* ${title}\n`;
+            fallbackMsg += `*📅 Year :* ${year}\n\n`;
+            fallbackMsg += `*⚠️ No download links found via API.*\n`;
+            fallbackMsg += `*🔗 You can try opening this URL manually:*\n${movieUrl}`;
+            return await conn.sendMessage(from, { text: fallbackMsg }, { quoted: mek });
+        }
+
+        let msg = `*☘️ Title :* ${title}\n`;
+        msg += `*📅 Year :* ${year}\n\n`;
+        msg += `*Select a quality to download:*`;
 
         // Build quality rows
         const rows = downloads.map((dl, index) => ({
@@ -379,6 +403,8 @@ cmd({
         const response = await axios.get(dlUrl);
         const dlData = response.data;
 
+        console.log('⬇️ Download Resolve Response:', JSON.stringify(dlData, null, 2)); // Debug
+
         if (!dlData.status || !dlData.data || !dlData.data.links || dlData.data.links.length === 0) {
             // Fallback: send the qualityUrl as text
             await conn.sendMessage(from, { text: `*⚠️ No direct download link found. Try opening this URL manually:*\n${qualityUrl}` }, { quoted: mek });
@@ -421,7 +447,7 @@ cmd({
 });
 
 // -----------------------------------------------------------------
-// 4. DETAILS TO JID COMMAND
+// 4. DETAILS TO JID COMMAND (Fixed)
 // -----------------------------------------------------------------
 cmd({
     pattern: "dubdet",	
@@ -439,23 +465,46 @@ async (conn, m, mek, { from, q, reply }) => {
         const response = await axios.get(infoUrl);
         const info = response.data;
 
+        console.log('📄 Details Response:', JSON.stringify(info, null, 2)); // Debug
+
         if (!info.status || !info.data) {
             return await conn.sendMessage(from, { text: '❌ Failed to fetch movie info.' }, { quoted: mek });
         }
 
-        const { title, image, year, downloads } = info.data;
-        let msg = `*☘️ Title :* ${title || 'N/A'}\n`;
-        msg += `*📅 Year :* ${year || 'N/A'}\n`;
+        const movieData = info.data;
+        let title = movieData.title || 'Unknown';
+        let image = movieData.image || config.LOGO;
+        let year = movieData.year || 'N/A';
+
+        // Try to extract download links
+        let downloads = movieData.downloads || movieData.links || movieData.downloadLinks || [];
+        if (downloads.length === 0) {
+            for (let key of Object.keys(movieData)) {
+                if (Array.isArray(movieData[key]) && movieData[key].length > 0 && movieData[key][0].url) {
+                    downloads = movieData[key];
+                    break;
+                }
+            }
+        }
+
+        let msg = `*☘️ Title :* ${title}\n`;
+        msg += `*📅 Year :* ${year}\n`;
         if (downloads && downloads.length > 0) {
             msg += `*🎬 Qualities:* ${downloads.map(d => d.quality || 'N/A').join(', ')}\n`;
+        } else {
+            msg += `*⚠️ No download links available.*\n`;
         }
         msg += `\n> 🌟 Follow us : *${config.chlink || 'https://t.me/yourchannel'}*\n`;
         msg += `> _*VISPER MD MULTIDEVICE*_`;
 
-        await conn.sendMessage(config.JID || from, { image: { url: image || config.LOGO }, caption: msg });
+        await conn.sendMessage(config.JID || from, { image: { url: image }, caption: msg });
         await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
     } catch (error) {
         console.error('Error fetching or sending details', error);
         await conn.sendMessage(from, { text: '*Error fetching movie details.*' }, { quoted: mek });
     }
 });
+
+        
+
+
