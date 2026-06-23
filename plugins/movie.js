@@ -223,8 +223,8 @@ async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) =
     }
 });
 
-// -----------------------------------------------------------------
-// 2. NEWDL - INFO COMMAND (FIXED)
+  // -----------------------------------------------------------------
+// 2. NEWDL - INFO & QUALITIES (Fixed Card Display)
 // -----------------------------------------------------------------
 cmd({
     pattern: "newdl",	
@@ -243,58 +243,60 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         const response = await axios.get(infoUrl);
         const result = response.data;
 
-        console.log('📄 Info Response:', JSON.stringify(result, null, 2)); // Debug
-
-        if (!result.status || !result.data || !result.data.status) {
+        if (!result.status || !result.data) {
             return await reply('❌ Failed to load movie info.');
         }
 
-        const movie = result.data;
+        const movie = result.data;   // ← Most APIs return data here
 
         const title = movie.title || 'Unknown';
-        const image = movie.poster || config.LOGO;
+        const image = movie.poster || movie.image || config.LOGO;
         const year = movie.year || 'N/A';
-        const desc = movie.description || '';
+        const desc = movie.description || movie.plot || '';
 
-        // FIXED: Correct path
-        let downloads = movie.download_links || [];
+        let downloads = movie.download_links || movie.downloads || movie.links || [];
 
         if (downloads.length === 0) {
             return await conn.sendMessage(from, {
-                text: `*☘️ Title :* ${title}\n*📅 Year :* ${year}\n\n⚠️ No links found.\n🔗 ${movieUrl}`
+                text: `*☘️ Title :* ${title}\n*📅 Year :* ${year}\n\n⚠️ No download links found.\n🔗 ${movieUrl}`
             }, { quoted: mek });
         }
 
-        let msg = `*☘️ Title :* ${title}\n`;
+        let msg = `*🎬 ${title}*\n`;
         msg += `*📅 Year :* ${year}\n`;
-        if (desc) msg += `*📝 Desc :* ${desc.substring(0, 100)}...\n\n`;
-        msg += `*Select Quality:*`;
+        if (desc) msg += `*📝* ${desc.substring(0, 150)}...\n\n`;
+        msg += `_*Select a quality below*_ 👇`;
 
+        // Quality list
         const qualityRows = downloads.map((dl, i) => ({
             title: dl.quality || `Quality ${i+1}`,
-            id: prefix + `ndll ${encodeURIComponent(dl.final_link || dl.original_zt_link)}±${encodeURIComponent(title)}±${encodeURIComponent(image)}`
+            id: prefix + `ndll ${encodeURIComponent(dl.final_link || dl.url || dl.original_zt_link || dl.link)}±${encodeURIComponent(title)}±${encodeURIComponent(image)}`
         }));
 
         const listButtons = {
-            title: "Choose Quality",
-            sections: [{ title: "Downloads", rows: qualityRows }]
+            title: "🎬 Download Qualities",
+            sections: [{
+                title: "Available Qualities",
+                rows: qualityRows
+            }]
         };
 
+        // FIXED: Better message without viewOnce conflict
         await conn.sendMessage(from, {
             image: { url: image },
             caption: msg,
             footer: config.FOOTER,
             buttons: [{
-                buttonId: "qualities",
-                buttonText: { displayText: "🎬 Select Quality" },
+                buttonId: "select_quality",
+                buttonText: { displayText: "🎥 Select Quality" },
                 type: 4,
                 nativeFlowInfo: {
                     name: "single_select",
                     paramsJson: JSON.stringify(listButtons)
                 }
             }],
-            headerType: 1,
-            viewOnce: true
+            headerType: 1
+            // Removed viewOnce to prevent photo-only display
         }, { quoted: mek });
 
     } catch (e) {
@@ -302,6 +304,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         await reply('🚩 *Error loading movie details*');
     }
 });
+
 
 // -----------------------------------------------------------------
 // 3. NDLL - DOWNLOAD (Improved)
