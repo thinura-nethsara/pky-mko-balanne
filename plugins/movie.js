@@ -218,7 +218,7 @@ async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) =
 });
 
 // -----------------------------------------------------------------
-// 2. NEWDL - INFO CARD (Fixed with Quality List)
+// 2. NEWDL - INFO CARD + WORKING QUALITY SELECTION
 // -----------------------------------------------------------------
 cmd({
     pattern: "newdl",	
@@ -253,32 +253,46 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         let msg = `*🎬 ${title}*\n`;
         msg += `*📅 Year :* ${year}\n`;
         if (desc) msg += `*📝* ${desc.substring(0, 180)}...\n\n`;
-        msg += `_*Available Qualities:*_\n`;
+        msg += `_*Available Qualities:*_\n\n`;
 
-        // Show qualities as numbered list in caption
         downloads.forEach((dl, i) => {
             msg += `*${i+1}.* ${dl.quality} (${dl.size || 'N/A'})\n`;
         });
 
-        msg += `\n_*Select a quality below*_ 👇`;
+        msg += `\n_*Reply with quality number (1, 2, 3...)* 👇`;
 
+        // Send image card first
+        await conn.sendMessage(from, {
+            image: { url: image },
+            caption: msg,
+            footer: config.FOOTER
+        }, { quoted: mek });
+
+        // Store movie data temporarily for number reply handling
+        global.movieSelections = global.movieSelections || {};
+        global.movieSelections[from] = {
+            downloads: downloads,
+            title: title,
+            image: image
+        };
+
+        // Also send list as backup
         const qualityRows = downloads.map((dl, i) => ({
-            title: `${dl.quality} (${dl.size || 'N/A'})`,
+            title: `${i+1}. ${dl.quality} (${dl.size || 'N/A'})`,
             id: prefix + `ndll ${encodeURIComponent(dl.final_link)}±${encodeURIComponent(title)}±${encodeURIComponent(image)}`
         }));
 
         const listButtons = {
-            title: "🎬 Choose Quality",
-            sections: [{ title: "Download Options", rows: qualityRows }]
+            title: "Select Quality",
+            sections: [{ title: "Downloads", rows: qualityRows }]
         };
 
         await conn.sendMessage(from, {
-            image: { url: image },
-            caption: msg,
+            text: "🎬 Choose Quality",
             footer: config.FOOTER,
             buttons: [{
-                buttonId: "select_quality",
-                buttonText: { displayText: "🎥 Select Quality" },
+                buttonId: "select",
+                buttonText: { displayText: "📥 Select from List" },
                 type: 4,
                 nativeFlowInfo: {
                     name: "single_select",
@@ -293,7 +307,6 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         await reply('🚩 *Error loading movie details*');
     }
 });
-
 // -----------------------------------------------------------------
 // 3. NDLL - DOWNLOAD (Using /dl API + Best Link)
 // -----------------------------------------------------------------
