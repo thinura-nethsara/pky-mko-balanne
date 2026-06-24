@@ -208,7 +208,7 @@ cmd({
 });
 
 
-// ====================== INFO COMMAND - UNIFIED SINGLE CARD ======================
+// ====================== INFO COMMAND - UNIFIED SINGLE CARD (No View Once) ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -230,7 +230,7 @@ cmd({
         const d = info.data;
         const posterUrl = (img || d.poster || config.LOGO).replace("-150x150", "");
 
-        // Info Caption
+        // Info Text
         let caption = `\`☘️ Tɪᴛʟᴇ: ${d.title || 'N/A'}\`
 \`📅 Yᴇᴀʀ : ${d.year || 'N/A'}\`
 \`💃 Iᴍᴅʙ : ${d.imdb_rating || 'N/A'}\`
@@ -261,7 +261,7 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
             }]
         };
 
-        // Single Unified Message
+        // Single Normal Message (View Once Removed)
         await conn.sendMessage(from, {
             image: { url: posterUrl },
             caption: caption,
@@ -275,8 +275,8 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
                     paramsJson: JSON.stringify(listButtons)
                 }
             }],
-            headerType: 1,
-            viewOnce: true
+            headerType: 1
+            // viewOnce: true  ← Removed
         }, { quoted: mek });
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
