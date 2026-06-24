@@ -118,7 +118,7 @@ async (conn, mek, m, {
         image: { url: 'https://mv-visper-full-db.pages.de/Data/visper_main.jpeg' },
         caption,
         footer: config.FOOTER,
-        buttons,
+       buttons,
         headerType: 4
       }, mek);
     }
@@ -133,8 +133,6 @@ async (conn, mek, m, {
 
 
 
-
-
 // ====================== CINESUBZ MOVIE PLUGIN ======================
 
 cmd({
@@ -142,7 +140,7 @@ cmd({
     react: '🔎',
     category: "movie",
     desc: "Cinesubz movie search",
-    use: ".cinesubz stvury",
+    use: ".cinesubz razor",
     filename: __filename
 }, async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) => {
     try {
@@ -209,7 +207,7 @@ cmd({
     }
 });
 
-// ====================== INFO COMMAND - CLEAN SINGLE CARD ======================
+// ====================== INFO COMMAND - SINGLE CLEAN CARD ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -231,14 +229,17 @@ cmd({
         const d = info.data;
         const posterUrl = (img || d.poster || config.LOGO).replace("-150x150", "");
 
-        // Clean Info Text
+        // Info Text
         let msg = `\`☘️ Tɪᴛʟᴇ: ${d.title || 'N/A'}\`
 \`📅 Yᴇᴀʀ : ${d.year || 'N/A'}\`
 \`💃 Iᴍᴅʙ : ${d.imdb_rating || 'N/A'}\`
 \`🎞️ Qᴜʟɪᴛʏ : ${d.quality || 'N/A'}\`
 
 \`🎭 ᴄᴀsᴛ:\`
-${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}`;
+${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}
+
+*Reply Below Number 🔢*,
+*Available Qualities*`;
 
         // Download Rows
         const downloadRows = d.download_links?.slice(0, 3).map((link) => ({
@@ -251,20 +252,20 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
             rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
         });
 
-        // Send Image + Info (First Message)
+        // 1. Send Image + Info Text
         await conn.sendMessage(from, {
             image: { url: posterUrl },
             caption: msg,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*"
         }, { quoted: mek });
 
-        // Single Clean Download List
+        // 2. Send Only Download List (No duplicate info)
         await conn.listMessage(from, {
-            text: `*Reply Below Number 🔢*\n*Available Qualities*`,
+            text: `*Reply Below Number 🔢*\n*Download Options*`,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
-            title: "Download Options",
+            title: "Available Qualities",
             buttonText: "*Reply Below Number 🔢*",
-            sections: [{ title: "Available Downloads", rows: downloadRows }]
+            sections: [{ title: "Download Links", rows: downloadRows }]
         }, mek);
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
@@ -326,7 +327,7 @@ cmd({
 
         await conn.sendMessage(config.JID || from, {
             document: { url: directUrl },
-            caption: `*🎬 ${decodedTitle}*\n\n${config.NAME || ''}`,
+            caption: `*🎬 ${decodedTitle}*\n\n${config.FOOTER || ''}`,
             mimetype: "video/mp4",
             jpegThumbnail: decodedImg ? await (await fetch(decodedImg.replace("-150x150", ""))).buffer().catch(() => null) : null,
             fileName: `${decodedTitle}.mp4`
@@ -342,7 +343,5 @@ cmd({
         isUploading = false;
     }
 });
-
-
-
+            
 
