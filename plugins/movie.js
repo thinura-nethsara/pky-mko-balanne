@@ -181,13 +181,23 @@ cmd({
         };
 
         if (config.BUTTON === "true") {
-            // Button version
-            const listButtons = { title: "🎬 Choose a Movie", sections: [{ title: "Results", rows: rows.map(r => ({ title: r.title, id: r.rowId })) }] };
+            const listButtons = {
+                title: "🎬 Choose a Movie",
+                sections: [{ title: "Results", rows: rows.map(r => ({ title: r.title, id: r.rowId })) }]
+            };
             await conn.sendMessage(from, {
                 image: { url: config.LOGO },
                 caption: `*_CINESUBZ MOVIE SEARCH RESULT 🎬_*\n\n*Input :* ${q}`,
                 footer: config.FOOTER,
-                buttons: [{ buttonId: "list", buttonText: { displayText: "Select Movie" }, type: 4, nativeFlowInfo: { name: "single_select", paramsJson: JSON.stringify(listButtons) }}],
+                buttons: [{
+                    buttonId: "list",
+                    buttonText: { displayText: "Select Movie" },
+                    type: 4,
+                    nativeFlowInfo: {
+                        name: "single_select",
+                        paramsJson: JSON.stringify(listButtons)
+                    }
+                }],
                 headerType: 1
             }, { quoted: mek });
         } else {
@@ -200,7 +210,7 @@ cmd({
     }
 });
 
-// ====================== INFO COMMAND - SINGLE MESSAGE ======================
+// ====================== INFO COMMAND - EXACT REQUESTED FORMAT ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -220,23 +230,26 @@ cmd({
         }
 
         const d = info.data;
+        const posterUrl = (img || d.poster || config.LOGO).replace("-150x150", "");
 
-        // Main Info Text
-        let msg = `☘️ Tɪᴛʟᴇ: ${d.title || 'N/A'}
-📅 Yᴇᴀʀ : ${d.year || 'N/A'}
-💃 Iᴍᴅʙ : ${d.imdb_rating || 'N/A'}
-🎞️ Qᴜʟɪᴛʏ : ${d.quality || 'N/A'}
+        // Exact Format with Backticks
+        let msg = `\`☘️ Tɪᴛʟᴇ: ${d.title || 'N/A'}\`
+\`📅 Yᴇᴀʀ : ${d.year || 'N/A'}\`
+\`💃 Iᴍᴅʙ : ${d.imdb_rating || 'N/A'}\`
+\`🎞️ Qᴜʟɪᴛʏ : ${d.quality || 'N/A'}\`
 
-🎭 ᴄᴀsᴛ:
-${d.cast?.map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}`;
+\`🎭 ᴄᴀsᴛ:\`
+${d.cast?.map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}
 
-        // Download Options for Number Reply
-        const downloadRows = d.download_links?.map((link, index) => ({
+*Reply Below Number 🔢*,
+*Available Qualities*`;
+
+        // Download Options
+        const downloadRows = d.download_links?.map((link) => ({
             title: `${link.size} - ${link.quality}`,
             rowId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
         })) || [];
 
-        // Add "Get Info" button
         downloadRows.push({
             title: "GET INFO",
             rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
@@ -250,7 +263,14 @@ ${d.cast?.map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}`;
             sections: [{ title: "Download Options", rows: downloadRows }]
         };
 
-        // Send Single List Message
+        // Send Poster + Caption
+        await conn.sendMessage(from, {
+            image: { url: posterUrl },
+            caption: msg,
+            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*"
+        }, { quoted: mek });
+
+        // Send Numbered List
         await conn.listMessage(from, listMessage, mek);
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
@@ -329,6 +349,5 @@ cmd({
         isUploading = false;
     }
 });
-
 
 
