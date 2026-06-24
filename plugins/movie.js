@@ -208,6 +208,7 @@ cmd({
 });
 
 
+
 // ====================== INFO COMMAND - NUMBER REPLY SUPPORT ======================
 cmd({
     pattern: "cinfo",
@@ -281,6 +282,7 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
         await reply('❌ *Error fetching info!*');
     }
 });
+
 // ====================== DETAILS & DOWNLOAD ======================
 cmd({
     pattern: "bdetails",
