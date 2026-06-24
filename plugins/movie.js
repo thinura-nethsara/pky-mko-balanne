@@ -209,7 +209,7 @@ cmd({
 
 
 
-// ====================== INFO COMMAND - ONE UNIFIED CARD ======================
+// ====================== INFO COMMAND - SINGLE CARD ONLY ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -246,38 +246,40 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
         // Download Options
         const downloadRows = d.download_links?.slice(0, 3).map((link) => ({
             title: `${link.size} - ${link.quality}`,
-            id: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
+            rowId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
         })) || [];
 
         downloadRows.push({
             title: "GET INFO",
-            id: `${prefix}bdetails ${url}&${img || d.poster || ''}`
+            rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
         });
 
-        const listButtons = {
-            title: "🎬 Choose Quality",
+        const listMessage = {
+            text: caption,
+            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
+            title: "Available Qualities",
+            buttonText: "*Reply Below Number 🔢*",
             sections: [{
                 title: "Download Options",
                 rows: downloadRows
             }]
         };
 
-        // ONE UNIFIED MESSAGE
+        // =============== ONLY ONE MESSAGE ===============
         await conn.sendMessage(from, {
             image: { url: posterUrl },
             caption: caption,
-            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
-            buttons: [{
-                buttonId: "select_download",
-                buttonText: { displayText: "⬇️ Select Quality" },
-                type: 4,
-                nativeFlowInfo: {
-                    name: "single_select",
-                    paramsJson: JSON.stringify(listButtons)
-                }
-            }],
-            headerType: 1
+            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*"
         }, { quoted: mek });
+
+        // Numbered Download List (Second message - but without repeating full info)
+        await conn.listMessage(from, {
+ 
+            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
+            title: "Available Qualities",
+            buttonText: "*Reply Below Number 🔢*",
+            sections: [{ title: "Download Options", rows: downloadRows }]
+        }, mek);
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
 
