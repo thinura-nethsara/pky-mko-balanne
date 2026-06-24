@@ -207,7 +207,7 @@ cmd({
     }
 });
 
-// ====================== INFO COMMAND - COMBINED CARD ======================
+// ====================== INFO COMMAND - UNIFIED CARD ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -227,39 +227,55 @@ cmd({
         }
 
         const d = info.data;
+        const posterUrl = (img || d.poster || config.LOGO).replace("-150x150", "");
 
-        // Build info text
-        let msg = `*☘️ Tɪᴛʟᴇ:* ${d.title || 'N/A'}\n`;
-        msg += `*📅 Yᴇᴀʀ :* ${d.year || 'N/A'}\n`;
-        msg += `*💃 Iᴍᴅʙ :* ${d.imdb_rating || 'N/A'}\n`;
-        msg += `*🎞️ Qᴜʟɪᴛʏ :* ${d.quality || 'N/A'}\n\n`;
-        msg += `*🎭 ᴄᴀsᴛ:*\n`;
+        // Build formatted caption
+        let caption = `*☘️ Tɪᴛʟᴇ:* ${d.title || 'N/A'}\n`;
+        caption += `*📅 Yᴇᴀʀ :* ${d.year || 'N/A'}\n`;
+        caption += `*💃 Iᴍᴅʙ :* ${d.imdb_rating || 'N/A'}\n`;
+        caption += `*🎞️ Qᴜʟɪᴛʏ :* ${d.quality || 'N/A'}\n\n`;
+        caption += `*🎭 ᴄᴀsᴛ:*\n`;
         if (d.cast?.length) {
-            d.cast.slice(0, 4).forEach(c => msg += `*• ${c.name}*\n`);
+            d.cast.slice(0, 4).forEach(c => caption += `*• ${c.name}*\n`);
         } else {
-            msg += '*• No cast available*\n';
+            caption += '*• No cast available*\n';
         }
-        msg += `\n*Reply Below Number 🔢*\n*Available Qualities*`;
+        caption += `\n*Select an option below 🔽*`;
 
-        // Build download rows
+        // Build sections for the list
         const downloadRows = d.download_links?.slice(0, 3).map((link) => ({
             title: `${link.size} - ${link.quality}`,
-            rowId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
+            id: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
         })) || [];
 
         downloadRows.push({
-            title: "GET INFO",
-            rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
+            title: "📄 GET INFO",
+            id: `${prefix}bdetails ${url}&${img || d.poster || ''}`
         });
 
-        // Send single list message with info + download options
-        await conn.listMessage(from, {
-            text: msg,
+        const sections = [{
+            title: "Download Links",
+            rows: downloadRows
+        }];
+
+        const listButtons = {
+            title: "🎬 Choose Option",
+            sections: sections
+        };
+
+        // Send unified interactive message with image + caption + list button
+        await conn.sendMessage(from, {
+            image: { url: posterUrl },
+            caption: caption,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
-            title: "🎬 Movie Details",
-            buttonText: "*Reply Below Number 🔢*",
-            sections: [{ title: "Download Links", rows: downloadRows }]
-        }, mek);
+            buttons: [{
+                buttonId: "list",
+                buttonText: { displayText: "Select Option" },
+                type: 4,
+                nativeFlowInfo: { name: "single_select", paramsJson: JSON.stringify(listButtons) }
+            }],
+            headerType: 1
+        }, { quoted: mek });
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
 
