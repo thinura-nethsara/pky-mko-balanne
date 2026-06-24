@@ -132,6 +132,7 @@ async (conn, mek, m, {
 
 
 
+
 // ====================== CINESUBZ MOVIE PLUGIN ======================
 
 cmd({
@@ -139,7 +140,7 @@ cmd({
     react: '🔎',
     category: "movie",
     desc: "Cinesubz movie search",
-    use: ".cinesubz laddaland",
+    use: ".cinesubz anjali",
     filename: __filename
 }, async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) => {
     try {
@@ -166,7 +167,6 @@ cmd({
             return await reply('*No results found ❌*');
         }
 
-        // Search Results Rows
         const rows = search.data.map((v) => ({
             title: v.title.replace(/Sinhala Subtitles|සිංහල උපසිරැසි සමඟ/gi, '').trim(),
             rowId: `${prefix}cinfo ${v.link}&${v.image || v.poster || ''}`
@@ -180,27 +180,15 @@ cmd({
             sections: [{ title: "Available Movies", rows }]
         };
 
-        const listButtons = {
-            title: "🎬 Choose a Movie",
-            sections: [{ title: "Cinesubz Results", rows: rows.map(r => ({ title: r.title, id: r.rowId })) }]
-        };
-
         if (config.BUTTON === "true") {
+            // Button version
+            const listButtons = { title: "🎬 Choose a Movie", sections: [{ title: "Results", rows: rows.map(r => ({ title: r.title, id: r.rowId })) }] };
             await conn.sendMessage(from, {
                 image: { url: config.LOGO },
                 caption: `*_CINESUBZ MOVIE SEARCH RESULT 🎬_*\n\n*Input :* ${q}`,
                 footer: config.FOOTER,
-                buttons: [{
-                    buttonId: "download_list",
-                    buttonText: { displayText: "🎥 Select Movie" },
-                    type: 4,
-                    nativeFlowInfo: {
-                        name: "single_select",
-                        paramsJson: JSON.stringify(listButtons)
-                    }
-                }],
-                headerType: 1,
-                viewOnce: true
+                buttons: [{ buttonId: "list", buttonText: { displayText: "Select Movie" }, type: 4, nativeFlowInfo: { name: "single_select", paramsJson: JSON.stringify(listButtons) }}],
+                headerType: 1
             }, { quoted: mek });
         } else {
             await conn.listMessage(from, listMessage, mek);
@@ -212,7 +200,7 @@ cmd({
     }
 });
 
-// ====================== INFO COMMAND (Number Reply + Buttons) ======================
+// ====================== INFO COMMAND - SINGLE MESSAGE ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -233,81 +221,39 @@ cmd({
 
         const d = info.data;
 
-        let msg = `*☘️ Title :* ${d.title || 'N/A'}
-*📅 Year :* ${d.year || 'N/A'}
-*💃 IMDB :* ${d.imdb_rating || 'N/A'}
-*🎞️ Quality :* ${d.quality || 'N/A'}
+        // Main Info Text
+        let msg = `☘️ Tɪᴛʟᴇ: ${d.title || 'N/A'}
+📅 Yᴇᴀʀ : ${d.year || 'N/A'}
+💃 Iᴍᴅʙ : ${d.imdb_rating || 'N/A'}
+🎞️ Qᴜʟɪᴛʏ : ${d.quality || 'N/A'}
 
-*📝 Description :*
-${(d.description || 'No description available.').substring(0, 650)}${(d.description || '').length > 650 ? '...' : ''}
+🎭 ᴄᴀsᴛ:
+${d.cast?.map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}`;
 
-*🎭 Cast :*
-${d.cast?.map(c => `• ${c.name}`).join('\n') || 'N/A'}`;
-
-        // Download Rows for Number Reply
-        const downloadRows = d.download_links?.map((link) => ({
+        // Download Options for Number Reply
+        const downloadRows = d.download_links?.map((link, index) => ({
             title: `${link.size} - ${link.quality}`,
             rowId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
         })) || [];
 
-        // Buttons for BUTTON mode
-        let buttons = [{
-            buttonId: `${prefix}bdetails ${url}&${img || d.poster || ''}`,
-            buttonText: { displayText: "📄 Details Send" },
-            type: 1
-        }];
+        // Add "Get Info" button
+        downloadRows.push({
+            title: "GET INFO",
+            rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
+        });
 
-        if (d.download_links && d.download_links.length > 0) {
-            d.download_links.slice(0, 4).forEach((link) => {
-                buttons.push({
-                    buttonId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`,
-                    buttonText: { displayText: `${link.size} - ${link.quality}` },
-                    type: 1
-                });
-            });
-        }
-
-        const listButtons = {
-            title: "🎬 Choose Quality",
-            sections: [{ title: "Available Downloads", rows: downloadRows }]
+        const listMessage = {
+            text: msg,
+            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
+            title: "Available Qualities",
+            buttonText: "*Reply Below Number 🔢*",
+            sections: [{ title: "Download Options", rows: downloadRows }]
         };
 
-        if (config.BUTTON === "true") {
-            await conn.sendMessage(from, {
-                image: { url: (img || d.poster || config.LOGO).replace("-150x150", "") },
-                caption: msg,
-                footer: config.FOOTER,
-                buttons: [{
-                    buttonId: "download_list",
-                    buttonText: { displayText: "⬇️ Select Quality" },
-                    type: 4,
-                    nativeFlowInfo: {
-                        name: "single_select",
-                        paramsJson: JSON.stringify(listButtons)
-                    }
-                }],
-                headerType: 1
-            }, { quoted: mek });
-        } else {
-            // Number Reply List (Search Results Style)
-            await conn.sendMessage(from, {
-                image: { url: (img || d.poster || config.LOGO).replace("-150x150", "") },
-                caption: msg,
-                footer: config.FOOTER,
-                buttons: buttons  // Normal buttons as fallback
-            }, { quoted: mek });
+        // Send Single List Message
+        await conn.listMessage(from, listMessage, mek);
 
-            // Optional: Send list for number reply
-            if (downloadRows.length > 0) {
-                await conn.listMessage(from, {
-                    text: msg,
-                    footer: config.FOOTER,
-                    title: "Download Options",
-                    buttonText: "*Reply Below Number 🔢*",
-                    sections: [{ title: "Available Qualities", rows: downloadRows }]
-                }, mek);
-            }
-        }
+        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
 
     } catch (e) {
         console.log(e);
@@ -315,7 +261,7 @@ ${d.cast?.map(c => `• ${c.name}`).join('\n') || 'N/A'}`;
     }
 });
 
-// ====================== DETAILS & DOWNLOAD (Same as before) ======================
+// ====================== DETAILS COMMAND ======================
 cmd({
     pattern: "bdetails",
     react: '📄',
@@ -326,15 +272,17 @@ cmd({
         const [url, img] = q.split("&");
         let info = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/info?q=${encodeURIComponent(url)}&apiKey=50d7ce3f5137b97bc64d220a3f6a33ed`);
         const d = info.data;
+
         let fullMsg = `*☘️ Title :* ${d.title}\n\n*📝 Full Description :*\n${d.description || 'N/A'}`;
 
         await conn.sendMessage(config.JID || from, {
-            image: { url: (img || d.poster).replace("-150x150", "") },
+            image: { url: (img || d.poster || '').replace("-150x150", "") },
             caption: fullMsg
         });
     } catch (e) {}
 });
 
+// ====================== DOWNLOAD COMMAND ======================
 let isUploading = false;
 
 cmd({
@@ -347,6 +295,7 @@ cmd({
 
     try {
         isUploading = true;
+
         const [img, finalLink, title] = q.split("&");
         const decodedLink = decodeURIComponent(finalLink);
         const decodedTitle = decodeURIComponent(title || 'Movie');
@@ -380,3 +329,6 @@ cmd({
         isUploading = false;
     }
 });
+
+
+
