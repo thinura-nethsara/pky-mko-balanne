@@ -207,7 +207,7 @@ cmd({
     }
 });
 
-// ====================== INFO COMMAND - SINGLE CLEAN CARD ======================
+// ====================== INFO COMMAND - COMBINED CARD ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -227,21 +227,21 @@ cmd({
         }
 
         const d = info.data;
-        const posterUrl = (img || d.poster || config.LOGO).replace("-150x150", "");
 
-        // Info Text
-        let msg = `\`☘️ Tɪᴛʟᴇ: ${d.title || 'N/A'}\`
-\`📅 Yᴇᴀʀ : ${d.year || 'N/A'}\`
-\`💃 Iᴍᴅʙ : ${d.imdb_rating || 'N/A'}\`
-\`🎞️ Qᴜʟɪᴛʏ : ${d.quality || 'N/A'}\`
+        // Build info text
+        let msg = `*☘️ Tɪᴛʟᴇ:* ${d.title || 'N/A'}\n`;
+        msg += `*📅 Yᴇᴀʀ :* ${d.year || 'N/A'}\n`;
+        msg += `*💃 Iᴍᴅʙ :* ${d.imdb_rating || 'N/A'}\n`;
+        msg += `*🎞️ Qᴜʟɪᴛʏ :* ${d.quality || 'N/A'}\n\n`;
+        msg += `*🎭 ᴄᴀsᴛ:*\n`;
+        if (d.cast?.length) {
+            d.cast.slice(0, 4).forEach(c => msg += `*• ${c.name}*\n`);
+        } else {
+            msg += '*• No cast available*\n';
+        }
+        msg += `\n*Reply Below Number 🔢*\n*Available Qualities*`;
 
-\`🎭 ᴄᴀsᴛ:\`
-${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}
-
-*Reply Below Number 🔢*,
-*Available Qualities*`;
-
-        // Download Rows
+        // Build download rows
         const downloadRows = d.download_links?.slice(0, 3).map((link) => ({
             title: `${link.size} - ${link.quality}`,
             rowId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
@@ -252,18 +252,11 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
             rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
         });
 
-        // 1. Send Image + Info Text
-        await conn.sendMessage(from, {
-            image: { url: posterUrl },
-            caption: msg,
-            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*"
-        }, { quoted: mek });
-
-        // 2. Send Only Download List (No duplicate info)
+        // Send single list message with info + download options
         await conn.listMessage(from, {
-            text: `*Reply Below Number 🔢*\n*Download Options*`,
+            text: msg,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
-            title: "Available Qualities",
+            title: "🎬 Movie Details",
             buttonText: "*Reply Below Number 🔢*",
             sections: [{ title: "Download Links", rows: downloadRows }]
         }, mek);
