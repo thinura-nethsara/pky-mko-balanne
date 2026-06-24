@@ -209,7 +209,7 @@ cmd({
 
 
 
-// ====================== INFO COMMAND - NUMBER REPLY SUPPORT ======================
+// ====================== INFO COMMAND - SINGLE CARD ONLY ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -243,7 +243,7 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
 *Reply Below Number 🔢*,
 *Available Qualities*`;
 
-        // Download Qualities as Number Reply
+        // Download Options
         const downloadRows = d.download_links?.slice(0, 3).map((link) => ({
             title: `${link.size} - ${link.quality}`,
             rowId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
@@ -254,6 +254,7 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
             rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
         });
 
+        // SINGLE LIST MESSAGE (This will be the only message with full info + numbers)
         const listMessage = {
             text: caption,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
@@ -265,14 +266,14 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
             }]
         };
 
-        // 1. Send Image + Info
+        // Send Image + Full Info + Number Reply in One Flow
         await conn.sendMessage(from, {
             image: { url: posterUrl },
             caption: caption,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*"
         }, { quoted: mek });
 
-        // 2. Send Number Reply List for Downloads
+        // Only one list (no duplicate text)
         await conn.listMessage(from, listMessage, mek);
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
@@ -282,7 +283,6 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
         await reply('❌ *Error fetching info!*');
     }
 });
-
 // ====================== DETAILS & DOWNLOAD ======================
 cmd({
     pattern: "bdetails",
