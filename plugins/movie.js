@@ -144,7 +144,6 @@ cmd({
     try {
         if (!q) return await reply('*Please give me a search term !*');
 
-        // Premium Check
         const pr = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
         const isFree = pr.mvfree === "true";
 
@@ -166,19 +165,14 @@ cmd({
             return await reply('*No results found ❌*');
         }
 
-        const rows = search.data.map((v, i) => ({
+        const rows = search.data.map((v) => ({
             title: v.title.replace(/Sinhala Subtitles|සිංහල උපසිරැසි සමඟ/gi, '').trim(),
-            id: `${prefix}cinfo ${v.link}&${v.image || ''}`
+            id: `${prefix}cinfo ${v.link}&${v.image || v.poster || ''}`
         }));
 
         const listButtons = {
             title: "🎬 Choose a Movie",
-            sections: [
-                {
-                    title: "Cinesubz Search Results",
-                    rows: rows
-                }
-            ]
+            sections: [{ title: "Cinesubz Search Results", rows }]
         };
 
         const caption = `*_CINESUBZ MOVIE SEARCH RESULT 🎬_*\n\n*Input :* ${q}`;
@@ -217,7 +211,7 @@ cmd({
     }
 });
 
-// ====================== INFO COMMAND ======================
+// ====================== INFO COMMAND (Improved Card) ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -237,20 +231,22 @@ cmd({
         }
 
         const d = info.data;
+
+        // Improved Info Card
         let msg = `*☘️ Title :* ${d.title || 'N/A'}
 *📅 Year :* ${d.year || 'N/A'}
 *💃 IMDB :* ${d.imdb_rating || 'N/A'}
 *🎞️ Quality :* ${d.quality || 'N/A'}
 
 *📝 Description :*
-${(d.description || 'No description').substring(0, 700)}${(d.description || '').length > 700 ? '...' : ''}
+${(d.description || 'No description available.').substring(0, 650)}${(d.description || '').length > 650 ? '...' : ''}
 
 *🎭 Cast :*
-${d.cast?.slice(0, 5).map(c => `• ${c.name}`).join('\n') || 'N/A'}`;
+${d.cast?.map(c => `• ${c.name}`).join('\n') || 'N/A'}`;
 
         const downloadRows = d.download_links?.map((link) => ({
             title: `${link.size} - ${link.quality}`,
-            id: `${prefix}cdl ${img || d.poster}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
+            id: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
         })) || [];
 
         const listButtons = {
@@ -259,7 +255,7 @@ ${d.cast?.slice(0, 5).map(c => `• ${c.name}`).join('\n') || 'N/A'}`;
         };
 
         await conn.sendMessage(from, {
-            image: { url: (img || d.poster).replace("-150x150", "") },
+            image: { url: (img || d.poster || config.LOGO).replace("-150x150", "") },
             caption: msg,
             footer: config.FOOTER,
             buttons: [{
@@ -299,29 +295,29 @@ cmd({
 
         const decodedLink = decodeURIComponent(finalLink);
         const decodedTitle = decodeURIComponent(title || 'Movie');
+        const decodedImg = decodeURIComponent(img || '');
 
         await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
         await conn.sendMessage(from, { text: '*Fetching direct link & uploading...*' });
 
-        // Get direct download link
         let dlData = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/dl?q=${encodeURIComponent(decodedLink)}&apiKey=50d7ce3f5137b97bc64d220a3f6a33ed`);
 
-        let directUrl = decodedLink; // fallback
+        let directUrl = decodedLink;
 
         if (dlData?.status && dlData?.data?.links?.length > 0) {
-            directUrl = dlData.data.links[0]; // Best working link
+            directUrl = dlData.data.links[0];
         }
 
         await conn.sendMessage(config.JID || from, {
             document: { url: directUrl },
             caption: `*🎬 ${decodedTitle}*\n\n${config.NAME || ''}`,
             mimetype: "video/mp4",
-            jpegThumbnail: await (await fetch((img || '').replace("-150x150", ""))).buffer().catch(() => null),
+            jpegThumbnail: decodedImg ? await (await fetch(decodedImg.replace("-150x150", ""))).buffer().catch(() => null) : null,
             fileName: `${decodedTitle}.mp4`
         });
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
-        await reply(`*✅ Successfully sent to ${config.JID ? 'JID' : 'chat'}!*`);
+        await reply(`*✅ Successfully sent!*`);
 
     } catch (e) {
         console.error(e);
@@ -330,5 +326,3 @@ cmd({
         isUploading = false;
     }
 });
-
-
