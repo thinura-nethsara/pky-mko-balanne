@@ -208,7 +208,7 @@ cmd({
 });
 
 
-// ====================== INFO COMMAND - UNIFIED SINGLE CARD (No View Once) ======================
+// ====================== INFO COMMAND - EXACT FORMAT + DOWNLOADS ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -230,7 +230,7 @@ cmd({
         const d = info.data;
         const posterUrl = (img || d.poster || config.LOGO).replace("-150x150", "");
 
-        // Info Text
+        // Exact Info Format You Want
         let caption = `\`☘️ Tɪᴛʟᴇ: ${d.title || 'N/A'}\`
 \`📅 Yᴇᴀʀ : ${d.year || 'N/A'}\`
 \`💃 Iᴍᴅʙ : ${d.imdb_rating || 'N/A'}\`
@@ -242,7 +242,7 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
 *Reply Below Number 🔢*,
 *Available Qualities*`;
 
-        // Download Options
+        // Download Qualities
         const downloadRows = d.download_links?.slice(0, 3).map((link) => ({
             title: `${link.size} - ${link.quality}`,
             id: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
@@ -254,21 +254,21 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
         });
 
         const listButtons = {
-            title: "🎬 Choose Download Quality",
+            title: "🎬 Choose Quality",
             sections: [{
-                title: "Available Downloads",
+                title: "Download Options",
                 rows: downloadRows
             }]
         };
 
-        // Single Normal Message (View Once Removed)
+        // Single Message with Image + Exact Info + Download Button
         await conn.sendMessage(from, {
             image: { url: posterUrl },
             caption: caption,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
             buttons: [{
-                buttonId: "select_quality",
-                buttonText: { displayText: "⬇️ Select Option" },
+                buttonId: "quality_list",
+                buttonText: { displayText: "⬇️ Select Quality" },
                 type: 4,
                 nativeFlowInfo: {
                     name: "single_select",
@@ -276,7 +276,6 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
                 }
             }],
             headerType: 1
-            // viewOnce: true  ← Removed
         }, { quoted: mek });
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
@@ -286,7 +285,6 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
         await reply('❌ *Error fetching info!*');
     }
 });
-
 // ====================== DETAILS & DOWNLOAD ======================
 cmd({
     pattern: "bdetails",
