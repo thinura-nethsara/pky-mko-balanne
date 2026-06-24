@@ -209,7 +209,7 @@ cmd({
 
 
 
-// ====================== INFO COMMAND - SINGLE CARD ONLY ======================
+// ====================== INFO COMMAND - ONE UNIFIED CARD ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -246,40 +246,38 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
         // Download Options
         const downloadRows = d.download_links?.slice(0, 3).map((link) => ({
             title: `${link.size} - ${link.quality}`,
-            rowId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
+            id: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
         })) || [];
 
         downloadRows.push({
             title: "GET INFO",
-            rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
+            id: `${prefix}bdetails ${url}&${img || d.poster || ''}`
         });
 
-        const listMessage = {
-            text: caption,
-            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
-            title: "Available Qualities",
-            buttonText: "*Reply Below Number 🔢*",
+        const listButtons = {
+            title: "🎬 Choose Quality",
             sections: [{
                 title: "Download Options",
                 rows: downloadRows
             }]
         };
 
-        // =============== ONLY ONE MESSAGE ===============
+        // ONE UNIFIED MESSAGE
         await conn.sendMessage(from, {
             image: { url: posterUrl },
             caption: caption,
-            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*"
-        }, { quoted: mek });
-
-        // Numbered Download List (Second message - but without repeating full info)
-        await conn.listMessage(from, {
-            text: `*Reply Below Number 🔢*\n*Download Options*`,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
-            title: "Available Qualities",
-            buttonText: "*Reply Below Number 🔢*",
-            sections: [{ title: "Download Options", rows: downloadRows }]
-        }, mek);
+            buttons: [{
+                buttonId: "select_download",
+                buttonText: { displayText: "⬇️ Select Quality" },
+                type: 4,
+                nativeFlowInfo: {
+                    name: "single_select",
+                    paramsJson: JSON.stringify(listButtons)
+                }
+            }],
+            headerType: 1
+        }, { quoted: mek });
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
 
@@ -288,7 +286,6 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
         await reply('❌ *Error fetching info!*');
     }
 });
-// ====================== DETAILS & DOWNLOAD ======================
 cmd({
     pattern: "bdetails",
     react: '📄',
