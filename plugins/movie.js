@@ -135,7 +135,6 @@ async (conn, mek, m, {
 
 
 
-
 // ====================== CINESUBZ MOVIE PLUGIN ======================
 
 cmd({
@@ -143,7 +142,7 @@ cmd({
     react: '🔎',
     category: "movie",
     desc: "Cinesubz movie search",
-    use: ".cinesubz deep water",
+    use: ".cinesubz stvury",
     filename: __filename
 }, async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) => {
     try {
@@ -210,7 +209,7 @@ cmd({
     }
 });
 
-// ====================== INFO COMMAND - SINGLE CARD ONLY ======================
+// ====================== INFO COMMAND - CLEAN SINGLE CARD ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -232,17 +231,14 @@ cmd({
         const d = info.data;
         const posterUrl = (img || d.poster || config.LOGO).replace("-150x150", "");
 
-        // Exact Format
+        // Clean Info Text
         let msg = `\`☘️ Tɪᴛʟᴇ: ${d.title || 'N/A'}\`
 \`📅 Yᴇᴀʀ : ${d.year || 'N/A'}\`
 \`💃 Iᴍᴅʙ : ${d.imdb_rating || 'N/A'}\`
 \`🎞️ Qᴜʟɪᴛʏ : ${d.quality || 'N/A'}\`
 
 \`🎭 ᴄᴀsᴛ:\`
-${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}
-
-*Reply Below Number 🔢*,
-*Available Qualities*`;
+${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}`;
 
         // Download Rows
         const downloadRows = d.download_links?.slice(0, 3).map((link) => ({
@@ -255,28 +251,20 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
             rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
         });
 
-        const listMessage = {
-            text: msg,
-            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
-            title: "Available Qualities",
-            buttonText: "*Reply Below Number 🔢*",
-            sections: [{ title: "Download Options", rows: downloadRows }]
-        };
-
-        // === SINGLE INFO CARD ===
+        // Send Image + Info (First Message)
         await conn.sendMessage(from, {
             image: { url: posterUrl },
             caption: msg,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*"
         }, { quoted: mek });
 
-        // Send only the download list (no duplicate info text)
+        // Single Clean Download List
         await conn.listMessage(from, {
-            text: "*Reply Below Number 🔢*\n*Download Options*",
+            text: `*Reply Below Number 🔢*\n*Available Qualities*`,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
-            title: "Available Qualities",
+            title: "Download Options",
             buttonText: "*Reply Below Number 🔢*",
-            sections: [{ title: "Download Options", rows: downloadRows }]
+            sections: [{ title: "Available Downloads", rows: downloadRows }]
         }, mek);
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
@@ -354,4 +342,7 @@ cmd({
         isUploading = false;
     }
 });
+
+
+
 
