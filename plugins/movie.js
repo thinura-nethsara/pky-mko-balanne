@@ -131,6 +131,7 @@ async (conn, mek, m, {
 
 
 
+
 // ====================== CINESUBZ MOVIE PLUGIN ======================
 
 cmd({
@@ -138,7 +139,7 @@ cmd({
     react: '🔎',
     category: "movie",
     desc: "Cinesubz movie search",
-    use: ".cinesubz spider man",
+    use: ".cinesubz laddaland",
     filename: __filename
 }, async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) => {
     try {
@@ -160,27 +161,34 @@ cmd({
 
         let search = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/search?q=${encodeURIComponent(q)}&apiKey=50d7ce3f5137b97bc64d220a3f6a33ed`);
 
-        if (!search || !search.status || !search.data || search.data.length === 0) {
+        if (!search?.status || !search?.data?.length) {
             await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
             return await reply('*No results found ❌*');
         }
 
+        // Search Results Rows
         const rows = search.data.map((v) => ({
             title: v.title.replace(/Sinhala Subtitles|සිංහල උපසිරැසි සමඟ/gi, '').trim(),
-            id: `${prefix}cinfo ${v.link}&${v.image || v.poster || ''}`
+            rowId: `${prefix}cinfo ${v.link}&${v.image || v.poster || ''}`
         }));
+
+        const listMessage = {
+            text: `*_CINESUBZ MOVIE SEARCH RESULT 🎬_*\n\n*Input :* ${q}`,
+            footer: config.FOOTER,
+            title: "Search Results",
+            buttonText: "*Reply Below Number 🔢*",
+            sections: [{ title: "Available Movies", rows }]
+        };
 
         const listButtons = {
             title: "🎬 Choose a Movie",
-            sections: [{ title: "Cinesubz Search Results", rows }]
+            sections: [{ title: "Cinesubz Results", rows: rows.map(r => ({ title: r.title, id: r.rowId })) }]
         };
-
-        const caption = `*_CINESUBZ MOVIE SEARCH RESULT 🎬_*\n\n*Input :* ${q}`;
 
         if (config.BUTTON === "true") {
             await conn.sendMessage(from, {
                 image: { url: config.LOGO },
-                caption: caption,
+                caption: `*_CINESUBZ MOVIE SEARCH RESULT 🎬_*\n\n*Input :* ${q}`,
                 footer: config.FOOTER,
                 buttons: [{
                     buttonId: "download_list",
@@ -195,14 +203,7 @@ cmd({
                 viewOnce: true
             }, { quoted: mek });
         } else {
-            const sections = [{ title: "cinesubz results", rows: rows.map(r => ({ title: r.title, rowId: r.id })) }];
-            await conn.listMessage(from, {
-                text: caption,
-                footer: config.FOOTER,
-                title: 'Search Results',
-                buttonText: '*Reply Below Number 🔢*',
-                sections
-            }, mek);
+            await conn.listMessage(from, listMessage, mek);
         }
 
     } catch (e) {
@@ -211,7 +212,7 @@ cmd({
     }
 });
 
-// ====================== INFO COMMAND (Improved Card) ======================
+// ====================== INFO COMMAND (Number Reply + Buttons) ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -232,7 +233,6 @@ cmd({
 
         const d = info.data;
 
-        // Improved Info Card
         let msg = `*☘️ Title :* ${d.title || 'N/A'}
 *📅 Year :* ${d.year || 'N/A'}
 *💃 IMDB :* ${d.imdb_rating || 'N/A'}
@@ -244,31 +244,70 @@ ${(d.description || 'No description available.').substring(0, 650)}${(d.descript
 *🎭 Cast :*
 ${d.cast?.map(c => `• ${c.name}`).join('\n') || 'N/A'}`;
 
+        // Download Rows for Number Reply
         const downloadRows = d.download_links?.map((link) => ({
             title: `${link.size} - ${link.quality}`,
-            id: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
+            rowId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
         })) || [];
+
+        // Buttons for BUTTON mode
+        let buttons = [{
+            buttonId: `${prefix}bdetails ${url}&${img || d.poster || ''}`,
+            buttonText: { displayText: "📄 Details Send" },
+            type: 1
+        }];
+
+        if (d.download_links && d.download_links.length > 0) {
+            d.download_links.slice(0, 4).forEach((link) => {
+                buttons.push({
+                    buttonId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`,
+                    buttonText: { displayText: `${link.size} - ${link.quality}` },
+                    type: 1
+                });
+            });
+        }
 
         const listButtons = {
             title: "🎬 Choose Quality",
             sections: [{ title: "Available Downloads", rows: downloadRows }]
         };
 
-        await conn.sendMessage(from, {
-            image: { url: (img || d.poster || config.LOGO).replace("-150x150", "") },
-            caption: msg,
-            footer: config.FOOTER,
-            buttons: [{
-                buttonId: "download_list",
-                buttonText: { displayText: "⬇️ Select Quality" },
-                type: 4,
-                nativeFlowInfo: {
-                    name: "single_select",
-                    paramsJson: JSON.stringify(listButtons)
-                }
-            }],
-            headerType: 1
-        }, { quoted: mek });
+        if (config.BUTTON === "true") {
+            await conn.sendMessage(from, {
+                image: { url: (img || d.poster || config.LOGO).replace("-150x150", "") },
+                caption: msg,
+                footer: config.FOOTER,
+                buttons: [{
+                    buttonId: "download_list",
+                    buttonText: { displayText: "⬇️ Select Quality" },
+                    type: 4,
+                    nativeFlowInfo: {
+                        name: "single_select",
+                        paramsJson: JSON.stringify(listButtons)
+                    }
+                }],
+                headerType: 1
+            }, { quoted: mek });
+        } else {
+            // Number Reply List (Search Results Style)
+            await conn.sendMessage(from, {
+                image: { url: (img || d.poster || config.LOGO).replace("-150x150", "") },
+                caption: msg,
+                footer: config.FOOTER,
+                buttons: buttons  // Normal buttons as fallback
+            }, { quoted: mek });
+
+            // Optional: Send list for number reply
+            if (downloadRows.length > 0) {
+                await conn.listMessage(from, {
+                    text: msg,
+                    footer: config.FOOTER,
+                    title: "Download Options",
+                    buttonText: "*Reply Below Number 🔢*",
+                    sections: [{ title: "Available Qualities", rows: downloadRows }]
+                }, mek);
+            }
+        }
 
     } catch (e) {
         console.log(e);
@@ -276,7 +315,26 @@ ${d.cast?.map(c => `• ${c.name}`).join('\n') || 'N/A'}`;
     }
 });
 
-// ====================== DOWNLOAD COMMAND ======================
+// ====================== DETAILS & DOWNLOAD (Same as before) ======================
+cmd({
+    pattern: "bdetails",
+    react: '📄',
+    dontAddCommandList: true,
+    filename: __filename
+}, async (conn, m, mek, { from, q }) => {
+    try {
+        const [url, img] = q.split("&");
+        let info = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/info?q=${encodeURIComponent(url)}&apiKey=50d7ce3f5137b97bc64d220a3f6a33ed`);
+        const d = info.data;
+        let fullMsg = `*☘️ Title :* ${d.title}\n\n*📝 Full Description :*\n${d.description || 'N/A'}`;
+
+        await conn.sendMessage(config.JID || from, {
+            image: { url: (img || d.poster).replace("-150x150", "") },
+            caption: fullMsg
+        });
+    } catch (e) {}
+});
+
 let isUploading = false;
 
 cmd({
@@ -289,10 +347,7 @@ cmd({
 
     try {
         isUploading = true;
-
         const [img, finalLink, title] = q.split("&");
-        if (!finalLink) return await reply('*Invalid download link!*');
-
         const decodedLink = decodeURIComponent(finalLink);
         const decodedTitle = decodeURIComponent(title || 'Movie');
         const decodedImg = decodeURIComponent(img || '');
@@ -303,7 +358,6 @@ cmd({
         let dlData = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/dl?q=${encodeURIComponent(decodedLink)}&apiKey=50d7ce3f5137b97bc64d220a3f6a33ed`);
 
         let directUrl = decodedLink;
-
         if (dlData?.status && dlData?.data?.links?.length > 0) {
             directUrl = dlData.data.links[0];
         }
@@ -317,7 +371,7 @@ cmd({
         });
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
-        await reply(`*✅ Successfully sent!*`);
+        await reply(`*✅ Movie sent successfully!*`);
 
     } catch (e) {
         console.error(e);
