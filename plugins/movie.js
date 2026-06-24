@@ -274,7 +274,6 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
 
         // Numbered Download List (Second message - but without repeating full info)
         await conn.listMessage(from, {
- 
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
             title: "Available Qualities",
             buttonText: "*Reply Below Number 🔢*",
@@ -329,38 +328,19 @@ cmd({
         await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
         await conn.sendMessage(from, { text: '*Fetching direct link & uploading...*' });
 
-        // Get direct download URL
         let dlData = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/dl?q=${encodeURIComponent(decodedLink)}&apiKey=50d7ce3f5137b97bc64d220a3f6a33ed`);
+
         let directUrl = decodedLink;
         if (dlData?.status && dlData?.data?.links?.length > 0) {
             directUrl = dlData.data.links[0];
         }
 
-        // ---------- THUMBNAIL FETCH (FIX) ----------
-        let thumbnailBuffer = null;
-        if (decodedImg) {
-            try {
-                // Remove "-150x150" if present, else use as-is
-                let cleanImg = decodedImg.replace(/-150x150/g, '');
-                // Use axios with arraybuffer to ensure binary data
-                const response = await axios.get(cleanImg, {
-                    responseType: 'arraybuffer',
-                    timeout: 10000
-                });
-                thumbnailBuffer = Buffer.from(response.data);
-            } catch (err) {
-                console.warn('Thumbnail fetch failed:', err.message);
-                // Optionally fallback to a default image
-            }
-        }
-
-        // Send document with thumbnail
-        await conn.sendMessage(from, {
+        await conn.sendMessage(config.JID || from, {
             document: { url: directUrl },
             caption: `*🎬 ${decodedTitle}*\n\n${config.FOOTER || ''}`,
             mimetype: "video/mp4",
-            fileName: `${decodedTitle}.mp4`,
-            jpegThumbnail: thumbnailBuffer  // now a valid Buffer or null
+            jpegThumbnail: decodedImg ? await (await fetch(decodedImg.replace("-150x150", ""))).buffer().catch(() => null) : null,
+            fileName: `${decodedTitle}.mp4`
         });
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
@@ -373,3 +353,5 @@ cmd({
         isUploading = false;
     }
 });
+            
+
