@@ -254,7 +254,6 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
             rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
         });
 
-        // SINGLE LIST MESSAGE (This will be the only message with full info + numbers)
         const listMessage = {
             text: caption,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
@@ -266,15 +265,21 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
             }]
         };
 
-        // Send Image + Full Info + Number Reply in One Flow
+        // =============== ONLY ONE MESSAGE ===============
         await conn.sendMessage(from, {
             image: { url: posterUrl },
             caption: caption,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*"
         }, { quoted: mek });
 
-        // Only one list (no duplicate text)
-        await conn.listMessage(from, listMessage, mek);
+        // Numbered Download List (Second message - but without repeating full info)
+        await conn.listMessage(from, {
+            text: `*Reply Below Number 🔢*\n*Download Options*`,
+            footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*",
+            title: "Available Qualities",
+            buttonText: "*Reply Below Number 🔢*",
+            sections: [{ title: "Download Options", rows: downloadRows }]
+        }, mek);
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
 
