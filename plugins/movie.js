@@ -133,6 +133,8 @@ async (conn, mek, m, {
 
 
 
+
+
 // ====================== CINESUBZ MOVIE PLUGIN ======================
 
 cmd({
@@ -140,7 +142,7 @@ cmd({
     react: '🔎',
     category: "movie",
     desc: "Cinesubz movie search",
-    use: ".cinesubz anjali",
+    use: ".cinesubz the favor",
     filename: __filename
 }, async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) => {
     try {
@@ -193,10 +195,7 @@ cmd({
                     buttonId: "list",
                     buttonText: { displayText: "Select Movie" },
                     type: 4,
-                    nativeFlowInfo: {
-                        name: "single_select",
-                        paramsJson: JSON.stringify(listButtons)
-                    }
+                    nativeFlowInfo: { name: "single_select", paramsJson: JSON.stringify(listButtons) }
                 }],
                 headerType: 1
             }, { quoted: mek });
@@ -210,7 +209,7 @@ cmd({
     }
 });
 
-// ====================== INFO COMMAND - EXACT REQUESTED FORMAT ======================
+// ====================== INFO COMMAND - SINGLE CARD WITH POSTER ======================
 cmd({
     pattern: "cinfo",
     react: '🎥',
@@ -239,13 +238,13 @@ cmd({
 \`🎞️ Qᴜʟɪᴛʏ : ${d.quality || 'N/A'}\`
 
 \`🎭 ᴄᴀsᴛ:\`
-${d.cast?.map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}
+${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}
 
 *Reply Below Number 🔢*,
 *Available Qualities*`;
 
-        // Download Options
-        const downloadRows = d.download_links?.map((link) => ({
+        // Download Rows (Limited to 4 items max)
+        const downloadRows = d.download_links?.slice(0, 3).map((link) => ({
             title: `${link.size} - ${link.quality}`,
             rowId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
         })) || [];
@@ -263,14 +262,14 @@ ${d.cast?.map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}
             sections: [{ title: "Download Options", rows: downloadRows }]
         };
 
-        // Send Poster + Caption
+        // SINGLE CARD: Image + Caption + Numbered List
         await conn.sendMessage(from, {
             image: { url: posterUrl },
             caption: msg,
             footer: "*• ᴠɪꜱᴘᴇʀ ᴍᴅ ᴡᴀ ʙᴏᴛ •*"
         }, { quoted: mek });
 
-        // Send Numbered List
+        // Numbered Download List (no duplicate text)
         await conn.listMessage(from, listMessage, mek);
 
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
@@ -281,7 +280,7 @@ ${d.cast?.map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}
     }
 });
 
-// ====================== DETAILS COMMAND ======================
+// ====================== DETAILS & DOWNLOAD ======================
 cmd({
     pattern: "bdetails",
     react: '📄',
@@ -302,7 +301,6 @@ cmd({
     } catch (e) {}
 });
 
-// ====================== DOWNLOAD COMMAND ======================
 let isUploading = false;
 
 cmd({
@@ -349,5 +347,4 @@ cmd({
         isUploading = false;
     }
 });
-
 
