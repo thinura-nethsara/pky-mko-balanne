@@ -259,8 +259,6 @@ async (conn, mek, m, { from, q, reply, isCmd, command, l }) => {
 
 
 
-
-
 cmd({
     pattern: "song",
     alias: ["ytsong"],
@@ -322,7 +320,7 @@ cmd({
 });
 
 // ============================================================
-// 🎶 Audio format (ytaa) – NEW API
+// 🎶 AUDIO FORMAT (ytaa) – Fixed with proper error handling
 // ============================================================
 cmd({
     pattern: "ytaa",
@@ -337,13 +335,22 @@ cmd({
         const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
         const prog = await fetchJson(apiUrl);
-        if (!prog.status || !prog.data || !prog.data.links || !prog.data.links.audio) {
-            throw new Error('Invalid API response');
+        console.log('📦 ytaa response:', JSON.stringify(prog, null, 2));
+
+        // Check API status
+        if (!prog.status) {
+            const errMsg = prog.message || 'Unknown API error';
+            return reply(`❌ API error: ${errMsg}`);
+        }
+
+        // Validate data structure
+        if (!prog.data || !prog.data.links || !prog.data.links.audio) {
+            throw new Error('Missing audio link in API response');
         }
 
         const audioUrl = prog.data.links.audio;
 
-        // Optional file size check
+        // Optional size check
         try {
             const bytes = await checkFileSize(audioUrl, config.MAX_SIZE);
             const sizeInMB = (bytes / (1024 * 1024)).toFixed(2);
@@ -365,13 +372,13 @@ cmd({
         await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
 
     } catch (e) {
+        console.error('❌ ytaa error:', e);
         reply('❌ Download failed: ' + (e.message || e));
-        console.log(e);
     }
 });
 
 // ============================================================
-// 🎤 Voice format (ytaap) – NEW API + Opus conversion
+// 🎤 VOICE FORMAT (ytaap) – Fixed
 // ============================================================
 cmd({
     pattern: "ytaap",
@@ -386,15 +393,22 @@ cmd({
         const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
         const prog = await fetchJson(apiUrl);
-        if (!prog.status || !prog.data || !prog.data.links || !prog.data.links.audio) {
-            throw new Error('Invalid API response');
+        console.log('📦 ytaap response:', JSON.stringify(prog, null, 2));
+
+        if (!prog.status) {
+            const errMsg = prog.message || 'Unknown API error';
+            return reply(`❌ API error: ${errMsg}`);
+        }
+
+        if (!prog.data || !prog.data.links || !prog.data.links.audio) {
+            throw new Error('Missing audio link in API response');
         }
 
         const audioUrl = prog.data.links.audio;
 
         await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
 
-        // Temporary file paths
+        // Temporary files
         const inputPath = `./temp_${Date.now()}.mp3`;
         const outputPath = `./temp_${Date.now()}.opus`;
 
@@ -403,10 +417,10 @@ cmd({
         const arrayBuffer = await res.arrayBuffer();
         fs.writeFileSync(inputPath, Buffer.from(arrayBuffer));
 
-        // Convert to Opus with ffmpeg
+        // Convert to Opus using ffmpeg
         exec(`${ffmpegPath} -i ${inputPath} -c:a libopus -b:a 64k -vbr on -f ogg ${outputPath}`, async (error) => {
             if (error) {
-                console.error(error);
+                console.error('ffmpeg error:', error);
                 return await reply('❌ Conversion error!');
             }
 
@@ -430,13 +444,13 @@ cmd({
         });
 
     } catch (e) {
+        console.error('❌ ytaap error:', e);
         await reply('❌ Failed: ' + (e.message || e));
-        console.log(e);
     }
 });
 
 // ============================================================
-// 📂 Document format (ytad) – NEW API
+// 📂 DOCUMENT FORMAT (ytad) – Fixed
 // ============================================================
 cmd({
     pattern: "ytad",
@@ -451,22 +465,28 @@ cmd({
         const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
         const prog = await fetchJson(apiUrl);
-        if (!prog.status || !prog.data || !prog.data.links || !prog.data.links.audio) {
-            throw new Error('Invalid API response');
+        console.log('📦 ytad response:', JSON.stringify(prog, null, 2));
+
+        if (!prog.status) {
+            const errMsg = prog.message || 'Unknown API error';
+            return reply(`❌ API error: ${errMsg}`);
+        }
+
+        if (!prog.data || !prog.data.links || !prog.data.links.audio) {
+            throw new Error('Missing audio link in API response');
         }
 
         const audioUrl = prog.data.links.audio;
         const title = prog.data.title || 'audio';
         const thumbnailUrl = prog.data.thumbnail;
 
-        // Fetch and resize thumbnail if available
+        // Fetch and resize thumbnail (if available)
         let thumbnailBuffer = null;
         if (thumbnailUrl) {
             try {
                 const thumbRes = await fetch(thumbnailUrl);
                 const thumbArray = await thumbRes.arrayBuffer();
                 thumbnailBuffer = Buffer.from(thumbArray);
-                // Resize if function exists
                 if (typeof resizeImage === 'function') {
                     thumbnailBuffer = await resizeImage(thumbnailBuffer, 200, 200);
                 }
@@ -492,13 +512,13 @@ cmd({
         await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
 
     } catch (e) {
-        console.log(e);
+        console.error('❌ ytad error:', e);
         await reply('*❌ Error occurred while processing your request.*');
     }
 });
 
 // ============================================================
-// ⬇️ Direct MP3 download (UNCHANGED)
+// ⬇️ DIRECT MP3 DOWNLOAD – UNCHANGED
 // ============================================================
 cmd({
     pattern: "directmp3",
@@ -528,6 +548,10 @@ cmd({
         await reply('❌ Direct download failed.');
     }
 });
+
+
+
+
 
 
 
