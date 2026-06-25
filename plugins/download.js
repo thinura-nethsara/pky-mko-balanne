@@ -255,6 +255,12 @@ async (conn, mek, m, { from, q, reply, isCmd, command, l }) => {
     }
 });
 
+
+
+
+
+
+
 cmd({
     pattern: "song",
     alias: ["ytsong"],
@@ -263,66 +269,61 @@ cmd({
     desc: "Download high-quality songs from YouTube",
     category: "Download",
     filename: __filename
-},
-
-async(conn, mek, m, {
-  from, prefix, q, reply
+}, async (conn, mek, m, {
+    from, prefix, q, reply
 }) => {
-  try {
-    if (!q) return await reply('🔎 *Please provide a song name or YouTube link!*');
+    try {
+        if (!q) return await reply('🔎 *Please provide a song name or YouTube link!*');
 
-    const url = q.replace(/\?si=[^&]*/, '');
-    const results = await yts(url);
-    const result = results.videos[0];
-    const wm = config.FOOTER;
+        const url = q.replace(/\?si=[^&]*/, '');
+        const results = await yts(url);
+        const result = results.videos[0];
+        const wm = config.FOOTER;
 
- 
-  let caption = `*🎶VISPER MD SONG DOWNLODER🎶*
+        let caption = `*🎶VISPER MD SONG DOWNLODER🎶*
 
 *☘️ Title :* *${result.title}*
 *👁️ Views :* *${result.views}*
 *⏰ Duration :* *${result.duration}*
 *💃 Url :* *${result.url}*`;
-	  
 
-    const buttons = [
-      {
-        buttonId: `${prefix}ytaa ${result.url}`,
-        buttonText: { displayText: 'Audio Format 🎶' },
-        type: 1
-      },
-      {
-        buttonId: `${prefix}ytad ${result.url}&${result.thumbnail}&${result.title}`,
-        buttonText: { displayText: 'Document Format 📂' },
-        type: 1
-      },
-		 {
-        buttonId: `${prefix}ytaap ${result.url}`,
-        buttonText: { displayText: 'Voice Format 🎤' },
-        type: 1
-      }
-    ];
+        const buttons = [
+            {
+                buttonId: `${prefix}ytaa ${result.url}`,
+                buttonText: { displayText: 'Audio Format 🎶' },
+                type: 1
+            },
+            {
+                buttonId: `${prefix}ytad ${result.url}`,
+                buttonText: { displayText: 'Document Format 📂' },
+                type: 1
+            },
+            {
+                buttonId: `${prefix}ytaap ${result.url}`,
+                buttonText: { displayText: 'Voice Format 🎤' },
+                type: 1
+            }
+        ];
 
-    const buttonMessage = {
-      image: { url: result.thumbnail },
-      caption: caption,
-      footer: wm,
-      buttons: buttons,
-      headerType: 4
-    };
+        const buttonMessage = {
+            image: { url: result.thumbnail },
+            caption: caption,
+            footer: wm,
+            buttons: buttons,
+            headerType: 4
+        };
 
+        await conn.buttonMessage(from, buttonMessage, mek);
 
-   await conn.buttonMessage(from, buttonMessage, mek);
-
- } catch (e) {
-    console.error(e);
-    reply('❌ *Song not found or an error occurred.*');
-  }
+    } catch (e) {
+        console.error(e);
+        reply('❌ *Song not found or an error occurred.*');
+    }
 });
 
-
-
-
+// ============================================================
+// 🎶 Audio format (ytaa) – NEW API
+// ============================================================
 cmd({
     pattern: "ytaa",
     react: "⬇️",
@@ -332,18 +333,23 @@ cmd({
     if (!q) return await reply('*Need a YouTube URL!*');
 
     try {
-        const prog = await fetchJson(`https://sulamd-ytmp3.vercel.app/download?q=${q}&format=mp3&apikey=SULA0310`)
-        if (!prog || !prog.result.download) return await reply('*Conversion failed, try again!*');
+        const encodedUrl = encodeURIComponent(q);
+        const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
+        const prog = await fetchJson(apiUrl);
+        if (!prog.status || !prog.data || !prog.data.links || !prog.data.links.audio) {
+            throw new Error('Invalid API response');
+        }
+
+        const audioUrl = prog.data.links.audio;
+
+        // Optional file size check
         try {
-            const bytes = await checkFileSize(prog.result.download, config.MAX_SIZE);
+            const bytes = await checkFileSize(audioUrl, config.MAX_SIZE);
             const sizeInMB = (bytes / (1024 * 1024)).toFixed(2);
-
-            // This check is redundant now, but left for safety
             if (sizeInMB > config.MAX_SIZE) {
                 return reply(`*⚠️ File too large!*\n\n*📌 Maximum allowed: \`${config.MAX_SIZE}\` MB*`);
             }
-
         } catch (err) {
             return reply(`*⚠️ File too large or cannot determine size!*\n\n*📌 Maximum allowed: \`${config.MAX_SIZE}\` MB*`);
         }
@@ -352,111 +358,130 @@ cmd({
 
         await conn.sendMessage(
             from,
-            { audio: { url: prog.result.download }, mimetype: 'audio/mpeg' },
+            { audio: { url: audioUrl }, mimetype: 'audio/mpeg' },
             { quoted: mek }
         );
 
         await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
 
     } catch (e) {
-        reply(N_FOUND);
+        reply('❌ Download failed: ' + (e.message || e));
         console.log(e);
     }
 });
 
-
-
+// ============================================================
+// 🎤 Voice format (ytaap) – NEW API + Opus conversion
+// ============================================================
 cmd({
-  pattern: "ytaap",
-  react: "⬇️",
-  dontAddCommandList: true,
-  filename: __filename
-},
-async (conn, mek, m, { from, q, reply }) => {
-  if (!q) return await reply('*Need a youtube url!*');
+    pattern: "ytaap",
+    react: "⬇️",
+    dontAddCommandList: true,
+    filename: __filename
+}, async (conn, mek, m, { from, q, reply }) => {
+    if (!q) return await reply('*Need a YouTube URL!*');
 
-  try {
-    const prog = await fetchJson(`https://sulamd-ytmp3.vercel.app/download?q=${encodeURIComponent(q)}&format=mp3&apikey=SULA0310`);
-    if (!prog?.result?.download) throw new Error('No download URL');
+    try {
+        const encodedUrl = encodeURIComponent(q);
+        const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
-    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+        const prog = await fetchJson(apiUrl);
+        if (!prog.status || !prog.data || !prog.data.links || !prog.data.links.audio) {
+            throw new Error('Invalid API response');
+        }
 
-    // තාවකාලික file names
-    const inputPath = `./temp_${Date.now()}.mp3`;
-    const outputPath = `./temp_${Date.now()}.opus`;
+        const audioUrl = prog.data.links.audio;
 
-    // 1. MP3 එක download කරලා save කරනවා
-    const res = await fetch(prog.result.download);
-    const arrayBuffer = await res.arrayBuffer();
-    fs.writeFileSync(inputPath, Buffer.from(arrayBuffer));
+        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
 
-    // 2. ffmpeg-static පාවිච්චි කරලා convert කරනවා
-    // ffmpegPath එක පාවිච්චි කරන්නේ අන්න ඒ නිසයි
-    exec(`${ffmpegPath} -i ${inputPath} -c:a libopus -b:a 64k -vbr on -f ogg ${outputPath}`, async (error) => {
-      if (error) {
-        console.error(error);
-        return await reply('❌ Conversion error!');
-      }
+        // Temporary file paths
+        const inputPath = `./temp_${Date.now()}.mp3`;
+        const outputPath = `./temp_${Date.now()}.opus`;
 
-      const buffer = fs.readFileSync(outputPath);
+        // Download MP3
+        const res = await fetch(audioUrl);
+        const arrayBuffer = await res.arrayBuffer();
+        fs.writeFileSync(inputPath, Buffer.from(arrayBuffer));
 
-      // 3. Audio එක voice message එකක් විදිහට යවනවා
-      await conn.sendMessage(
-        from,
-        {
-          audio: buffer,
-          mimetype: 'audio/ogg; codecs=opus',
-          ptt: true
-        },
-        { quoted: mek }
-      );
+        // Convert to Opus with ffmpeg
+        exec(`${ffmpegPath} -i ${inputPath} -c:a libopus -b:a 64k -vbr on -f ogg ${outputPath}`, async (error) => {
+            if (error) {
+                console.error(error);
+                return await reply('❌ Conversion error!');
+            }
 
-      // වැඩේ ඉවර වුණාම file අයින් කරනවා
-      if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
-      if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+            const buffer = fs.readFileSync(outputPath);
 
-      await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-    });
+            await conn.sendMessage(
+                from,
+                {
+                    audio: buffer,
+                    mimetype: 'audio/ogg; codecs=opus',
+                    ptt: true
+                },
+                { quoted: mek }
+            );
 
-  } catch (e) {
-    await reply('❌ Failed: ' + (e.message || e));
-    console.log(e);
-  }
+            // Cleanup
+            if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+            if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+
+            await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+        });
+
+    } catch (e) {
+        await reply('❌ Failed: ' + (e.message || e));
+        console.log(e);
+    }
 });
 
+// ============================================================
+// 📂 Document format (ytad) – NEW API
+// ============================================================
 cmd({
     pattern: "ytad",
     react: "⬇️",
     dontAddCommandList: true,
     filename: __filename
-},
-async (conn, mek, m, { from, q, reply }) => {
+}, async (conn, mek, m, { from, q, reply }) => {
     try {
         if (!q) return await reply('*Need a YouTube URL!*');
 
-        const datae = q.split("&")[0];
-        const datas = q.split("&")[1];
-        const title = q.split("&")[2];
+        const encodedUrl = encodeURIComponent(q);
+        const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
-        // --- Thumbnail fetch ---
-        const botimgResponse = await fetch(datas);
-        const botimgBuffer = await botimgResponse.buffer();
+        const prog = await fetchJson(apiUrl);
+        if (!prog.status || !prog.data || !prog.data.links || !prog.data.links.audio) {
+            throw new Error('Invalid API response');
+        }
 
-        
-        // Resize image to 200x200 before sending
-        const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
-        // --- Get audio download link ---
-        const prog = await fetchJson(`https://sulamd-ytmp3.vercel.app/download?q=${datae}&format=mp3&apikey=SULA0310`);
-       
+        const audioUrl = prog.data.links.audio;
+        const title = prog.data.title || 'audio';
+        const thumbnailUrl = prog.data.thumbnail;
 
-        // --- Send audio file ---
+        // Fetch and resize thumbnail if available
+        let thumbnailBuffer = null;
+        if (thumbnailUrl) {
+            try {
+                const thumbRes = await fetch(thumbnailUrl);
+                const thumbArray = await thumbRes.arrayBuffer();
+                thumbnailBuffer = Buffer.from(thumbArray);
+                // Resize if function exists
+                if (typeof resizeImage === 'function') {
+                    thumbnailBuffer = await resizeImage(thumbnailBuffer, 200, 200);
+                }
+            } catch (e) {
+                console.log('Thumbnail fetch error:', e);
+            }
+        }
+
         await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
 
         await conn.sendMessage(
             from,
             {
-                document: { url: prog.result.download },
-                jpegThumbnail: resizedBotImg,
+                document: { url: audioUrl },
+                jpegThumbnail: thumbnailBuffer,
                 mimetype: 'audio/mpeg',
                 caption: `*${title}*\n\n${config.FOOTER}`,
                 fileName: `${title}.mp3`
@@ -472,30 +497,42 @@ async (conn, mek, m, { from, q, reply }) => {
     }
 });
 
-
-  cmd({
+// ============================================================
+// ⬇️ Direct MP3 download (UNCHANGED)
+// ============================================================
+cmd({
     pattern: "directmp3",
     react: "⬇️",
     dontAddCommandList: true,
     filename: __filename
-},
-    async (conn, mek, m, { from, q, reply }) => {
-try {
-           if (!q) return await reply('*Need a youtube url!*')
-	
- 
+}, async (conn, mek, m, { from, q, reply }) => {
+    try {
+        if (!q) return await reply('*Need a youtube url!*');
 
-	await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-	const up_mg =  await conn.sendMessage(from, { text : `*Uploading request ..⬆️*` }, {quoted: mek} )
-           
-	await conn.sendMessage(from, { audio:{ url: q }, caption: config.FOOTER , mimetype: 'audio/mpeg' , caption: wm, fileName: `test.mp3` });
-        await conn.sendMessage(from, { delete: up_mg.key })
-	await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-} catch (e) {
-	       console.log(e)
-        }
-    })
+        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+        const up_mg = await conn.sendMessage(from, { text: `*Uploading request ..⬆️*` }, { quoted: mek });
 
+        await conn.sendMessage(
+            from,
+            {
+                audio: { url: q },
+                caption: config.FOOTER,
+                mimetype: 'audio/mpeg',
+                fileName: `test.mp3`
+            }
+        );
+        await conn.sendMessage(from, { delete: up_mg.key });
+        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+    } catch (e) {
+        console.log(e);
+        await reply('❌ Direct download failed.');
+    }
+});
+
+
+
+
+  
 
 cmd({
     pattern: "tiktok",    
