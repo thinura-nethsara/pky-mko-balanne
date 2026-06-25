@@ -258,7 +258,22 @@ async (conn, mek, m, { from, q, reply, isCmd, command, l }) => {
 
 
 
+function cleanYtUrl(url) {
+    try {
+        const u = new URL(url);
+        // Remove 'si' and other common tracking params
+        u.searchParams.delete('si');
+        u.searchParams.delete('feature');
+        u.searchParams.delete('utm_source');
+        return u.toString();
+    } catch {
+        return url; // fallback
+    }
+}
 
+// ============================================================
+// 🔍 MAIN SEARCH COMMAND
+// ============================================================
 cmd({
     pattern: "song",
     alias: ["ytsong"],
@@ -320,7 +335,7 @@ cmd({
 });
 
 // ============================================================
-// 🎶 AUDIO FORMAT (ytaa) – Fixed with proper error handling
+// 🎶 AUDIO FORMAT (ytaa) – with HTTP error handling
 // ============================================================
 cmd({
     pattern: "ytaa",
@@ -331,26 +346,27 @@ cmd({
     if (!q) return await reply('*Need a YouTube URL!*');
 
     try {
-        const encodedUrl = encodeURIComponent(q);
+        const cleanUrl = cleanYtUrl(q);
+        const encodedUrl = encodeURIComponent(cleanUrl);
         const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
+        console.log('➡️ Requesting API:', apiUrl);
         const prog = await fetchJson(apiUrl);
+
         console.log('📦 ytaa response:', JSON.stringify(prog, null, 2));
 
-        // Check API status
         if (!prog.status) {
             const errMsg = prog.message || 'Unknown API error';
             return reply(`❌ API error: ${errMsg}`);
         }
 
-        // Validate data structure
         if (!prog.data || !prog.data.links || !prog.data.links.audio) {
             throw new Error('Missing audio link in API response');
         }
 
         const audioUrl = prog.data.links.audio;
 
-        // Optional size check
+        // Optional file size check
         try {
             const bytes = await checkFileSize(audioUrl, config.MAX_SIZE);
             const sizeInMB = (bytes / (1024 * 1024)).toFixed(2);
@@ -373,12 +389,21 @@ cmd({
 
     } catch (e) {
         console.error('❌ ytaa error:', e);
-        reply('❌ Download failed: ' + (e.message || e));
+        // Check if it's a 404/network error
+        let msg = '❌ Download failed.';
+        if (e.status === 404 || e.message.includes('404')) {
+            msg = '❌ Video not found or unavailable. Please try another song.';
+        } else if (e.status) {
+            msg = `❌ HTTP error ${e.status}: ${e.message}`;
+        } else {
+            msg = `❌ Error: ${e.message || e}`;
+        }
+        reply(msg);
     }
 });
 
 // ============================================================
-// 🎤 VOICE FORMAT (ytaap) – Fixed
+// 🎤 VOICE FORMAT (ytaap) – with HTTP error handling
 // ============================================================
 cmd({
     pattern: "ytaap",
@@ -389,10 +414,13 @@ cmd({
     if (!q) return await reply('*Need a YouTube URL!*');
 
     try {
-        const encodedUrl = encodeURIComponent(q);
+        const cleanUrl = cleanYtUrl(q);
+        const encodedUrl = encodeURIComponent(cleanUrl);
         const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
+        console.log('➡️ Requesting API:', apiUrl);
         const prog = await fetchJson(apiUrl);
+
         console.log('📦 ytaap response:', JSON.stringify(prog, null, 2));
 
         if (!prog.status) {
@@ -408,16 +436,13 @@ cmd({
 
         await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
 
-        // Temporary files
         const inputPath = `./temp_${Date.now()}.mp3`;
         const outputPath = `./temp_${Date.now()}.opus`;
 
-        // Download MP3
         const res = await fetch(audioUrl);
         const arrayBuffer = await res.arrayBuffer();
         fs.writeFileSync(inputPath, Buffer.from(arrayBuffer));
 
-        // Convert to Opus using ffmpeg
         exec(`${ffmpegPath} -i ${inputPath} -c:a libopus -b:a 64k -vbr on -f ogg ${outputPath}`, async (error) => {
             if (error) {
                 console.error('ffmpeg error:', error);
@@ -436,7 +461,6 @@ cmd({
                 { quoted: mek }
             );
 
-            // Cleanup
             if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
             if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
 
@@ -445,12 +469,20 @@ cmd({
 
     } catch (e) {
         console.error('❌ ytaap error:', e);
-        await reply('❌ Failed: ' + (e.message || e));
+        let msg = '❌ Failed.';
+        if (e.status === 404 || e.message.includes('404')) {
+            msg = '❌ Video not found or unavailable. Please try another song.';
+        } else if (e.status) {
+            msg = `❌ HTTP error ${e.status}: ${e.message}`;
+        } else {
+            msg = `❌ Error: ${e.message || e}`;
+        }
+        await reply(msg);
     }
 });
 
 // ============================================================
-// 📂 DOCUMENT FORMAT (ytad) – Fixed
+// 📂 DOCUMENT FORMAT (ytad) – with HTTP error handling
 // ============================================================
 cmd({
     pattern: "ytad",
@@ -461,10 +493,13 @@ cmd({
     try {
         if (!q) return await reply('*Need a YouTube URL!*');
 
-        const encodedUrl = encodeURIComponent(q);
+        const cleanUrl = cleanYtUrl(q);
+        const encodedUrl = encodeURIComponent(cleanUrl);
         const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
+        console.log('➡️ Requesting API:', apiUrl);
         const prog = await fetchJson(apiUrl);
+
         console.log('📦 ytad response:', JSON.stringify(prog, null, 2));
 
         if (!prog.status) {
@@ -480,7 +515,6 @@ cmd({
         const title = prog.data.title || 'audio';
         const thumbnailUrl = prog.data.thumbnail;
 
-        // Fetch and resize thumbnail (if available)
         let thumbnailBuffer = null;
         if (thumbnailUrl) {
             try {
@@ -513,12 +547,20 @@ cmd({
 
     } catch (e) {
         console.error('❌ ytad error:', e);
-        await reply('*❌ Error occurred while processing your request.*');
+        let msg = '❌ Error occurred.';
+        if (e.status === 404 || e.message.includes('404')) {
+            msg = '❌ Video not found or unavailable. Please try another song.';
+        } else if (e.status) {
+            msg = `❌ HTTP error ${e.status}: ${e.message}`;
+        } else {
+            msg = `❌ Error: ${e.message || e}`;
+        }
+        await reply(msg);
     }
 });
 
 // ============================================================
-// ⬇️ DIRECT MP3 DOWNLOAD – UNCHANGED
+// ⬇️ DIRECT MP3 DOWNLOAD (unchanged)
 // ============================================================
 cmd({
     pattern: "directmp3",
@@ -551,12 +593,7 @@ cmd({
 
 
 
-
-
-
-
-
-  
+    
 
 cmd({
     pattern: "tiktok",    
