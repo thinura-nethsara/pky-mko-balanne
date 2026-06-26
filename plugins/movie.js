@@ -56,7 +56,7 @@ async (conn, mek, m, {
 
     // Movie sources
     const sources = [
-      { name: "CINESUBZ", cmd: "cine" },
+      { name: "CINESUBZ", cmd: "cinesubz" },
       { name: "SINHALASUB", cmd: "sinhalasub" }
 
     ];
@@ -137,6 +137,7 @@ async (conn, mek, m, {
 
 cmd({
     pattern: "cinesubz",
+    alias: ["cz"],
     react: '🔎',
     category: "movie",
     desc: "Cinesubz movie search",
