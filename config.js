@@ -14,7 +14,7 @@ ANTI_LINK: process.env.ANTI_LINK === undefined ? 'true' : process.env.ANTI_LINK,
 SEEDR_MAIL: '',
 SEEDR_PASSWORD: '',
 SUDO: '',//
-DB_NAME: 'test',
+DB_NAME: 'pramaaaataaaaahaaaaggaaaajjaa',
 LANG: 'SI',
 OWNER_NUMBER: '94758260318',
 TG_GROUP: 'https://t.me/+Zm865mJ_TL0yNGVl'
