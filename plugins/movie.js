@@ -30,7 +30,7 @@ async (conn, mek, m, {
   isPre, isSudo, isOwner, isMe, reply
 }) => {
   try {
-    const pr = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
+    const pr = (await axios.get('https://visper-database.vercel.app/Main/main_var.json')).data;
     const isFree = pr.mvfree === "true";
 
     // Premium check
@@ -64,7 +64,7 @@ async (conn, mek, m, {
 
     let imageBuffer;
     try {
-      const res = await axios.get('https://mv-visper-full-db.pages.dev/Data/visper_main.jpeg', {
+      const res = await axios.get('https://files.catbox.moe/f3nwkv.png', {
         responseType: 'arraybuffer'
       });
       imageBuffer = Buffer.from(res.data, 'binary');
@@ -90,7 +90,7 @@ async (conn, mek, m, {
       };
 
       return await conn.sendMessage(from, {
-        image: imageBuffer || { url: 'https://mv-visper-full-db.pages.dev/Data/visper_main.jpeg' },
+        image: imageBuffer || { url: 'https://files.catbox.moe/f3nwkv.png' },
         caption,
         footer: config.FOOTER,
         buttons: [
@@ -115,7 +115,7 @@ async (conn, mek, m, {
       }));
 
       return await conn.buttonMessage2(from, {
-        image: { url: 'https://mv-visper-full-db.pages.de/Data/visper_main.jpeg' },
+        image: { url: 'https://files.catbox.moe/f3nwkv.png' },
         caption,
         footer: config.FOOTER,
        buttons,
