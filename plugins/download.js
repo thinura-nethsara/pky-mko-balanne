@@ -1824,7 +1824,7 @@ ${config.FOOTER}`
     await conn.sendMessage(from, { image: { url: data.icon }, caption: listdata }, { quoted: mek })
 
     // send apk file    let sendapk = await conn.sendMessage(from , { 
-        document : { url : data.dllink }, 
+        document : { url : data.dllink }
         mimetype : 'application/vnd.android.package-archive', 
         fileName : data.name + '.apk',
         caption: config.FOOTER
