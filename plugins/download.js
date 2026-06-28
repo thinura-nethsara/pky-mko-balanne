@@ -1860,41 +1860,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
       return;
     }
 
-    // --- Search flow (if input is not a URL) ---
-    let res = await fetchJson(`https://darksadasyt-spotify-search.vercel.app/search?query=${q}`);
-    if (!res || res.length === 0) {
-      return reply('🚩 *No results found for your query.*');
-    }
-
-    var srh = [];
-    for (var i = 0; i < res.length; i++) {
-      srh.push({
-        title: res[i].song_name,
-        description: '',
-        rowId: prefix + `spotifydl ${res[i].track_url}`
-      });
-    }
-
-    const sections = [{
-      title: "open.spotify.com",
-      rows: srh
-    }];
-
-    const listMessage = {
-      text: `*SPOTIFY SEARCH RESULT 🎶*\n\n*\`Input :\`* ${q}`,
-      footer: config.FOOTER,
-      title: 'open.spotify.com',
-      buttonText: '*Reply Below Number 🔢*',
-      sections
-    };
-
-    await conn.listMessage(from, listMessage, mek);
-
-  } catch (e) {
-    console.log(e);
-    await conn.sendMessage(from, { text: '🚩 *Error !!*' }, { quoted: mek });
-  }
-});
+    
 
 // ---------- SPOTIFY DOWNLOAD (triggered from search results) ----------
 cmd({
