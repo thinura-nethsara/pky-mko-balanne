@@ -1772,16 +1772,37 @@ console.log(e)
 })
 
 
-  
-// ==================== SPOTIFY SEARCH ====================
+async (conn, mek, m, { from, q, reply }) => {
+  if (!q) return await reply('*Need a download URL!*');
+  try {
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, { 
+      audio: { url: q }, 
+      mimetype: 'audio/mpeg' 
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) {
+    console.log(e);
+    reply('*Error sending audio*');
+  }
+});
 
-    // --- If it's not a URL, proceed with the search ---
-    
+
+// ==============================================================
+//  SPOTIFY MODULE – VISPER BOT
+//  Features:
+//   - Search by song name
+//   - Direct download by Spotify URL
+//   - Audio & Document types
+//   - No viewOnce (image stays visible)
+// ==============================================================
+
+// ---------- SPOTIFY SEARCH ----------
 cmd({
   pattern: "spotify",	
   react: '🎶',
   category: "download",
-  desc: "spotify search or direct download",
+  desc: "Spotify search or direct download",
   use: ".spotify <song name or spotify url>",
   filename: __filename
 },
@@ -1789,25 +1810,20 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply('🚩 *Please give me a song name or a Spotify track URL*');
 
-    // --- Check if the input is a Spotify track URL ---
-    // This regex matches both standard and region-specific Spotify track URLs
+    // --- Check if input is a Spotify track URL ---
     const spotifyTrackRegex = /^(https?:\/\/)?(open|play)\.spotify\.com\/(intl-[a-z]{2}\/)?track\//;
     if (spotifyTrackRegex.test(q)) {
-        // It's a Spotify track URL! Directly call the download command.
-        // We'll just call the 'spotifydl' command's logic here.
-        // To avoid code duplication, we can import or re-use the logic.
-        // Since we are in the same file, we can just call the function if we refactor.
-        // For simplicity, we will directly use the API call here.
-        try {
-            const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/spotify?url=${encodeURIComponent(q)}&apiKey=${config.YT_API_KEY || 'key_4797e0dcedd66cca'}`;
-            const response = await fetchJson(apiUrl);
+      // Direct download flow
+      try {
+        const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/spotify?url=${encodeURIComponent(q)}&apiKey=${config.YT_API_KEY || 'key_4797e0dcedd66cca'}`;
+        const response = await fetchJson(apiUrl);
 
-            if (!response.status || !response.data) {
-                return await reply('❌ Failed to retrieve song data. Please check the URL.');
-            }
+        if (!response.status || !response.data) {
+          return await reply('❌ Failed to retrieve song data. Please check the URL.');
+        }
 
-            const data = response.data;
-            const caption = `*\`🎼 🅅🄸🅂🄿🄴🅁 🅂🄿🄾🅃🄸🄵🄸🅈 🄳🄾🅆🄽🄻🄾🄰🄳🄴🅁 🎼\`*
+        const data = response.data;
+        const caption = `*\`🎼 🅅🄸🅂🄿🄴🅁 🅂🄿🄾🅃🄸🄵🄸🅈 🄳🄾🅆🄽🄻🄾🄰🄳🄴🅁 🎼\`*
 *┌──────────────────╮*
 *├ \`🎶 Title:\`* ${data.track_name}
 *├ \`🧑‍🎤 Artist:\`* ${data.artist}
@@ -1815,79 +1831,84 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 *├ \`🔗 URL:\`* ${q}
 *└──────────────────╯*`;
 
-            const buttons = [
-                {
-                    buttonId: prefix + 'spa ' + data.download_url,
-                    buttonText: { displayText: 'Audio Type 🎶' },
-                    type: 1
-                },
-                {
-                    buttonId: prefix + `spad ${data.download_url}&${data.cover_art}&${data.track_name}`,
-                    buttonText: { displayText: 'Document Type 📂' },
-                    type: 1
-                }
-            ];
+        const buttons = [
+          {
+            buttonId: prefix + 'spa ' + data.download_url,
+            buttonText: { displayText: 'Audio Type 🎶' },
+            type: 1
+          },
+          {
+            buttonId: prefix + `spad ${data.download_url}&${data.cover_art}&${data.track_name}`,
+            buttonText: { displayText: 'Document Type 📂' },
+            type: 1
+          }
+        ];
 
-            await conn.sendMessage(from, {
-                image: { url: data.cover_art },
-                caption: caption,
-                footer: config.FOOTER,
-                buttons: buttons,
-                headerType: 4,
-                viewOnce: true
-            }, { quoted: mek });
+        await conn.sendMessage(from, {
+          image: { url: data.cover_art },
+          caption: caption,
+          footer: config.FOOTER,
+          buttons: buttons,
+          headerType: 4
+          // viewOnce removed – image stays visible
+        }, { quoted: mek });
 
-        } catch (e) {
-            console.error('Error in direct Spotify download:', e);
-            await reply('❌ An error occurred while fetching the song. Please try again later.');
-        }
-        return; // Stop further execution
+      } catch (e) {
+        console.error('Error in direct Spotify download:', e);
+        await reply('❌ An error occurred while fetching the song. Please try again later.');
+      }
+      return;
     }
 
-    // --- If it's not a URL, proceed with the search ---
+    // --- Search flow (if input is not a URL) ---
     let res = await fetchJson(`https://darksadasyt-spotify-search.vercel.app/search?query=${q}`);
     if (!res || res.length === 0) {
-        return reply('🚩 *No results found for your query.*');
+      return reply('🚩 *No results found for your query.*');
     }
+
     var srh = [];
     for (var i = 0; i < res.length; i++) {
-        srh.push({
-            title: res[i].song_name,
-            description: '',
-            rowId: prefix + `spotifydl ${res[i].track_url}`
-        });
+      srh.push({
+        title: res[i].song_name,
+        description: '',
+        rowId: prefix + `spotifydl ${res[i].track_url}`
+      });
     }
+
     const sections = [{
-        title: "open.spotify.com",
-        rows: srh
+      title: "open.spotify.com",
+      rows: srh
     }];
+
     const listMessage = {
-        text: `*SPOTIFY SEARCH RESULT 🎶*\n\n*\`Input :\`* ${q}`,
-        footer: config.FOOTER,
-        title: 'open.spotify.com',
-        buttonText: '*Reply Below Number 🔢*',
-        sections
+      text: `*SPOTIFY SEARCH RESULT 🎶*\n\n*\`Input :\`* ${q}`,
+      footer: config.FOOTER,
+      title: 'open.spotify.com',
+      buttonText: '*Reply Below Number 🔢*',
+      sections
     };
+
     await conn.listMessage(from, listMessage, mek);
+
   } catch (e) {
     console.log(e);
     await conn.sendMessage(from, { text: '🚩 *Error !!*' }, { quoted: mek });
   }
-})
-// ==================== SPOTIFY DOWNLOAD (uses new API) ====================
+});
+
+// ---------- SPOTIFY DOWNLOAD (triggered from search results) ----------
 cmd({
   pattern: "spotifydl",
   alias: ["ytsong"],
   use: '.song lelena',
   react: "🎧",
-  desc: "Download songs",
+  desc: "Download songs from Spotify",
   filename: __filename
 },
 async (conn, mek, m, { from, prefix, q, reply }) => {
   try {
     if (!q) return await reply('*Please enter a Spotify track URL!*');
 
-    // Use the new API
     const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/spotify?url=${encodeURIComponent(q)}&apiKey=${config.YT_API_KEY || 'key_4797e0dcedd66cca'}`;
     const response = await fetchJson(apiUrl);
 
@@ -1896,8 +1917,6 @@ async (conn, mek, m, { from, prefix, q, reply }) => {
     }
 
     const data = response.data;
-    // data: { track_name, artist, duration, cover_art, download_url, spotify_url }
-
     const caption = `*\`🎼 🅅🄸🅂🄿🄴🅁 🅂🄿🄾🅃🄸🄵🄸🅈 🄳🄾🅆🄽🄻🄾🄰🄳🄴🅁 🎼\`*
 *┌──────────────────╮*
 *├ \`🎶 Title:\`* ${data.track_name}
@@ -1906,7 +1925,6 @@ async (conn, mek, m, { from, prefix, q, reply }) => {
 *├ \`🔗 URL:\`* ${q}
 *└──────────────────╯*`;
 
-    // Buttons for Audio and Document
     const buttons = [
       {
         buttonId: prefix + 'spa ' + data.download_url,
@@ -1925,8 +1943,8 @@ async (conn, mek, m, { from, prefix, q, reply }) => {
       caption: caption,
       footer: config.FOOTER,
       buttons: buttons,
-      headerType: 4,
-      viewOnce: true
+      headerType: 4
+      // viewOnce removed – image stays visible
     }, { quoted: mek });
 
   } catch (e) {
@@ -1935,7 +1953,7 @@ async (conn, mek, m, { from, prefix, q, reply }) => {
   }
 });
 
-// ==================== SPA (Audio) – unchanged ====================
+// ---------- SPA – Send as Audio ----------
 cmd({
   pattern: "spa",
   react: "⬇️",
@@ -1946,9 +1964,9 @@ async (conn, mek, m, { from, q, reply }) => {
   if (!q) return await reply('*Need a download URL!*');
   try {
     await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-    await conn.sendMessage(from, { 
-      audio: { url: q }, 
-      mimetype: 'audio/mpeg' 
+    await conn.sendMessage(from, {
+      audio: { url: q },
+      mimetype: 'audio/mpeg'
     }, { quoted: mek });
     await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
   } catch (e) {
@@ -1957,7 +1975,7 @@ async (conn, mek, m, { from, q, reply }) => {
   }
 });
 
-// ==================== SPAD (Document) – unchanged ====================
+// ---------- SPAD – Send as Document with thumbnail ----------
 cmd({
   pattern: "spad",
   react: "⬇️",
@@ -1967,22 +1985,27 @@ cmd({
 async (conn, mek, m, { from, q, reply }) => {
   try {
     if (!q) return await reply('*Need a download URL!*');
-    const datae = q.split("&")[0];
-    const datas = q.split("&")[1];
-    const title = q.split("&")[2] || 'audio';
     
-    const botimgResponse = await fetch(datas);
-    const botimgBuffer = await botimgResponse.buffer();
-    const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
+    const parts = q.split("&");
+    const downloadUrl = parts[0];
+    const coverUrl = parts[1];
+    const title = parts[2] || 'audio';
+
+    // Fetch and resize thumbnail
+    const imgResponse = await fetch(coverUrl);
+    const imgBuffer = await imgResponse.buffer();
+    const resizedImg = await resizeImage(imgBuffer, 200, 200);
 
     await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+
     await conn.sendMessage(from, {
-      document: { url: datae },
-      jpegThumbnail: resizedBotImg,
+      document: { url: downloadUrl },
+      jpegThumbnail: resizedImg,
       caption: config.FOOTER || '',
       mimetype: 'audio/mpeg',
       fileName: `${title}.mp3`
     }, { quoted: mek });
+
     await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
   } catch (e) {
     console.log(e);
