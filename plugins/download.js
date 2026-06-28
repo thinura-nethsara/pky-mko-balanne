@@ -1774,44 +1774,106 @@ console.log(e)
 
   
 // ==================== SPOTIFY SEARCH ====================
+
+    // --- If it's not a URL, proceed with the search ---
+    
 cmd({
   pattern: "spotify",	
   react: '🎶',
   category: "download",
-  desc: "spotify search",
-  use: ".spotify lelena",
+  desc: "spotify search or direct download",
+  use: ".spotify <song name or spotify url>",
   filename: __filename
 },
 async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
-    if (!q) return reply('🚩 *Please give me words to search*');
+    if (!q) return reply('🚩 *Please give me a song name or a Spotify track URL*');
+
+    // --- Check if the input is a Spotify track URL ---
+    // This regex matches both standard and region-specific Spotify track URLs
+    const spotifyTrackRegex = /^(https?:\/\/)?(open|play)\.spotify\.com\/(intl-[a-z]{2}\/)?track\//;
+    if (spotifyTrackRegex.test(q)) {
+        // It's a Spotify track URL! Directly call the download command.
+        // We'll just call the 'spotifydl' command's logic here.
+        // To avoid code duplication, we can import or re-use the logic.
+        // Since we are in the same file, we can just call the function if we refactor.
+        // For simplicity, we will directly use the API call here.
+        try {
+            const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/spotify?url=${encodeURIComponent(q)}&apiKey=${config.YT_API_KEY || 'key_4797e0dcedd66cca'}`;
+            const response = await fetchJson(apiUrl);
+
+            if (!response.status || !response.data) {
+                return await reply('❌ Failed to retrieve song data. Please check the URL.');
+            }
+
+            const data = response.data;
+            const caption = `*\`🎼 🅅🄸🅂🄿🄴🅁 🅂🄿🄾🅃🄸🄵🄸🅈 🄳🄾🅆🄽🄻🄾🄰🄳🄴🅁 🎼\`*
+*┌──────────────────╮*
+*├ \`🎶 Title:\`* ${data.track_name}
+*├ \`🧑‍🎤 Artist:\`* ${data.artist}
+*├ \`⏱️ Duration:\`* ${data.duration}
+*├ \`🔗 URL:\`* ${q}
+*└──────────────────╯*`;
+
+            const buttons = [
+                {
+                    buttonId: prefix + 'spa ' + data.download_url,
+                    buttonText: { displayText: 'Audio Type 🎶' },
+                    type: 1
+                },
+                {
+                    buttonId: prefix + `spad ${data.download_url}&${data.cover_art}&${data.track_name}`,
+                    buttonText: { displayText: 'Document Type 📂' },
+                    type: 1
+                }
+            ];
+
+            await conn.sendMessage(from, {
+                image: { url: data.cover_art },
+                caption: caption,
+                footer: config.FOOTER,
+                buttons: buttons,
+                headerType: 4,
+                viewOnce: true
+            }, { quoted: mek });
+
+        } catch (e) {
+            console.error('Error in direct Spotify download:', e);
+            await reply('❌ An error occurred while fetching the song. Please try again later.');
+        }
+        return; // Stop further execution
+    }
+
+    // --- If it's not a URL, proceed with the search ---
     let res = await fetchJson(`https://darksadasyt-spotify-search.vercel.app/search?query=${q}`);
+    if (!res || res.length === 0) {
+        return reply('🚩 *No results found for your query.*');
+    }
     var srh = [];
     for (var i = 0; i < res.length; i++) {
-      srh.push({
-        title: res[i].song_name,
-        description: '',
-        rowId: prefix + `spotifydl ${res[i].track_url}`
-      });
+        srh.push({
+            title: res[i].song_name,
+            description: '',
+            rowId: prefix + `spotifydl ${res[i].track_url}`
+        });
     }
     const sections = [{
-      title: "open.spotify.com",
-      rows: srh
+        title: "open.spotify.com",
+        rows: srh
     }];
     const listMessage = {
-      text: `*SPOTIFY SEARCH RESULT 🎶*\n\n*\`Input :\`* ${q}`,
-      footer: config.FOOTER,
-      title: 'open.spotify.com',
-      buttonText: '*Reply Below Number 🔢*',
-      sections
+        text: `*SPOTIFY SEARCH RESULT 🎶*\n\n*\`Input :\`* ${q}`,
+        footer: config.FOOTER,
+        title: 'open.spotify.com',
+        buttonText: '*Reply Below Number 🔢*',
+        sections
     };
     await conn.listMessage(from, listMessage, mek);
   } catch (e) {
     console.log(e);
     await conn.sendMessage(from, { text: '🚩 *Error !!*' }, { quoted: mek });
   }
-});
-
+})
 // ==================== SPOTIFY DOWNLOAD (uses new API) ====================
 cmd({
   pattern: "spotifydl",
