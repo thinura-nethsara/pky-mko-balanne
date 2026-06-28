@@ -186,7 +186,7 @@ conn.ev.on('connection.update', async (update) => {
 • Status: Online ✅
 `;
                 await conn.sendMessage(targetJid, { 
-                   image: { url: 'https://cdn.phototourl.com/free/2026-06-17-4e4d78af-364b-4047-b535-fa9de8a86079.jpg' }, 
+                   image: { url: 'https://files.catbox.moe/f3nwkv.png' }, 
                   caption: ownerdata.connectmg || configMsg 
               });
                 
