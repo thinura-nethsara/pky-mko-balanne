@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://cdn.phototourl.com/free/2026-06-17-4e4d78af-364b-4047-b535-fa9de8a86079.jpg" alt="VISPER MD Logo" width="650" style="animation: pulse 2s infinite; border-radius: 20px;"/>
+  <img src="https://files.catbox.moe/f3nwkv.png" alt="VISPER MD Logo" width="650" style="animation: pulse 2s infinite; border-radius: 20px;"/>
 </p>
 
 <h1 align="center">
