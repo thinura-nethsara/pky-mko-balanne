@@ -1907,263 +1907,7 @@ const datas = q.split("±")[1]
     })
 
 
-cmd({
-    pattern: "spotify",	
-    react: '🎶',
-    category: "download",
-    desc: "spotify search",
-    use: ".spotify lelena",
-    
-    filename: __filename
-},
-async (conn, m, mek, { from, q, isSudo, isOwner, prefix, isMe, reply }) => {
-try{
 
-
-if (!q) return reply('🚩 *Please give me words to search*')
-let res = await fetchJson(`https://darksadasyt-spotify-search.vercel.app/search?query=${q}`)
-
-
-var srh = [];  
-for (var i = 0; i < res.length; i++) {
-srh.push({
-title: res[i].song_name,
-description: '',
-rowId: prefix + `spotifydl ${res[i].track_url}`
-});
-}
-
-const sections = [{
-title: "open.spotify.com",
-rows: srh
-}	  
-]
-const listMessage = {
-text: `*SPOTIFY SEARCH RESULT 🎶*
-
-*\`Input :\`* ${q}`,
-	
-footer: config.FOOTER,
-title: 'open.spotify.com',
-buttonText: '*Reply Below Number 🔢*',
-sections
-}
-await conn.listMessage(from, listMessage,mek)
-} catch (e) {
-    console.log(e)
-  await conn.sendMessage(from, { text: '🚩 *Error !!*' }, { quoted: mek } )
-}
-})
-
-cmd({
-    pattern: "spotifydl",
-    alias: ["ytsong"],
-    use: '.song lelena',
-    react: "🎧",
-    desc: "Download songs",
-    filename: __filename
-},
-
-async (conn, mek, m, { from, prefix, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
-    try {
-        if (!q) return await reply('*Please enter a query or a URL!*');
-
-        const response = await axios.get(`https://phinfo.vercel.app/download?songId=${encodeURIComponent(q)}`);
-        const data = response.data.data;
-
-        if (!data || !data.downloadLink) {
-            return await reply("❌ Could not retrieve the song. Please check your query.");
-        }
-
-        let caption = `*\`🎼 🅅🄸🅂🄿🄴🅁 🅂🄿🄾🅃🄸🄵🅈 🄳🄾🅆🄽🄻🄾🄰🄳🄴🅁 🎼\`*
-*┌──────────────────╮*
-*├ \`🎶 Title:\`* ${data.title}
-*├ \`🧑‍🎤 Artist:\`* ${data.artist}
-*├ \`💽 Album:\`* ${data.album}
-*├ \`📅 Date:\`* ${data.releaseDate}
-*├ \`🔗 URL:\`* ${q}
-*└──────────────────╯*`;
-
-        const buttons = [
-            {
-                buttonId: prefix + 'spa ' + data.downloadLink,
-                buttonText: { displayText: 'Audio Type 🎶' },
-                type: 1
-            },
-            {
-                buttonId: prefix + `spad ${data.downloadLink}&${data.cover}&${data.title}`,
-                buttonText: { displayText: 'Document Type 📂' },
-                type: 1
-            }
-        ];
-
-        const buttonMessage = {
-            image: { url: data.cover },
-            caption: caption,
-            footer: config.FOOTER,
-            buttons: buttons,
-            headerType: 4
-        };
-
-        await conn.buttonMessage(from, buttonMessage, mek);
-
-    } catch (e) {
-        console.error('Error occurred:', e);
-        await reply('❌ An error occurred while processing your request. Please try again later.');
-    }
-});
-
-
-
-cmd({
-    pattern: "spa",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-    async (conn, mek, m, { from, q, reply }) => {
-        if (!q) return await reply('*Need a youtube url!*');
-
-          try {
-
-		
-
-await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-		    
-		        
-                await conn.sendMessage(from, { audio: { url: q }, mimetype: 'audio/mpeg' }, { quoted: mek });
-               
-                await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-           } catch (e) {
-  
-  console.log(e)
-}
-})
-
- cmd({
-    pattern: "spad",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-    async (conn, mek, m, { from, q, reply }) => {
-try {
-           if (!q) return await reply('*Need a youtube url!*')
-	
-           const datae = q.split("&")[0]
-const datas = q.split("&")[1]
-	const title = q.split("&")[2]
-  const botimgUrl = datas;
-        const botimgResponse = await fetch(botimgUrl);
-        const botimgBuffer = await botimgResponse.buffer();
-        
-        // Resize image to 200x200 before sending
-        const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
-	
-     
-
-
-	
-	await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-	
-           
-	await conn.sendMessage(from, { document:{ url: datae }, jpegThumbnail: resizedBotImg, caption: config.FOOTER , mimetype: 'audio/mpeg' , caption: wm, fileName: `${title}` }, { quoted: mek });
-	await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-} catch (e) {
-	       console.log(e)
-        }
-    })
-cmd({
-    pattern: "soundcloud",	
-    react: '🎶',
-    category: "download",
-    desc: "soundcloud search",
-    use: ".soundcloud lelena",
-    
-    filename: __filename
-},
-async (conn, m, mek, { from, q, isSudo, isOwner, prefix, isMe, reply }) => {
-try{
-
-
-if (!q) return reply('🚩 *Please give me words to search*')
-let res = await fetchJson(`https://api.fgmods.xyz/api/search/soundcloud?text=${q}&apikey=fg_NHnzSf6e`)
-
-
-var srh = [];  
-for (var i = 0; i < res.result.length; i++) {
-srh.push({
-title: res.result[i].title,
-description: '',
-rowId: prefix + `sounddl ${res.result[i].url}`
-});
-}
-
-const sections = [{
-title: "soundcloud.com results",
-rows: srh
-}	  
-]
-const listMessage = {
-text: `*_SOUNDCLOUD SEARCH RESULT 🎶_*
-
-*\`Input :\`* ${q}`,
-	
-footer: config.FOOTER,
-title: 'soundcloud.com results',
-buttonText: '*Reply Below Number 🔢*',
-sections
-}
-await conn.listMessage(from, listMessage,mek)
-} catch (e) {
-    console.log(e)
-  await conn.sendMessage(from, { text: '🚩 *Error !!*' }, { quoted: mek } )
-}
-})
-
-
-cmd({
-    pattern: "sounddl",
-    alias: ["ytsong"],
-    use: '.song <query>',
-    react: "🎧",
-    desc: "Download songs",
-    filename: __filename
-}, 
-async (conn, mek, m, { from, prefix, q, reply }) => {
-    try {
-        if (!q) return await reply('*❌ Please enter a song name or SoundCloud URL!*');
-
-        // Make the API request
-        const apiUrl = `https://darksadasyt-soundcloud-dl.vercel.app/api/fetch-track?q=${encodeURIComponent(q)}`;
-        let response;
-
-        try {
-            response = await axios.get(apiUrl);
-        } catch (apiError) {
-            console.error('API request failed:', apiError.message);
-            return await reply('❌ The song download server is currently unavailable or returned an error (500). Please try again later.');
-        }
-
-        const data = response.data;
-
-        if (!data || !data.url || !data.title || !data.imageURL) {
-            return await reply('⚠️ Failed to retrieve valid song data. Please check your query or try again later.');
-        }
-
-        const caption = `*\`🎼 VISPER SOUNDCLOUD DOWNLOADER 🎼\`*\n\n*🎶 Title:* ${data.title}\n*🔗 URL:* ${q}`;
-
-        const buttons = [
-            {
-                buttonId: prefix + 'spa ' + data.url,
-                buttonText: { displayText: 'Audio Type 🎶' },
-                type: 1
-            },
-            {
-                buttonId: prefix + `spad ${data.url}&${data.imageURL}&${data.title}`,
-                buttonText: { displayText: 'Document Type 📂' },
-                type: 1
-            }
         ];
 
         const buttonMessage = {
@@ -2209,5 +1953,158 @@ conn.sendMessage(from, {
 });
 
 
-//fuck pathum
+// ==================== SPOTIFY SEARCH ====================
+cmd({
+  pattern: "spotify",	
+  react: '🎶',
+  category: "download",
+  desc: "spotify search",
+  use: ".spotify lelena",
+  filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+  try {
+    if (!q) return reply('🚩 *Please give me words to search*');
+    let res = await fetchJson(`https://darksadasyt-spotify-search.vercel.app/search?query=${q}`);
+    var srh = [];
+    for (var i = 0; i < res.length; i++) {
+      srh.push({
+        title: res[i].song_name,
+        description: '',
+        rowId: prefix + `spotifydl ${res[i].track_url}`
+      });
+    }
+    const sections = [{
+      title: "open.spotify.com",
+      rows: srh
+    }];
+    const listMessage = {
+      text: `*SPOTIFY SEARCH RESULT 🎶*\n\n*\`Input :\`* ${q}`,
+      footer: config.FOOTER,
+      title: 'open.spotify.com',
+      buttonText: '*Reply Below Number 🔢*',
+      sections
+    };
+    await conn.listMessage(from, listMessage, mek);
+  } catch (e) {
+    console.log(e);
+    await conn.sendMessage(from, { text: '🚩 *Error !!*' }, { quoted: mek });
+  }
+});
+
+// ==================== SPOTIFY DOWNLOAD (uses new API) ====================
+cmd({
+  pattern: "spotifydl",
+  alias: ["ytsong"],
+  use: '.song lelena',
+  react: "🎧",
+  desc: "Download songs",
+  filename: __filename
+},
+async (conn, mek, m, { from, prefix, q, reply }) => {
+  try {
+    if (!q) return await reply('*Please enter a Spotify track URL!*');
+
+    // Use the new API
+    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/spotify?url=${encodeURIComponent(q)}&apiKey=${config.YT_API_KEY || 'key_4797e0dcedd66cca'}`;
+    const response = await fetchJson(apiUrl);
+
+    if (!response.status || !response.data) {
+      return await reply('❌ Failed to retrieve song data. Please check the URL.');
+    }
+
+    const data = response.data;
+    // data: { track_name, artist, duration, cover_art, download_url, spotify_url }
+
+    const caption = `*\`🎼 🅅🄸🅂🄿🄴🅁 🅂🄿🄾🅃🄸🄵🄸🅈 🄳🄾🅆🄽🄻🄾🄰🄳🄴🅁 🎼\`*
+*┌──────────────────╮*
+*├ \`🎶 Title:\`* ${data.track_name}
+*├ \`🧑‍🎤 Artist:\`* ${data.artist}
+*├ \`⏱️ Duration:\`* ${data.duration}
+*├ \`🔗 URL:\`* ${q}
+*└──────────────────╯*`;
+
+    // Buttons for Audio and Document
+    const buttons = [
+      {
+        buttonId: prefix + 'spa ' + data.download_url,
+        buttonText: { displayText: 'Audio Type 🎶' },
+        type: 1
+      },
+      {
+        buttonId: prefix + `spad ${data.download_url}&${data.cover_art}&${data.track_name}`,
+        buttonText: { displayText: 'Document Type 📂' },
+        type: 1
+      }
+    ];
+
+    await conn.sendMessage(from, {
+      image: { url: data.cover_art },
+      caption: caption,
+      footer: config.FOOTER,
+      buttons: buttons,
+      headerType: 4,
+      viewOnce: true
+    }, { quoted: mek });
+
+  } catch (e) {
+    console.error('Error in spotifydl:', e);
+    await reply('❌ An error occurred. Please try again later.');
+  }
+});
+
+// ==================== SPA (Audio) – unchanged ====================
+cmd({
+  pattern: "spa",
+  react: "⬇️",
+  dontAddCommandList: true,
+  filename: __filename
+},
+async (conn, mek, m, { from, q, reply }) => {
+  if (!q) return await reply('*Need a download URL!*');
+  try {
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, { 
+      audio: { url: q }, 
+      mimetype: 'audio/mpeg' 
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) {
+    console.log(e);
+    reply('*Error sending audio*');
+  }
+});
+
+// ==================== SPAD (Document) – unchanged ====================
+cmd({
+  pattern: "spad",
+  react: "⬇️",
+  dontAddCommandList: true,
+  filename: __filename
+},
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return await reply('*Need a download URL!*');
+    const datae = q.split("&")[0];
+    const datas = q.split("&")[1];
+    const title = q.split("&")[2] || 'audio';
+    
+    const botimgResponse = await fetch(datas);
+    const botimgBuffer = await botimgResponse.buffer();
+    const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
+
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      document: { url: datae },
+      jpegThumbnail: resizedBotImg,
+      caption: config.FOOTER || '',
+      mimetype: 'audio/mpeg',
+      fileName: `${title}.mp3`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) {
+    console.log(e);
+    reply('*Error sending document*');
+  }
+});
 
