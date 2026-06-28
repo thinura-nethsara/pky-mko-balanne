@@ -90,7 +90,7 @@ async (conn, mek, m, {
       };
 
       return await conn.sendMessage(from, {
-        image: imageBuffer || { url: 'https://mv-visper-full-db.pages.dev/Data/visper_main.jpeg' },
+        image: imageBuffer || { url: 'https://files.catbox.moe/f3nwkv.png' },
         caption,
         footer: config.FOOTER,
         buttons: [
@@ -115,7 +115,7 @@ async (conn, mek, m, {
       }));
 
       return await conn.buttonMessage2(from, {
-        image: { url: 'https://mv-visper-full-db.pages.de/Data/visper_main.jpeg' },
+        image: { url: 'https://files.catbox.moe/f3nwkv.png' },
         caption,
         footer: config.FOOTER,
        buttons,
