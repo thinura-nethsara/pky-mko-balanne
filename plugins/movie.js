@@ -241,8 +241,7 @@ cmd({
 \`🎭 ᴄᴀsᴛ:\`
 ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast available*'}
 
-*Reply Below Number 🔢*,
-*Available Qualities*`;
+*📝 Full Description :*\n${d.description || 'N/A'}`;
 
         // Download Options
         const downloadRows = d.download_links?.slice(0, 3).map((link) => ({
@@ -250,10 +249,6 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
             rowId: `${prefix}cdl ${encodeURIComponent(img || d.poster || '')}&${encodeURIComponent(link.final_link)}&${encodeURIComponent(d.title)}`
         })) || [];
 
-        downloadRows.push({
-            title: "GET INFO",
-            rowId: `${prefix}bdetails ${url}&${img || d.poster || ''}`
-        });
 
         const listMessage = {
             text: caption,
@@ -281,31 +276,12 @@ ${d.cast?.slice(0, 4).map(c => `*• ${c.name}*`).join('\n') || '*• No cast av
             sections: [{ title: "Download Options", rows: downloadRows }]
         }, mek);
 
-        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+        await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
 
     } catch (e) {
         console.log(e);
         await reply('❌ *Error fetching info!*');
     }
-});
-cmd({
-    pattern: "bdetails",
-    react: '📄',
-    dontAddCommandList: true,
-    filename: __filename
-}, async (conn, m, mek, { from, q }) => {
-    try {
-        const [url, img] = q.split("&");
-        let info = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/info?q=${encodeURIComponent(url)}&apiKey=50d7ce3f5137b97bc64d220a3f6a33ed`);
-        const d = info.data;
-
-        let fullMsg = `*☘️ Title :* ${d.title}\n\n*📝 Full Description :*\n${d.description || 'N/A'}`;
-
-        await conn.sendMessage(config.JID || from, {
-            image: { url: (img || d.poster || '').replace("-150x150", "") },
-            caption: fullMsg
-        });
-    } catch (e) {}
 });
 
 let isUploading = false;
@@ -327,7 +303,7 @@ cmd({
         const decodedImg = decodeURIComponent(img || '');
 
         await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-        await conn.sendMessage(from, { text: '*Fetching direct link & uploading...*' });
+        await conn.sendMessage(from, { text: '*Uploading Your Movie...*' });
 
         let dlData = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/dl?q=${encodeURIComponent(decodedLink)}&apiKey=50d7ce3f5137b97bc64d220a3f6a33ed`);
 
@@ -341,10 +317,10 @@ cmd({
             caption: `*🎬 ${decodedTitle}*\n\n${config.FOOTER || ''}`,
             mimetype: "video/mp4",
             jpegThumbnail: decodedImg ? await (await fetch(decodedImg.replace("-150x150", ""))).buffer().catch(() => null) : null,
-            fileName: `${decodedTitle}.mp4`
+            fileName: `🎬VISPER-MD🎬${decodedTitle}.mkv`
         });
 
-        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+        await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
         await reply(`*✅ Movie sent successfully!*`);
 
     } catch (e) {
