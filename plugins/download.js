@@ -1185,7 +1185,6 @@ async(conn, mek, m,{from, q, reply}) => {
 *└──────────────────╯*
 
 ${config.FOOTER}`
-
     // send info + footer
     await conn.sendMessage(from, { image: { url: data.icon }, caption: listdata }, { quoted: mek })
 
@@ -1208,130 +1207,116 @@ ${config.FOOTER}`
 })
 
 
-cmd({
-    pattern: "video",
-    alias: ["ytvideo"],
-    use: '.video lelena',
-    react: "📽️",
-      desc: "Download videoss",
-    category: "download",
-    filename: __filename
-},
 
-async(conn, mek, m,{from, prefix, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
-try{            
-    if (!q) return await reply('*Please enter a query or a url!*')
+
+
+              
+
+
+// ============================================================
+//  FULLY FIXED VIDEO DOWNLOADER (uses Mr Thinuzz API)
+//  All video/doc commands now use the new endpoint.
+// ============================================================
+
+// ---------- HELPER ----------
+async function getYTVideo(url, quality) {
+  // quality: '144','240','360','480','720','1080'
+  const apiUrl = `${config.YT_API_BASE}?url=${encodeURIComponent(url)}&quality=${quality}p&apiKey=${config.YT_API_KEY}`;
+  const res = await fetchJson(apiUrl);
+  if (!res.status) throw new Error('API error: ' + JSON.stringify(res));
+  return res.data; // { title, thumbnail, links: { video }, filename, ... }
+}
+
+// ---------- MAIN VIDEO COMMAND ----------
+cmd({
+  pattern: "video",
+  alias: ["ytvideo"],
+  use: '.video lelena',
+  react: "📽️",
+  desc: "Download videos",
+  category: "download",
+  filename: __filename
+},
+async (conn, mek, m, { from, prefix, q, reply }) => {
+  try {
+    if (!q) return await reply('*Please enter a query or a url!*');
     const url = q.replace(/\?si=[^&]*/, '');
-    var results = await yts(url);
-    let wm = config.FOOTER
-    var result = results.videos[0]
-     let caption = `*🎥 VISPER VIDEO DOWNLODER 🎥*
+    const results = await yts(url);
+    const result = results.videos[0];
+
+    const caption = `*🎥 VISPER VIDEO DOWNLOADER 🎥*
 *┌─────────────────────┐*
 *├ 📹 Title : ${result.title}* 
 *├ 🐼 Views : ${result.views}*
-*├ ⌛Duration : ${result.duration}*
+*├ ⌛ Duration : ${result.duration}*
 *├ 📎 URL : ${result.url}*
-*└─────────────────────┘*`
-const sections = [
-  {
-title: "`Video type 📽️`",
-rows: [{
-title: '*144p Video*',
-rowId: prefix + `videodl144 ${result.url}` 
-},
-{
-title: '*240p Video*',
-rowId: prefix + `videodl240 ${result.url}`
-},
-{
-title: '*360p Video*',
-rowId: prefix + `videodl360 ${result.url}`
-},
-{
-title: '*480p Video*',
-rowId: prefix + `videodl480 ${result.url}`
-},  
-{
-title: '*720p Video*',
-rowId: prefix + `videodl720 ${result.url}`
-},       
-{
-title: '*1080p Video*',
-rowId: prefix + `videodl1080 ${result.url}`
-}
-       
-]},  
+*└─────────────────────┘*`;
 
-{
-title: "`Document type 📁`",
-rows: [{
-title: '*144p Document*',
-rowId: prefix + `docdl144 ${result.url}&${result.thumbnail}&${result.title}`
-},
-{
-title: '*240p Document*',
-rowId: prefix + `docdl240 ${result.url}&${result.thumbnail}&${result.title}`
-},
-{
-title: '*360p Document*',
-rowId: prefix + `docdl360 ${result.url}&${result.thumbnail}&${result.title}`
-},
-{
-title: '*480p Document*',
-rowId: prefix + `docdl480 ${result.url}&${result.thumbnail}&${result.title}`
-},
-{
-title: '*720p Document*',
-rowId: prefix + `docdl720 ${result.url}&${result.thumbnail}&${result.title}`
-},       
-{
-title: '*1080p Document*',
-rowId: prefix + `docdl1080 ${result.url}&${result.thumbnail}&${result.title}`
-}
-       
-]}  	
-]
-const listMessage = {
-text: caption,
-image: {url: result.thumbnail },	
-footer: config.FOOTER,
-title: '',
-buttonText: '*🔢 Reply below number*\n',
-sections
-}
+    const sections = [
+      {
+        title: "`Video type 📽️`",
+        rows: [
+          { title: '*144p Video*', rowId: prefix + `videodl144 ${result.url}` },
+          { title: '*240p Video*', rowId: prefix + `videodl240 ${result.url}` },
+          { title: '*360p Video*', rowId: prefix + `videodl360 ${result.url}` },
+          { title: '*480p Video*', rowId: prefix + `videodl480 ${result.url}` },
+          { title: '*720p Video*', rowId: prefix + `videodl720 ${result.url}` },
+          { title: '*1080p Video*', rowId: prefix + `videodl1080 ${result.url}` }
+        ]
+      },
+      {
+        title: "`Document type 📁`",
+        rows: [
+          { title: '*144p Document*', rowId: prefix + `docdl144 ${result.url}` },
+          { title: '*240p Document*', rowId: prefix + `docdl240 ${result.url}` },
+          { title: '*360p Document*', rowId: prefix + `docdl360 ${result.url}` },
+          { title: '*480p Document*', rowId: prefix + `docdl480 ${result.url}` },
+          { title: '*720p Document*', rowId: prefix + `docdl720 ${result.url}` },
+          { title: '*1080p Document*', rowId: prefix + `docdl1080 ${result.url}` }
+        ]
+      }
+    ];
 
-const listButtons = {
-  title: "❯❯ Choose a video quality ❮❮",
-  sections: [
-    {
-      title: "Video Type 📽️",
-      rows: [
-        { title: "144p Video", "description":"144p quality download", id: prefix + `videodl144 ${result.url}` },
-        { title: "240p Video",  "description":"240p quality download",id: prefix + `videodl240 ${result.url}` },
-        { title: "360p Video", "description":"360p quality download", id: prefix + `videodl360 ${result.url}` },
-		 { title: "720p Video", "description":"720p quality download",id: prefix + `videodl720 ${result.url}` },
-        { title: "480p Video", "description":"480p quality download",id: prefix + `videodl480 ${result.url}` },
-        { title: "1080p Video","description":"1080p quality download", id: prefix + `videodl1080 ${result.url}` }
+    const listMessage = {
+      text: caption,
+      image: { url: result.thumbnail },
+      footer: config.FOOTER,
+      title: '',
+      buttonText: '*🔢 Reply below number*\n',
+      sections
+    };
+
+    const listButtons = {
+      title: "❯❯ Choose a video quality ❮❮",
+      sections: [
+        {
+          title: "Video Type 📽️",
+          rows: [
+            { title: "144p Video", description: "144p quality download", id: prefix + `videodl144 ${result.url}` },
+            { title: "240p Video", description: "240p quality download", id: prefix + `videodl240 ${result.url}` },
+            { title: "360p Video", description: "360p quality download", id: prefix + `videodl360 ${result.url}` },
+            { title: "480p Video", description: "480p quality download", id: prefix + `videodl480 ${result.url}` },
+            { title: "720p Video", description: "720p quality download", id: prefix + `videodl720 ${result.url}` },
+            { title: "1080p Video", description: "1080p quality download", id: prefix + `videodl1080 ${result.url}` }
+          ]
+        },
+        {
+          title: "Document Type 📁",
+          rows: [
+            { title: "144p Document", description: "144p quality download", id: prefix + `docdl144 ${result.url}` },
+            { title: "240p Document", description: "240p quality download", id: prefix + `docdl240 ${result.url}` },
+            { title: "360p Document", description: "360p quality download", id: prefix + `docdl360 ${result.url}` },
+            { title: "480p Document", description: "480p quality download", id: prefix + `docdl480 ${result.url}` },
+            { title: "720p Document", description: "720p quality download", id: prefix + `docdl720 ${result.url}` },
+            { title: "1080p Document", description: "1080p quality download", id: prefix + `docdl1080 ${result.url}` }
+          ]
+        }
       ]
-    },
-    {
-      title: "Document Type 📁",
-      rows: [
-        { title: "144p Document","description":"144p quality download", id: prefix + `docdl144 ${result.url}&${result.thumbnail}&${result.title}` },
-        { title: "240p Document", "description":"240p quality download",id: prefix + `docdl240 ${result.url}&${result.thumbnail}&${result.title}` },
-        { title: "360p Document","description":"360p quality download", id: prefix + `docdl360 ${result.url}&${result.thumbnail}&${result.title}` },
-		 { title: "480p Document", "description":"480p quality download",id: prefix + `docdl480 ${result.url}&${result.thumbnail}&${result.title}` },
-        { title: "720p Document", "description":"720p quality download",id: prefix + `docdl720 ${result.url}&${result.thumbnail}&${result.title}` },
-        { title: "1080p Document","description":"1080p quality download", id: prefix + `docdl1080 ${result.url}&${result.thumbnail}&${result.title}` }
-      ]
-    }
-  ]
-};
+    };
 
-    // Sending logic based on config.BUTTON
     if (config.BUTTON === "true") {
       return await conn.sendMessage(from, {
-        image: {url: result.thumbnail },
+        image: { url: result.thumbnail },
         caption,
         footer: config.FOOTER,
         buttons: [
@@ -1348,501 +1333,224 @@ const listButtons = {
         headerType: 1,
         viewOnce: true
       }, { quoted: mek });
-
-} else if (config.BUTTON === 'false') {
-   await conn.listMessage4(from, listMessage,mek)
-}
-
-	
-
-} catch (e) {
-reply('*Error !!*')
-l(e)
-}
-})
-
-cmd({
-    pattern: "docdl144",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-async (conn, mek, m, { from, q, reply }) => {
-    try {
-        if (!q) return await reply('*Need a YouTube URL!*');
-
-        const parts = q.split("&");
-        const url = parts[0];
-        const thumbUrl = parts[1];
-        const title = parts[2] || 'video';
-
-        // Fetch and resize the thumbnail
-        const botimgResponse = await fetch(thumbUrl);
-        const botimgBuffer = await botimgResponse.buffer();
-
-        // Resize function must be defined elsewhere in your codebase
-        const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
-
-        // Fetch the video download information
-        const prog = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${url}&format=144`);
-
-    
-        const videoUrl = prog.result.download;
-
-        // React with upload emoji
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        // Send video as document
-        await conn.sendMessage(from, {
-            document: { url: videoUrl },
-            jpegThumbnail: resizedBotImg,
-            caption: '`144p`\n' + config?.FOOTER || '',
-            mimetype: 'video/mp4',
-            fileName: `${prog.result.title || title}.mp4`
-        }, { quoted: mek });
-
-        // React with check mark
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-
-    } catch (e) {
-        console.error(e);
-        await reply('*An error occurred while processing your request.*');
+    } else {
+      await conn.listMessage4(from, listMessage, mek);
     }
+
+  } catch (e) {
+    reply('*Error !!*');
+    console.log(e);
+  }
 });
 
-
-
-cmd({
-    pattern: "docdl240",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
+// ---------- VIDEO DOWNLOADS (all qualities) ----------
+cmd({ pattern: "videodl144", react: "⬇️", dontAddCommandList: true, filename: __filename },
 async (conn, mek, m, { from, q, reply }) => {
-    try {
-        if (!q) return await reply('*Need a YouTube URL!*');
-
-        const parts = q.split("&");
-        const url = parts[0];
-        const thumbUrl = parts[1];
-        const title = parts[2] || 'video';
-
-        // Fetch and resize the thumbnail
-        const botimgResponse = await fetch(thumbUrl);
-        const botimgBuffer = await botimgResponse.buffer();
-
-        // Resize function must be defined elsewhere in your codebase
-        const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
-
-        // Fetch the video download information
-        const prog = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${url}&format=240`);
-
-        const videoUrl = prog.url;
-
-        // React with upload emoji
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        // Send video as document
-        await conn.sendMessage(from, {
-            document: { url: videoUrl },
-            jpegThumbnail: resizedBotImg,
-            caption: '`240p`\n' + config?.FOOTER || '',
-            mimetype: 'video/mp4',
-            fileName: `${prog.result.title || title}.mp4`
-        }, { quoted: mek });
-
-        // React with check mark
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-
-    } catch (e) {
-        console.error(e);
-        await reply('*An error occurred while processing your request.*');
-    }
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '144');
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      video: { url: data.links.video },
+      caption: `${data.title}\n144p\n\n${config.FOOTER || ''}`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
 });
 
-
-
-cmd({
-    pattern: "docdl360",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
+cmd({ pattern: "videodl240", react: "⬇️", dontAddCommandList: true, filename: __filename },
 async (conn, mek, m, { from, q, reply }) => {
-    try {
-        if (!q) return await reply('*Need a YouTube URL!*');
-
-        const parts = q.split("&");
-        const url = parts[0];
-        const thumbUrl = parts[1];
-        const title = parts[2] || 'video';
-
-        // Fetch and resize the thumbnail
-        const botimgResponse = await fetch(thumbUrl);
-        const botimgBuffer = await botimgResponse.buffer();
-
-        // Resize function must be defined elsewhere in your codebase
-        const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
-
-        // Fetch the video download information
-        const prog = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${url}&format=360`);
-
-    
-        const videoUrl = prog.url;
-
-        // React with upload emoji
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        // Send video as document
-        await conn.sendMessage(from, {
-            document: { url: videoUrl },
-            jpegThumbnail: resizedBotImg,
-            caption: '`360p`\n' + config?.FOOTER || '',
-            mimetype: 'video/mp4',
-            fileName: `${prog.result.title || title}.mp4`
-        }, { quoted: mek });
-
-        // React with check mark
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-
-    } catch (e) {
-        console.error(e);
-        await reply('*An error occurred while processing your request.*');
-    }
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '240');
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      video: { url: data.links.video },
+      caption: `${data.title}\n240p\n\n${config.FOOTER || ''}`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
 });
 
-cmd({
-    pattern: "docdl480",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-    async (conn, mek, m, { from, q, reply }) => {
-try {
-           if (!q) return await reply('*Need a youtube url!*')
-	        const parts = q.split("&");
-        const url = parts[0];
-        const thumbUrl = parts[1];
-        const title = parts[2] || 'video';
-
-        // Fetch and resize the thumbnail
-        const botimgResponse = await fetch(thumbUrl);
-        const botimgBuffer = await botimgResponse.buffer();
-
-        // Resize function must be defined elsewhere in your codebase
-        const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
-
-        // Fetch the video download information
-        const prog = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${url}&format=480`);
-
-    
-        const videoUrl = prog.url;
-
-        // React with upload emoji
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        // Send video as document
-        await conn.sendMessage(from, {
-            document: { url: videoUrl },
-            jpegThumbnail: resizedBotImg,
-            caption: '`480p`\n' + config?.FOOTER || '',
-            mimetype: 'video/mp4',
-            fileName: `${prog.result.title || title}.mp4`
-        }, { quoted: mek });
-
-        // React with check mark
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-} catch (e) {
-	       console.log(e)
-        }
-    })
-
-cmd({
-    pattern: "docdl720",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-    async (conn, mek, m, { from, q, reply }) => {
-try {
-           if (!q) return await reply('*Need a youtube url!*')
-	        const parts = q.split("&");
-        const url = parts[0];
-        const thumbUrl = parts[1];
-        const title = parts[2] || 'video';
-
-        // Fetch and resize the thumbnail
-        const botimgResponse = await fetch(thumbUrl);
-        const botimgBuffer = await botimgResponse.buffer();
-
-        // Resize function must be defined elsewhere in your codebase
-        const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
-
-        // Fetch the video download information
-        const prog = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${url}&format=720`);
-
-    
-        const videoUrl = prog.url;
-
-        // React with upload emoji
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        // Send video as document
-        await conn.sendMessage(from, {
-            document: { url: videoUrl },
-            jpegThumbnail: resizedBotImg,
-            caption: '`720p`\n' + config?.FOOTER || '',
-            mimetype: 'video/mp4',
-            fileName: `${prog.result.title || title}.mp4`
-        }, { quoted: mek });
-
-        // React with check mark
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-} catch (e) {
-	       console.log(e)
-        }
-    })
-
-
-
-cmd({
-    pattern: "docdl1080",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-    async (conn, mek, m, { from, q, reply }) => {
-try {
-           if (!q) return await reply('*Need a youtube url!*')
-	
-                 const parts = q.split("&");
-        const url = parts[0];
-        const thumbUrl = parts[1];
-        const title = parts[2] || 'video';
-
-        // Fetch and resize the thumbnail
-        const botimgResponse = await fetch(thumbUrl);
-        const botimgBuffer = await botimgResponse.buffer();
-
-        // Resize function must be defined elsewhere in your codebase
-        const resizedBotImg = await resizeImage(botimgBuffer, 200, 200);
-
-        // Fetch the video download information
-        const prog = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${url}&format=1080`);
-
-    
-        const videoUrl = prog.url;
-
-        // React with upload emoji
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        // Send video as document
-        await conn.sendMessage(from, {
-            document: { url: videoUrl },
-            jpegThumbnail: resizedBotImg,
-            caption: '`1080p`\n' + config?.FOOTER || '',
-            mimetype: 'video/mp4',
-            fileName: `${prog.result.title || title}.mp4`
-        }, { quoted: mek });
-
-        // React with check mark
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-} catch (e) {
-	       console.log(e)
-        }
-    })
-
-
-
-
-cmd({
-    pattern: "videodl144",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
+cmd({ pattern: "videodl360", react: "⬇️", dontAddCommandList: true, filename: __filename },
 async (conn, mek, m, { from, q, reply }) => {
-    try {
-        if (!q) return await reply('*You must provide a YouTube URL!*');
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '360');
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      video: { url: data.links.video },
+      caption: `${data.title}\n360p\n\n${config.FOOTER || ''}`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
+});
 
-        const res = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${q}&format=144`);
-        
+cmd({ pattern: "videodl480", react: "⬇️", dontAddCommandList: true, filename: __filename },
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '480');
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      video: { url: data.links.video },
+      caption: `${data.title}\n480p\n\n${config.FOOTER || ''}`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
+});
 
-     
-        const videoUrl = res.result.download;
+cmd({ pattern: "videodl720", react: "⬇️", dontAddCommandList: true, filename: __filename },
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '720');
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      video: { url: data.links.video },
+      caption: `${data.title}\n720p\n\n${config.FOOTER || ''}`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
+});
 
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+cmd({ pattern: "videodl1080", react: "⬇️", dontAddCommandList: true, filename: __filename },
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '1080');
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      video: { url: data.links.video },
+      caption: `${data.title}\n1080p\n\n${config.FOOTER || ''}`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
+});
 
-        await conn.sendMessage(from, {
-            video: { url: videoUrl },
-            caption: res.result.title + '\n`144p`' + `\n\n${config.FOOTER}` || 'Downloaded Video'
-        }, { quoted: mek });
+// ---------- DOCUMENT DOWNLOADS (all qualities) ----------
+cmd({ pattern: "docdl144", react: "⬇️", dontAddCommandList: true, filename: __filename },
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '144');
+    const thumbBuf = await fetch(data.thumbnail).then(r => r.buffer());
+    const resized = await resizeImage(thumbBuf, 200, 200);
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      document: { url: data.links.video },
+      jpegThumbnail: resized,
+      caption: `144p\n${config.FOOTER || ''}`,
+      mimetype: 'video/mp4',
+      fileName: `${data.filename || data.title}.mp4`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
+});
 
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+cmd({ pattern: "docdl240", react: "⬇️", dontAddCommandList: true, filename: __filename },
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '240');
+    const thumbBuf = await fetch(data.thumbnail).then(r => r.buffer());
+    const resized = await resizeImage(thumbBuf, 200, 200);
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      document: { url: data.links.video },
+      jpegThumbnail: resized,
+      caption: `240p\n${config.FOOTER || ''}`,
+      mimetype: 'video/mp4',
+      fileName: `${data.filename || data.title}.mp4`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
+});
 
-    } catch (e) {
-        console.error(e);
-        await reply('*An error occurred while downloading the video.*');
-    }
+cmd({ pattern: "docdl360", react: "⬇️", dontAddCommandList: true, filename: __filename },
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '360');
+    const thumbBuf = await fetch(data.thumbnail).then(r => r.buffer());
+    const resized = await resizeImage(thumbBuf, 200, 200);
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      document: { url: data.links.video },
+      jpegThumbnail: resized,
+      caption: `360p\n${config.FOOTER || ''}`,
+      mimetype: 'video/mp4',
+      fileName: `${data.filename || data.title}.mp4`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
+});
+
+cmd({ pattern: "docdl480", react: "⬇️", dontAddCommandList: true, filename: __filename },
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '480');
+    const thumbBuf = await fetch(data.thumbnail).then(r => r.buffer());
+    const resized = await resizeImage(thumbBuf, 200, 200);
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      document: { url: data.links.video },
+      jpegThumbnail: resized,
+      caption: `480p\n${config.FOOTER || ''}`,
+      mimetype: 'video/mp4',
+      fileName: `${data.filename || data.title}.mp4`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
+});
+
+cmd({ pattern: "docdl720", react: "⬇️", dontAddCommandList: true, filename: __filename },
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '720');
+    const thumbBuf = await fetch(data.thumbnail).then(r => r.buffer());
+    const resized = await resizeImage(thumbBuf, 200, 200);
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      document: { url: data.links.video },
+      jpegThumbnail: resized,
+      caption: `720p\n${config.FOOTER || ''}`,
+      mimetype: 'video/mp4',
+      fileName: `${data.filename || data.title}.mp4`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
+});
+
+cmd({ pattern: "docdl1080", react: "⬇️", dontAddCommandList: true, filename: __filename },
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*URL required*');
+    const data = await getYTVideo(q, '1080');
+    const thumbBuf = await fetch(data.thumbnail).then(r => r.buffer());
+    const resized = await resizeImage(thumbBuf, 200, 200);
+    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    await conn.sendMessage(from, {
+      document: { url: data.links.video },
+      jpegThumbnail: resized,
+      caption: `1080p\n${config.FOOTER || ''}`,
+      mimetype: 'video/mp4',
+      fileName: `${data.filename || data.title}.mp4`
+    }, { quoted: mek });
+    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+  } catch (e) { console.error(e); reply('*Error*'); }
 });
 
 
 
 
-cmd({
-    pattern: "videodl240",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-
-    async (conn, mek, m, { from, q, reply }) => {
-        try {
-           const res = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${q}&format=240`);
-        
-
-     
-        const videoUrl = res.result.download;
-
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        await conn.sendMessage(from, {
-            video: { url: videoUrl },
-            caption: res.result.title + '\n`240p`' + `\n\n${config.FOOTER}` || 'Downloaded Video'
-        }, { quoted: mek });
-
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-
-        } catch (e) {
-            reply('*Error !!*')
-            console.log(e)
-        }
-    })
 
 
 
-cmd({
-    pattern: "videodl360",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-
-    async (conn, mek, m, { from, q, reply }) => {
-        try {
-           const res = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${q}&format=360`);
-        
-
-     
-        const videoUrl = res.result.download;
-
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        await conn.sendMessage(from, {
-            video: { url: videoUrl },
-            caption: res.result.title + '\n`360p`' + `\n\n${config.FOOTER}`|| 'Downloaded Video'
-        }, { quoted: mek });
-
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-
-        } catch (e) {
-            reply('*Error !!*')
-            console.log(e)
-        }
-    })
-
-cmd({
-    pattern: "videodl480",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-
-    async (conn, mek, m, { from, q, reply }) => {
-        try {
-           const res = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${q}&format=480`);
-        
-
-     
-        const videoUrl = res.result.download;
-
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        await conn.sendMessage(from, {
-            video: { url: videoUrl },
-            caption: res.result.title + '\n`480p`' + `\n\n${config.FOOTER}`|| 'Downloaded Video'
-        }, { quoted: mek });
-
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-
-        } catch (e) {
-            reply('*Error !!*')
-            console.log(e)
-        }
-    })
 
 
-cmd({
-    pattern: "videodl720",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-
-    async (conn, mek, m, { from, q, reply }) => {
-        try {
-          const res = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${q}&format=720`);
-        
-
-     
-        const videoUrl = res.result.download;
-
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        await conn.sendMessage(from, {
-            video: { url: videoUrl },
-            caption: res.result.title + '\n`720p`' + `\n\n${config.FOOTER}`|| 'Downloaded Video'
-        }, { quoted: mek });
-
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-
-        } catch (e) {
-            reply('*Error !!*')
-            console.log(e)
-        }
-    })
-
-
-
-cmd({
-    pattern: "videodl1080",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-
-    async (conn, mek, m, { from, q, reply }) => {
-        try {
-           const res = await fetchJson(`https://tharuzz-ofc-api-v3.vercel.app/api/ytdl/yt?url=${q}&format=1080`);
-        
-
-     
-        const videoUrl = res.result.download;
-
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-
-        await conn.sendMessage(from, {
-            video: { url: videoUrl },
-            caption: res.result.title + '\n`1080p`' + `\n\n${config.FOOTER}`|| 'Downloaded Video'
-        }, { quoted: mek });
-
-        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
-
-        } catch (e) {
-            reply('*Error !!*')
-            console.log(e)
-        }
-    })
 
 
 
