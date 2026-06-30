@@ -332,3 +332,223 @@ cmd({
 });
             
 
+
+
+// ======================================================================
+//                      MOVIEPRO PLUGIN (Full Browser)
+// ======================================================================
+
+// -------------------- MOVIEPRO SEARCH --------------------
+cmd({
+    pattern: "moviepro",
+    alias: ["mp", "mpro"],
+    react: "🎬",
+    category: "movie",
+    desc: "Search movies using MoviePro API",
+    use: ".moviepro avengers",
+    filename: __filename
+}, async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) => {
+    try {
+        if (!q) return await reply('*Please enter a movie name!*');
+
+        // Premium & block checks
+        const pr = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
+        const isFree = pr.mvfree === "true";
+        if (!isFree && !isMe && !isPre) {
+            await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
+            return await reply("*`You are not a premium user⚠️`*\n\n*Send a message to one of the 2 numbers below and buy Lifetime premium 🎉.*\n\n_Price : 200 LKR_\n\n*Contact : 0778500326 , 0722617699*");
+        }
+        if (config.MV_BLOCK == "true" && !isMe && !isSudo && !isOwner) {
+            return await reply("*This command currently only works for the Bot owner.*");
+        }
+
+        await conn.sendMessage(from, { react: { text: '🔎', key: mek.key } });
+
+        const searchUrl = `https://mr-thinuzz-api-build.vercel.app/api/moviepro/search?keyword=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
+        const searchRes = await fetchJson(searchUrl);
+
+        if (!searchRes?.status || !searchRes?.results?.length) {
+            await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
+            return await reply('*No movies found for that query.*');
+        }
+
+        const results = searchRes.results.slice(0, 10);
+        const rows = results.map(movie => ({
+            title: `${movie.title} ${movie.rating > 0 ? `⭐ ${movie.rating}` : ''}`.substring(0, 60),
+            rowId: `${prefix}mpinfo ${encodeURIComponent(movie.id)}`
+        }));
+
+        const caption = `*🎬 MOVIEPRO SEARCH RESULTS*\n\n*Query:* ${q}\n*Found:* ${results.length} movies`;
+
+        if (config.BUTTON === "true") {
+            const listButtons = {
+                title: "🎥 Select a Movie",
+                sections: [{ title: "Results", rows: rows.map(r => ({ title: r.title, id: r.rowId })) }]
+            };
+            await conn.sendMessage(from, {
+                image: { url: config.LOGO },
+                caption: caption,
+                footer: config.FOOTER,
+                buttons: [{
+                    buttonId: "list",
+                    buttonText: { displayText: "Select Movie" },
+                    type: 4,
+                    nativeFlowInfo: { name: "single_select", paramsJson: JSON.stringify(listButtons) }
+                }],
+                headerType: 1
+            }, { quoted: mek });
+        } else {
+            const listMessage = {
+                text: caption,
+                footer: config.FOOTER,
+                title: "Movies",
+                buttonText: "*Reply Below Number 🔢*",
+                sections: [{ title: "Available Movies", rows }]
+            };
+            await conn.listMessage(from, listMessage, mek);
+        }
+
+        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+
+    } catch (e) {
+        console.error(e);
+        await reply('❌ *Error searching movies!*');
+    }
+});
+
+// -------------------- MOVIEPRO INFO + QUALITIES --------------------
+cmd({
+    pattern: "mpinfo",
+    react: "📋",
+    dontAddCommandList: true,
+    filename: __filename
+}, async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        if (!q) return await reply('*Invalid movie ID!*');
+
+        const movieId = decodeURIComponent(q);
+        const infoUrl = `https://mr-thinuzz-api-build.vercel.app/api/moviepro/info?id=${encodeURIComponent(movieId)}&apiKey=key_4797e0dcedd66cca`;
+        const info = await fetchJson(infoUrl);
+
+        if (!info?.status || !info?.movie) {
+            return await reply('*Failed to fetch movie details!*');
+        }
+
+        const movie = info.movie;
+        const downloadLinks = info.download_links || [];
+
+        // Send movie poster + details
+        const poster = movie.image || config.LOGO;
+        const caption = `*🎬 ${movie.title}*\n\n` +
+                        `📅 *Release:* ${movie.releaseDate || 'N/A'}\n` +
+                        `🎭 *Genre:* ${movie.genre?.join(', ') || 'N/A'}\n` +
+                        `🌍 *Country:* ${movie.country || 'N/A'}\n` +
+                        `⭐ *IMDb:* ${movie.imdbRating || 'N/A'}\n\n` +
+                        `_Select a quality below to download._`;
+
+        await conn.sendMessage(from, {
+            image: { url: poster },
+            caption: caption,
+            footer: config.FOOTER
+        }, { quoted: mek });
+
+        if (downloadLinks.length === 0) {
+            await conn.sendMessage(from, { react: { text: '⚠️', key: mek.key } });
+            return await reply('*No download links available for this movie.*');
+        }
+
+        // Build quality rows
+        const rows = downloadLinks.map(link => ({
+            title: `${link.quality} (${link.size})`,
+            rowId: `${prefix}mpdl ${encodeURIComponent(link.original_url)}&${encodeURIComponent(movie.title)}&${encodeURIComponent(poster)}&${encodeURIComponent(link.quality)}`
+        }));
+
+        const listMessage = {
+            text: `*${movie.title}* - Available qualities:`,
+            footer: config.FOOTER,
+            title: "Download Options",
+            buttonText: "*Reply Below Number 🔢*",
+            sections: [{ title: "Qualities", rows }]
+        };
+
+        if (config.BUTTON === "true") {
+            const listButtons = {
+                title: "⬇️ Choose Quality",
+                sections: [{ title: "Qualities", rows: rows.map(r => ({ title: r.title, id: r.rowId })) }]
+            };
+            await conn.sendMessage(from, {
+                image: { url: poster },
+                caption: `*${movie.title}* - Available qualities:`,
+                footer: config.FOOTER,
+                buttons: [{
+                    buttonId: "list",
+                    buttonText: { displayText: "Select Quality" },
+                    type: 4,
+                    nativeFlowInfo: { name: "single_select", paramsJson: JSON.stringify(listButtons) }
+                }],
+                headerType: 1
+            }, { quoted: mek });
+        } else {
+            await conn.listMessage(from, listMessage, mek);
+        }
+
+        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+
+    } catch (e) {
+        console.error(e);
+        await reply('❌ *Error fetching movie details!*');
+    }
+});
+
+// -------------------- MOVIEPRO DOWNLOAD --------------------
+let isMovieUploading = false;
+
+cmd({
+    pattern: "mpdl",
+    react: "⬇️",
+    dontAddCommandList: true,
+    filename: __filename
+}, async (conn, m, mek, { from, q, reply }) => {
+    if (isMovieUploading) return await reply('*A movie is already being uploaded. Please wait...* ⏳');
+
+    try {
+        isMovieUploading = true;
+
+        const [encodedUrl, encodedTitle, encodedPoster, quality] = q.split("&");
+        const url = decodeURIComponent(encodedUrl);
+        const title = decodeURIComponent(encodedTitle || 'Movie');
+        const poster = decodeURIComponent(encodedPoster || '');
+        const qlty = decodeURIComponent(quality || '');
+
+        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+        await conn.sendMessage(from, { text: '*Fetching download link...*' });
+
+        // Prepare thumbnail
+        let thumb = null;
+        if (poster) {
+            try {
+                const imgRes = await axios.get(poster, { responseType: 'arraybuffer', timeout: 15000 });
+                thumb = await sharp(imgRes.data).resize(320, 320).jpeg({ quality: 70 }).toBuffer();
+            } catch (e) { console.warn('Thumb error:', e.message); }
+        }
+
+        const fileName = `🎬${config.TITLE}${title.replace(/[^\w\s]/g, '').substring(0, 40)}.mp4`;
+
+        await conn.sendMessage(config.JID || from, {
+            document: { url: url },
+            mimetype: 'video/mp4',
+            fileName: fileName,
+            caption: `*🎬 𝗧ɪᴛʟᴇ : ${title}*\n\n\`[${qlty}]\`\n\n${config.FOOTER || ''}`,
+            jpegThumbnail: thumb
+        });
+
+        await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
+        await reply(`*☑️ Movie sent successfully!*\n\n > *Download by VISPER MD*`);
+
+    } catch (e) {
+        console.error(e);
+        await reply(`*Error while downloading:* ${e.message}`);
+    } finally {
+        isMovieUploading = false;
+    }
+});
