@@ -1149,8 +1149,6 @@ async (conn, m, mek, { from, q, reply }) => {
 
         const movie = res.data;
 
-       
-
         let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title}_*
 
 *▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗗𝗮𝘁𝗲 ➮* _${movie.releaseDate || "N/A"}_
@@ -1161,49 +1159,33 @@ async (conn, m, mek, { from, q, reply }) => {
 *▫🗳️ 𝗩𝗼𝘁𝗲𝘀 ➮* _${movie.ratingCount || "0"}_
 
 *▫🎭 𝗚𝗲𝗻𝗿𝗲 ➮*
-${movie.genres?.map(g => `• ${g}`).join('\n') || "N/A"}\n⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛\n🪀Follow us : https://whatsapp.com/channel/0029Vb8NvTj5K3zbmo1MCo35\n⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛\n${config.NAME}`;
+${movie.genres?.map(g => `• ${g}`).join('\n') || "N/A"}
 
-        await conn.sendMessage(config.JID || from, {
-            image: { url: movie.imageUrl },
-            caption: msg
-        }, { quoted: mek });
+⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛
+🪀Follow us : https://whatsapp.com/channel/0029Vb8NvTj5K3zbmo1MCo35
+⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛
+
+${config.NAME}`;
+
+        await conn.sendMessage(
+            config.JID || from,
+            {
+                image: { url: movie.imageUrl },
+                caption: msg
+            },
+            { quoted: mek }
+        );
 
     } catch (error) {
         console.error('Error:', error);
-        await conn.sendMessage(from, {
-            text: '⚠️ *An error occurred while fetching details.*'
-        }, { quoted: mek });
-    }
-});onent(finalLink);
-        const decodedTitle = decodeURIComponent(title || 'Movie');
-        const decodedImg = decodeURIComponent(img || '');
 
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-        await conn.sendMessage(from, { text: '*Uploading Your Movie...*' });
-
-        let dlData = await fetchJson(`https://apis.sadas.dev/api/v1/movie/cinesubz/dl?q=${encodeURIComponent(decodedLink)}&apiKey=50d7ce3f5137b97bc64d220a3f6a33ed`);
-
-        let directUrl = decodedLink;
-        if (dlData?.status && dlData?.data?.links?.length > 0) {
-            directUrl = dlData.data.links[0];
-        }
-
-        await conn.sendMessage(config.JID || from, {
-            document: { url: directUrl },
-            caption: `*🎬 ${decodedTitle}*\n\n${config.FOOTER || ''}`,
-            mimetype: "video/mp4",
-            jpegThumbnail: decodedImg ? await (await fetch(decodedImg.replace("-150x150", ""))).buffer().catch(() => null) : null,
-            fileName: `🎬VISPER-MD🎬${decodedTitle}.mkv`
-        });
-
-        await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
-        await reply(`*✅ Movie sent successfully!*`);
-
-    } catch (e) {
-        console.error(e);
-        await reply('*Error while processing download!*');
-    } finally {
-        isUploading = false;
+        await conn.sendMessage(
+            from,
+            {
+                text: '⚠️ *An error occurred while fetching details.*'
+            },
+            { quoted: mek }
+        );
     }
 });
             
