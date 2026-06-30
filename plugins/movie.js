@@ -207,9 +207,10 @@ try {
 
     const sources = [
       { name: "CINESUBZ", cmd: "cine" },
+	{name: "CINESUBZTV", cmd: "cinetv" },
       { name: "SINHALASUB", cmd: "sinhalasub" },
       { name: "SUBLK", cmd: "sublk" },
-       { name: "MOVIEPRO", cmd: "mp" }
+       { name: "MOVIEPRO", cmd: "moviepro" }
 		
 	 
     ];
@@ -341,8 +342,6 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 *▫💃 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.imdb_rating}_
 *▫⏰ 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality}_
 *▫🎭 𝗖𝗮𝘀𝘁 ➮* ${movie.cast?.slice(0, 5).map(c => `• ${c.name} (${c.role})`).join('\n') || "N/A"}
-
-
 *▫🕵️‍♀️ 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻 ➮* _${movie.description?.slice(0, 300) || "No description"}..._`;
 
         let buttons = [];
@@ -441,7 +440,7 @@ if (thumbUrl) {
         await conn.sendMessage(from, {
             document: { url: directLink },
             mimetype: 'video/mp4',
-            fileName: `🎬𝕲𝖔𝖑𝖉𝖊𝖓 𝕾𝖈𝖗𝖊𝖊𝖓🎬${movieName}.mp4`,
+            fileName: `📽️𝘝𝘐𝘚𝘗𝘌𝘙-𝘔𝘋📽️${movieName}.mp4`,
             jpegThumbnail: thumb,
             caption: `*🎬 ${movieName}*\n\n*\`${quality || res.data.size}\`*\n\n${config.NAME}`
         }, { quoted: mek });
@@ -642,7 +641,7 @@ const direct_link = original_link.replace("/u/", "/api/file/")
         await conn.sendMessage(from, { 
             document: { url: direct_link }, 
             mimetype: 'video/mp4',
-            fileName: `🎬𝕲𝖔𝖑𝖉𝖊𝖓 𝕾𝖈𝖗𝖊𝖊𝖓🎬 ${movieName}.mp4`,
+            fileName: `📽️𝘝𝘐𝘚𝘗𝘌𝘙-𝘔𝘋📽️ ${movieName}.mp4`,
             caption: `*🎬 Name :* *${movieName}*\n\n*\`${quality}\`*\n\n${config.NAME}`,
             jpegThumbnail: await (await fetch(thumbUrl.trim())).buffer(),
         }, { quoted: mek });
@@ -1190,223 +1189,404 @@ ${config.NAME}`;
 });
             
 
+//••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
+let isUploadingTv = false;
+const API_KEY = 'key_13be1374312cdd0a';   // new API key
+const BASE_URL = 'https://mr-thinuzz-api-build.vercel.app/api/cinesubz';
 
-// ======================================================================
-//                      MOVIEPRO PLUGIN (Full Browser)
-// ======================================================================
-
-// -------------------- MOVIEPRO SEARCH --------------------
-cmd({
-    pattern: "moviepro",
-    alias: ["mp", "mpro"],
-    react: "🎬",
-    category: "movie",
-    desc: "Search movies using MoviePro API",
-    use: ".moviepro avengers",
-    filename: __filename
-}, async (conn, m, mek, { from, q, prefix, isMe, isPre, isSudo, isOwner, reply }) => {
+async function getResizedThumb(url) {
     try {
-        if (!q) return await reply('*Please enter a movie name!*');
+        const response = await axios.get(url, { responseType: 'arraybuffer' });
+        const buffer = Buffer.from(response.data, 'binary');
+        return await sharp(buffer)
+            .resize(200, 200, { fit: 'cover' }) 
+            .jpeg({ quality: 80 }) 
+            .toBuffer();
+    } catch (e) {
+        console.error("Sharp Error:", e.message);
+        return null;
+    }
+}
 
-        // Premium & block checks
-        const pr = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
-        const isFree = pr.mvfree === "true";
-        if (!isFree && !isMe && !isPre) {
-            await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
-            return await reply("*`You are not a premium user⚠️`*\n\n*Send a message to one of the 2 numbers below and buy Lifetime premium 🎉.*\n\n_Price : 200 LKR_\n\n*Contact : 0778500326 , 0722617699*");
+// ==================== 1. TV SERIES SEARCH ====================
+cmd({
+    pattern: "cinetv",
+    react: '🔎',
+    category: "tv",
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        if (!q) return await reply('*Please enter a TV series name! 📺*');
+
+        // new search endpoint
+        const searchUrl = `${BASE_URL}/search?query=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+        const { data } = await axios.get(searchUrl, { timeout: 30000 });
+
+        if (!data?.status || !data?.data?.all?.length) {
+            return await reply('*No results found ❌*');
         }
-        if (config.MV_BLOCK == "true" && !isMe && !isSudo && !isOwner) {
-            return await reply("*This command currently only works for the Bot owner.*");
+
+        // filter only TV series (type === 'TV')
+        const tvShows = data.data.all.filter(item => item.type === 'TV');
+        if (tvShows.length === 0) {
+            return await reply('*No TV series found for that query.*');
         }
 
-        await conn.sendMessage(from, { react: { text: '🔎', key: mek.key } });
-
-        const searchUrl = `https://mr-thinuzz-api-build.vercel.app/api/moviepro/search?keyword=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
-        const searchRes = await fetchJson(searchUrl);
-
-        if (!searchRes?.status || !searchRes?.results?.length) {
-            await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
-            return await reply('*No movies found for that query.*');
-        }
-
-        const results = searchRes.results.slice(0, 10);
-        const rows = results.map(movie => ({
-            title: `${movie.title} ${movie.rating > 0 ? `⭐ ${movie.rating}` : ''}`.substring(0, 60),
-            rowId: `${prefix}mpinfo ${encodeURIComponent(movie.id)}`
+        const results = tvShows.slice(0, 10);
+        let srh = results.map(v => ({
+            title: v.title.replace(/Sinhala Subtitles\s*\|?\s*සිංහල උපසිරසි.*/gi, "").trim(),
+            rowId: `${prefix}tvinfo ${v.link}`
         }));
 
-        const caption = `*🎬 MOVIEPRO SEARCH RESULTS*\n\n*Query:* ${q}\n*Found:* ${results.length} movies`;
-
-        if (config.BUTTON === "true") {
-            const listButtons = {
-                title: "🎥 Select a Movie",
-                sections: [{ title: "Results", rows: rows.map(r => ({ title: r.title, id: r.rowId })) }]
-            };
-            await conn.sendMessage(from, {
-                image: { url: config.LOGO },
-                caption: caption,
-                footer: config.FOOTER,
-                buttons: [{
-                    buttonId: "list",
-                    buttonText: { displayText: "Select Movie" },
-                    type: 4,
-                    nativeFlowInfo: { name: "single_select", paramsJson: JSON.stringify(listButtons) }
-                }],
-                headerType: 1
-            }, { quoted: mek });
-        } else {
-            const listMessage = {
-                text: caption,
-                footer: config.FOOTER,
-                title: "Movies",
-                buttonText: "*Reply Below Number 🔢*",
-                sections: [{ title: "Available Movies", rows }]
-            };
-            await conn.listMessage(from, listMessage, mek);
-        }
-
-        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
-
-    } catch (e) {
+        await conn.listMessage(from, {
+            text: `_CINESUBZ TV SERIES SEARCH RESULTS 📺_\n\n*🔎 Input:* ${q}\n\n*Select a series from the list below to view episodes.*`,
+            footer: config.FOOTER || "Cinesubz Downloader",
+            title: '', 
+            buttonText: 'Click to View Results 🎬',
+            sections: [{ title: "Available TV Series", rows: srh }]
+        }, mek);
+    } catch (e) { 
         console.error(e);
-        await reply('❌ *Error searching movies!*');
+        reply('🚩 *Error during search!*'); 
     }
 });
 
-// -------------------- MOVIEPRO INFO + QUALITIES --------------------
+// ==================== 2. TV INFO & EPISODES ====================
 cmd({
-    pattern: "mpinfo",
-    react: "📋",
+    pattern: "tvinfo",
+    react: "📺",
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        // new TV info endpoint
+        const infoUrl = `${BASE_URL}/tvshow?url=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+        const { data } = await axios.get(infoUrl, { timeout: 30000 });
+
+        const series = data.data;
+        if (!series) return await reply("*Couldn't find TV series info!*");
+
+        // extract fields from new API
+        const title = series.maintitle || 'N/A';
+        const imdb = series.imdb || 'N/A';
+        const posterUrl = series.mainImage || config.LOGO;
+        const seasons = series.episodesDetails || [];   // array of { season: number, episodes: [ { number, title, url } ] }
+
+        if (seasons.length === 0) {
+            return await reply("*No seasons/episodes found for this series.*");
+        }
+
+        for (let i = 0; i < seasons.length; i++) {
+            const season = seasons[i];
+            const seasonNum = season.season;
+            const episodes = season.episodes || [];
+
+            let rows = [];
+
+            // "Download All Sx" button
+            rows.push({
+                buttonId: `${prefix}tvallquality ${q}±${posterUrl}±${title}±${seasonNum}`,
+                buttonText: { displayText: `📥 Download All S${seasonNum}` },
+                type: 1
+            });
+
+            // "Details Card" button only for first season
+            if (i === 0) {
+                rows.push({
+                    buttonId: `${prefix}ctvdetails ${q}`,
+                    buttonText: { displayText: 'View Details Card 📋' },
+                    type: 1
+                });
+            }
+
+            // episode buttons
+            episodes.forEach(ep => {
+                const epTitle = `S${String(seasonNum).padStart(2, '0')} E${String(ep.number).padStart(2, '0')}`;
+                rows.push({
+                    buttonId: `${prefix}tvquality ${ep.url}±${posterUrl}±${title} ${epTitle}±${q}`,
+                    buttonText: { displayText: epTitle },
+                    type: 1
+                });
+            });
+
+            const captionText = i === 0 
+                ? `*🍿 𝗧ɪᴛ𝗹𝗲 ➮* *_${title}_*\n*⭐ 𝗜𝗠𝗗𝗯 ➮* _${imdb}_\n\n*Select an Episode from Season ${seasonNum} below:*`
+                : `*📂 Season ${seasonNum} Episodes - ${title}*`;
+
+            await conn.buttonMessage(from, {
+                image: { url: posterUrl },
+                caption: captionText,
+                footer: config.FOOTER || "Cinesubz Downloader",
+                buttons: rows,
+                headerType: 4
+            }, mek);
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    } catch (e) { 
+        console.error(e);
+        reply('🚩 *Error fetching episodes!*'); 
+    }
+});
+
+// ==================== 3. DETAILS CARD ====================
+cmd({
+    pattern: "ctvdetails",
+    react: '📋',
+    desc: "Rich TV info card",
+    filename: __filename
+},
+async (conn, m, mek, { from, q, reply }) => {
+    try {
+        const infoUrl = `${BASE_URL}/tvshow?url=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+        const { data } = await axios.get(infoUrl, { timeout: 30000 });
+
+        const movie = data.data;
+        let details = { mvchlink: "https://whatsapp.com/channel/yourchannel" }; 
+        try {
+            details = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
+        } catch(e){}
+
+        // construct details using new fields
+        const title = movie.maintitle || 'N/A';
+        const imdb = movie.imdb || 'N/A';
+        const genres = movie.category?.join(', ') || 'N/A';
+        const cast = movie.cast?.slice(0, 5).map(c => c.actor.name).join(', ') || 'N/A';
+
+        let msg = `*✨ 𝐓ᴠ 𝐒ᴇʀɪᴇ𝐬 𝐃ᴇᴛᴀɪʟ𝐬 ✨*\n\n` +
+                  `*🍿 𝐓ɪ𝐓ʟ𝐄 ➮* *_${title}_*\n` +
+                  `*⭐ 𝐈𝐌𝐃𝐛 ➮* _${imdb}_\n` +
+                  `*🎭 𝐆𝐞𝐧𝐫𝐞𝐬 ➮* _${genres}_\n` +
+                  `*👥 𝐂𝐚𝐬𝐭 ➮* _${cast}_\n\n` +
+                  `✨ *Follow us:* ${details.mvchlink}`;
+
+        await conn.sendMessage(from, { 
+            image: { url: movie.mainImage || config.LOGO }, 
+            caption: msg 
+        }, { quoted: mek });
+        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+    } catch (e) { 
+        console.error("Error in ctvdetails command:", e); 
+        reply('🚩 *Error fetching details card!*'); 
+    }
+});
+
+// ==================== 4. QUALITY SELECTION (SINGLE EPISODE) ====================
+cmd({
+    pattern: "tvquality",
+    react: "🎥",
     dontAddCommandList: true,
     filename: __filename
-}, async (conn, m, mek, { from, q, prefix, reply }) => {
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
     try {
-        if (!q) return await reply('*Invalid movie ID!*');
+        const [epUrl, imgLink, title, mainUrl] = q.split("±");
 
-        const movieId = decodeURIComponent(q);
-        const infoUrl = `https://mr-thinuzz-api-build.vercel.app/api/moviepro/info?id=${encodeURIComponent(movieId)}&apiKey=key_4797e0dcedd66cca`;
-        const info = await fetchJson(infoUrl);
+        // new episode endpoint
+        const epInfoUrl = `${BASE_URL}/episode?url=${encodeURIComponent(epUrl)}&apiKey=${API_KEY}`;
+        const { data: convData } = await axios.get(epInfoUrl, { timeout: 30000 });
 
-        if (!info?.status || !info?.movie) {
-            return await reply('*Failed to fetch movie details!*');
+        if (!convData?.status || !convData?.data?.downloadUrl?.length) {
+            return await reply('*No download links found for this episode.*');
         }
 
-        const movie = info.movie;
-        const downloadLinks = info.download_links || [];
-
-        // Send movie poster + details
-        const poster = movie.image || config.LOGO;
-        const caption = `*🎬 ${movie.title}*\n\n` +
-                        `📅 *Release:* ${movie.releaseDate || 'N/A'}\n` +
-                        `🎭 *Genre:* ${movie.genre?.join(', ') || 'N/A'}\n` +
-                        `🌍 *Country:* ${movie.country || 'N/A'}\n` +
-                        `⭐ *IMDb:* ${movie.imdbRating || 'N/A'}\n\n` +
-                        `_Select a quality below to download._`;
-
-        await conn.sendMessage(from, {
-            image: { url: poster },
-            caption: caption,
-            footer: config.FOOTER
-        }, { quoted: mek });
-
-        if (downloadLinks.length === 0) {
-            await conn.sendMessage(from, { react: { text: '⚠️', key: mek.key } });
-            return await reply('*No download links available for this movie.*');
-        }
-
-        // Build quality rows
-        const rows = downloadLinks.map(link => ({
-            title: `${link.quality} (${link.size})`,
-            rowId: `${prefix}mpdl ${encodeURIComponent(link.original_url)}&${encodeURIComponent(movie.title)}&${encodeURIComponent(poster)}&${encodeURIComponent(link.quality)}`
+        let rows = convData.data.downloadUrl.map(dl => ({
+            buttonId: `${prefix}tvdl ${dl.link}±${imgLink}±${title}±${mainUrl}±${dl.quality}`, 
+            buttonText: { displayText: `${dl.quality} (${dl.size})` },
+            type: 1
         }));
 
-        const listMessage = {
-            text: `*${movie.title}* - Available qualities:`,
-            footer: config.FOOTER,
-            title: "Download Options",
-            buttonText: "*Reply Below Number 🔢*",
-            sections: [{ title: "Qualities", rows }]
-        };
-
-        if (config.BUTTON === "true") {
-            const listButtons = {
-                title: "⬇️ Choose Quality",
-                sections: [{ title: "Qualities", rows: rows.map(r => ({ title: r.title, id: r.rowId })) }]
-            };
-            await conn.sendMessage(from, {
-                image: { url: poster },
-                caption: `*${movie.title}* - Available qualities:`,
-                footer: config.FOOTER,
-                buttons: [{
-                    buttonId: "list",
-                    buttonText: { displayText: "Select Quality" },
-                    type: 4,
-                    nativeFlowInfo: { name: "single_select", paramsJson: JSON.stringify(listButtons) }
-                }],
-                headerType: 1
-            }, { quoted: mek });
-        } else {
-            await conn.listMessage(from, listMessage, mek);
-        }
-
-        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
-
-    } catch (e) {
+        await conn.buttonMessage(from, {
+            image: { url: imgLink },
+            caption: `*🎥 Select Quality for:* \n_${title}_`,
+            footer: config.FOOTER || "Cinesubz Downloader",
+            buttons: rows,
+            headerType: 4
+        }, mek);
+    } catch (e) { 
         console.error(e);
-        await reply('❌ *Error fetching movie details!*');
+        reply('🚩 *Error fetching qualities!*'); 
     }
 });
 
-// -------------------- MOVIEPRO DOWNLOAD --------------------
-let isMovieUploading = false;
-
+// ==================== 5. ALL EPISODES QUALITY SELECTION ====================
 cmd({
-    pattern: "mpdl",
+    pattern: "tvallquality",
+    react: "📑",
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        const [mainUrl, imgLink, title, seasonNum] = q.split("±");
+
+        // get series info to fetch first episode of that season
+        const seriesUrl = `${BASE_URL}/tvshow?url=${encodeURIComponent(mainUrl)}&apiKey=${API_KEY}`;
+        const { data: seriesData } = await axios.get(seriesUrl, { timeout: 30000 });
+
+        const targetSeason = seriesData.data.episodesDetails.find(s => s.season.toString() === seasonNum.toString());
+        if (!targetSeason || !targetSeason.episodes || targetSeason.episodes.length === 0) {
+            return await reply('*No episodes found for this season.*');
+        }
+        const firstEpUrl = targetSeason.episodes[0].url;
+
+        // fetch quality options from first episode
+        const epInfoUrl = `${BASE_URL}/episode?url=${encodeURIComponent(firstEpUrl)}&apiKey=${API_KEY}`;
+        const { data: convData } = await axios.get(epInfoUrl, { timeout: 30000 });
+
+        if (!convData?.status || !convData?.data?.downloadUrl?.length) {
+            return await reply('*No quality options available.*');
+        }
+
+        let rows = convData.data.downloadUrl.map(dl => ({
+            buttonId: `${prefix}tvdlall ${mainUrl}±${imgLink}±${title}±${dl.quality}±${seasonNum}`,
+            buttonText: { displayText: dl.quality },
+            type: 1
+        }));
+
+        await conn.buttonMessage(from, {
+            image: { url: imgLink },
+            caption: `*📥 DOWNLOAD ALL - SEASON ${seasonNum}*\n\n*Series:* ${title}\n*Select the quality for all episodes in Season ${seasonNum}:*`,
+            footer: config.FOOTER || "Cinesubz Downloader",
+            buttons: rows,
+            headerType: 4
+        }, mek);
+    } catch (e) { 
+        console.error(e);
+        reply('🚩 *Error fetching quality list!*'); 
+    }
+});
+
+// ==================== 6. DOWNLOAD ALL EPISODES OF A SEASON ====================
+cmd({
+    pattern: "tvdlall",
+    react: "⏳",
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, reply }) => {
+    if (isUploadingTv) return await reply('*Another process is running. Please wait ⏳*');
+    try {
+        const [mainUrl, imgLink, title, selectedQuality, seasonNum] = q.split("±");
+        isUploadingTv = true;
+        await reply(`*🚀 Starting download all episodes of Season ${seasonNum} in ${selectedQuality}...*`);
+
+        // get series info
+        const seriesUrl = `${BASE_URL}/tvshow?url=${encodeURIComponent(mainUrl)}&apiKey=${API_KEY}`;
+        const { data: seriesData } = await axios.get(seriesUrl, { timeout: 30000 });
+
+        const targetSeason = seriesData.data.episodesDetails.find(s => s.season.toString() === seasonNum.toString());
+        if (!targetSeason || !targetSeason.episodes) {
+            throw new Error('Season not found');
+        }
+
+        for (const ep of targetSeason.episodes) {
+            try {
+                const epTitle = `${title} S${String(seasonNum).padStart(2, '0')}E${String(ep.number).padStart(2, '0')}`;
+
+                // fetch episode download links
+                const epInfoUrl = `${BASE_URL}/episode?url=${encodeURIComponent(ep.url)}&apiKey=${API_KEY}`;
+                const { data: qData } = await axios.get(epInfoUrl, { timeout: 30000 });
+
+                if (!qData?.status || !qData?.data?.downloadUrl?.length) continue;
+
+                // find matching quality (or fallback to first)
+                const matchingDl = qData.data.downloadUrl.find(d => d.quality.trim() === selectedQuality.trim()) || qData.data.downloadUrl[0];
+
+                // resolve final download URL
+                const dlUrl = `${BASE_URL}/download?url=${encodeURIComponent(matchingDl.link)}&apiKey=${API_KEY}`;
+                const { data: apiRes } = await axios.get(dlUrl, { timeout: 60000 });
+
+                if (!apiRes?.status || !apiRes?.data?.downloadUrls?.length) continue;
+
+                // pick a non-telegram, non-'start=' link
+                let finalUrl = null;
+                for (const item of apiRes.data.downloadUrls) {
+                    if (item.url && !item.url.includes('t.me') && !item.url.includes('start=')) {
+                        finalUrl = item.url;
+                        break;
+                    }
+                }
+                if (!finalUrl) finalUrl = apiRes.data.downloadUrls[0].url;
+
+                // send file
+                const resizedThumb = await getResizedThumb(imgLink);
+                const caption = `🎬 *𝗡𝗮𝗺𝗲 :* ${epTitle}\n\n\`[${selectedQuality.trim()}]\` \n\n${config.NAME || 'Bot'}`;
+
+                const targetJid = config.JID || from;
+                await conn.sendMessage(targetJid, { 
+                    document: { url: finalUrl }, 
+                    fileName: "🎥 " + epTitle.replace(/[^\w\s]/g, '').trim() + ".mp4", 
+                    mimetype: "video/mp4",
+                    jpegThumbnail: resizedThumb,
+                    caption: caption
+                });
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            } catch (err) { 
+                console.error(`Error downloading episode ${ep.number}:`, err); 
+            }
+        }
+        await reply(`*✅ All episodes of Season ${seasonNum} have been sent!*`);
+    } catch (e) { 
+        console.error(e);
+        reply('*Critical error in Download All!*'); 
+    }
+    finally { isUploadingTv = false; }
+});
+
+// ==================== 7. FINAL INDIVIDUAL DOWNLOAD ====================
+cmd({
+    pattern: "tvdl",
     react: "⬇️",
     dontAddCommandList: true,
     filename: __filename
-}, async (conn, m, mek, { from, q, reply }) => {
-    if (isMovieUploading) return await reply('*A movie is already being uploaded. Please wait...* ⏳');
-
+},
+async (conn, m, mek, { from, q, reply }) => {
+    if (isUploadingTv) return await reply('*Another episode is uploading. Please wait ⏳*');
     try {
-        isMovieUploading = true;
+        const [processedUrl, imgLink, title, mainUrl, quality] = q.split("±");
 
-        const [encodedUrl, encodedTitle, encodedPoster, quality] = q.split("&");
-        const url = decodeURIComponent(encodedUrl);
-        const title = decodeURIComponent(encodedTitle || 'Movie');
-        const poster = decodeURIComponent(encodedPoster || '');
-        const qlty = decodeURIComponent(quality || '');
+        // resolve final download URL
+        const dlUrl = `${BASE_URL}/download?url=${encodeURIComponent(processedUrl)}&apiKey=${API_KEY}`;
+        const { data: apiRes } = await axios.get(dlUrl, { timeout: 60000 });
 
-        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
-        await conn.sendMessage(from, { text: '*Fetching download link...*' });
-
-        // Prepare thumbnail
-        let thumb = null;
-        if (poster) {
-            try {
-                const imgRes = await axios.get(poster, { responseType: 'arraybuffer', timeout: 15000 });
-                thumb = await sharp(imgRes.data).resize(320, 320).jpeg({ quality: 70 }).toBuffer();
-            } catch (e) { console.warn('Thumb error:', e.message); }
+        if (!apiRes?.status || !apiRes?.data?.downloadUrls?.length) {
+            return await reply("⚠️ No working link found.");
         }
 
-        const fileName = `🎬${config.TITLE}${title.replace(/[^\w\s]/g, '').substring(0, 40)}.mp4`;
+        let finalUrl = null;
+        for (const item of apiRes.data.downloadUrls) {
+            if (item.url && !item.url.includes('t.me') && !item.url.includes('start=')) {
+                finalUrl = item.url;
+                break;
+            }
+        }
+        if (!finalUrl) finalUrl = apiRes.data.downloadUrls[0].url;
 
-        await conn.sendMessage(config.JID || from, {
-            document: { url: url },
-            mimetype: 'video/mp4',
-            fileName: fileName,
-            caption: `*🎬 𝗧ɪᴛʟᴇ : ${title}*\n\n\`[${qlty}]\`\n\n${config.FOOTER || ''}`,
-            jpegThumbnail: thumb
+        isUploadingTv = true;
+        await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+
+        const resizedThumb = await getResizedThumb(imgLink);
+        const qText = quality ? quality.trim() : 'Unknown';
+        const caption = `🎬 *𝗡𝗮𝗺𝗲 :* ${title}\n\n\`[ ${qText} ]\`\n\n${config.NAME || 'Bot'}`;
+
+        const targetJid = config.JID || from;
+        await conn.sendMessage(targetJid, { 
+            document: { url: finalUrl }, 
+            fileName: "🎥" + title.replace(/[^\w\s]/g, '').trim() + ".mp4", 
+            mimetype: "video/mp4",
+            jpegThumbnail: resizedThumb,
+            caption: caption
         });
-
-        await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
-        await reply(`*☑️ Movie sent successfully!*\n\n > *Download by VISPER MD*`);
-
-    } catch (e) {
+        await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+    } catch (e) { 
         console.error(e);
-        await reply(`*Error while downloading:* ${e.message}`);
-    } finally {
-        isMovieUploading = false;
+        reply('*Download Error !!*'); 
     }
+    finally { isUploadingTv = false; }
 });
+
+
+
