@@ -1600,7 +1600,7 @@ async (conn, mek, m, { from, q, reply }) => {
 
 
 
-// sinhalacartoons.js
+
 
 cmd({
     pattern: "sinhalacartoons",
@@ -1619,17 +1619,17 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
         if (!q) return reply("*Please give a movie or cartoon name 🎬*");
 
         // 🔍 SEARCH API
-        const api = `https://mr-thinuzz-api-build.zone.id/api/cartoonlk/search?q=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
+        const api = `https://mr-thinuzz-api-build.zone.id/api/sincartoons/search?query=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
         const { data: result } = await axios.get(api);
 
         // ✅ Validate response
-        if (!result.status || !result.data?.results?.length) {
+        if (!result.status || !result.data?.all?.length) {
             return reply("*No results found ❌*");
         }
 
         // 🧾 Build list rows – only title is shown
         let rows = [];
-        result.data.results.slice(0, 30).forEach(item => {
+        result.data.all.slice(0, 30).forEach(item => {
             rows.push({
                 title: item.title,
                 // store the URL for fetching details
@@ -1643,7 +1643,7 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
         }];
 
         await conn.listMessage(from, {
-            text: `🎬 *SINHALA CARTOONS SEARCH*\n\n🔎 Query: *${q}*\n📂 Source: ${result.source || 'Cartoons.lk'}\n\n_Select a movie below to get download links._`,
+            text: `🎬 *SINHALA CARTOONS SEARCH*\n\n🔎 Query: *${q}*\n📂 Source: ${result.service || 'Sinhala Cartoons'}\n\n_Select a movie below to get download links._`,
             footer: config.FOOTER,
             title: "Sinhala Cartoons Downloader",
             buttonText: "📂 View Results",
@@ -1670,7 +1670,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         const movieUrl = decodeURIComponent(q);
 
         // 📄 INFO API
-        const api = `https://mr-thinuzz-api-build.zone.id/api/cartoonlk/info?url=${encodeURIComponent(movieUrl)}&apiKey=key_4797e0dcedd66cca`;
+        const api = `https://mr-thinuzz-api-build.zone.id/api/sincartoons/movie?url=${encodeURIComponent(movieUrl)}&apiKey=key_4797e0dcedd66cca`;
         const { data: res } = await axios.get(api);
 
         if (!res.status) {
@@ -1680,41 +1680,42 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         // The actual movie data is inside `res.data`
         const movie = res.data || {};
 
-        // Build caption
+        // Build caption with movie details
         let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title || 'N/A'}_*\n`;
+        if (movie.year) msg += `*▫📅 𝗬𝗲𝗮𝗿 ➮* _${movie.year}_\n`;
+        if (movie.director) msg += `*▫🎬 𝗗𝗶𝗿𝗲𝗰𝘁𝗼𝗿 ➮* _${movie.director}_\n`;
+        if (movie.imdb_rating) msg += `*▫⭐ 𝗜𝗠𝗗𝗕 ➮* _${movie.imdb_rating}_\n`;
         if (movie.quality) msg += `*▫📊 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality}_\n`;
-        if (movie.size) msg += `*▫💾 𝗦𝗶𝘇𝗲 ➮* _${movie.size}_\n`;
-        if (movie.downloads) msg += `*▫⬇️ 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝘀 ➮* _${movie.downloads}_\n`;
-        msg += `\n_Select a quality below to download._`;
+        if (movie.description) msg += `\n*▫📝 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻 ➮* _${movie.description.substring(0, 200)}${movie.description.length > 200 ? '...' : ''}_\n`;
+        
+        // Cast information (show first 3 cast members)
+        if (movie.cast && movie.cast.length > 0) {
+            msg += `\n*▫🎭 𝗖𝗮𝘀𝘁 ➮* _`;
+            const castNames = movie.cast.slice(0, 3).map(c => c.name).join(', ');
+            msg += `${castNames}${movie.cast.length > 3 ? '...' : ''}_`;
+        }
+        
+        msg += `\n\n_⬇️ Click the button below to download._`;
 
-        // 🎯 Extract download links – check both root and data
-        let downloadLinks = res.download_links || movie.download_links || [];
-        if (!downloadLinks.length && movie.download_url) {
-            // Fallback: if single download_url exists
-            downloadLinks = [{ url: movie.download_url, quality: movie.quality || 'N/A' }];
+        // 🎯 Get direct video URL
+        const videoUrl = movie.video_url;
+        
+        if (!videoUrl) {
+            return reply("*🚩 No download link available for this movie!*");
         }
 
-        let buttons = [];
-        downloadLinks.forEach((dl, index) => {
-            // Try all possible link keys
-            const link = dl.stream_url || dl.original_url || dl.direct_url || dl.url;
-            if (link) {
-                const label = dl.quality ? `${dl.quality}` : `Download ${index + 1}`;
-                buttons.push({
-                    buttonId: `${prefix}scsend ${link}±${movie.title || 'Movie'}±${movie.thumbnail || ''}±${dl.quality || 'N/A'}`,
-                    buttonText: { displayText: label },
-                    type: 1
-                });
-            }
-        });
+        // Create a single download button
+        let buttons = [{
+            buttonId: `${prefix}scsend ${videoUrl}±${movie.title || 'Movie'}±${movie.poster || ''}±${movie.quality || 'HD'}`,
+            buttonText: {
+                displayText: `⬇️ Download ${movie.quality || 'HD'}`
+            },
+            type: 1
+        }];
 
-        if (buttons.length === 0) {
-            return reply("*🚩 No download links available for this movie!*");
-        }
-
-        // 🖼️ Send button message with thumbnail
+        // 🖼️ Send button message with poster
         await conn.buttonMessage(from, {
-            image: { url: movie.thumbnail || 'https://via.placeholder.com/300x400?text=No+Image' },
+            image: { url: movie.poster || 'https://via.placeholder.com/300x400?text=No+Image' },
             caption: msg,
             footer: config.FOOTER,
             buttons,
@@ -1774,3 +1775,5 @@ async (conn, mek, m, { from, q, reply }) => {
         reply("*❌ Error:* " + e.message);
     }
 });
+
+
