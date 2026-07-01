@@ -48,7 +48,8 @@ try {
 	{name: "CINESUBZTV", cmd: "cinetv" },
       { name: "SINHALASUB", cmd: "sinhalasub" },
       { name: "SUBLK", cmd: "sublk" },
-       { name: "MOVIEPRO", cmd: "moviepro" }
+       { name: "MOVIEPRO", cmd: "moviepro" },
+		{ name: "SINHALACARTOONS", cmd: "sinhalacartoons" }
 		
 	 
     ];
@@ -1586,6 +1587,183 @@ async (conn, mek, m, { from, q, reply }) => {
             fileName: `🎬${movieName}.mp4`,
             jpegThumbnail: thumb,
             caption: `*🎬 ${movieName}*\n\n*\`${quality}\`*\n\n${config.NAME}`
+        }, { quoted: mek });
+
+        await conn.sendMessage(from, { delete: loading.key });
+        await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
+
+    } catch (e) {
+        console.log(e);
+        reply("*❌ Error:* " + e.message);
+    }
+});
+
+
+
+// sinhalacartoons.js
+
+cmd({
+    pattern: "sinhalacartoons",
+    react: '🎬',
+    category: "movie",
+    alias: ["sc"],
+    desc: "Search Sinhala dubbed cartoons & movies",
+    use: ".sinhalacartoons movie name",
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
+    try {
+        if (config.MV_BLOCK === "true" && !isMe && !isSudo && !isOwner) {
+            return reply("*This command currently only works for the Bot owner.*");
+        }
+        if (!q) return reply("*Please give a movie or cartoon name 🎬*");
+
+        // 🔍 SEARCH API
+        const api = `https://mr-thinuzz-api-build.zone.id/api/cartoonlk/search?q=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
+        const { data: result } = await axios.get(api);
+
+        // ✅ Validate response
+        if (!result.status || !result.data?.results?.length) {
+            return reply("*No results found ❌*");
+        }
+
+        // 🧾 Build list rows – only title is shown
+        let rows = [];
+        result.data.results.slice(0, 30).forEach(item => {
+            rows.push({
+                title: item.title,
+                // store the URL for fetching details
+                rowId: `${prefix}scdl ${encodeURIComponent(item.url)}`
+            });
+        });
+
+        const sections = [{
+            title: `🔍 Search Results (${result.total_results || rows.length})`,
+            rows
+        }];
+
+        await conn.listMessage(from, {
+            text: `🎬 *SINHALA CARTOONS SEARCH*\n\n🔎 Query: *${q}*\n📂 Source: ${result.source || 'Cartoons.lk'}\n\n_Select a movie below to get download links._`,
+            footer: config.FOOTER,
+            title: "Sinhala Cartoons Downloader",
+            buttonText: "📂 View Results",
+            sections
+        }, mek);
+
+    } catch (e) {
+        console.log(e);
+        reply("*🚩 Search error!*");
+    }
+});
+
+
+cmd({
+    pattern: "scdl",
+    react: '🎥',
+    desc: "Get download links for Sinhala cartoon",
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        if (!q) return reply("*Please provide the movie URL!*");
+
+        const movieUrl = decodeURIComponent(q);
+
+        // 📄 INFO API
+        const api = `https://mr-thinuzz-api-build.zone.id/api/cartoonlk/info?url=${encodeURIComponent(movieUrl)}&apiKey=key_4797e0dcedd66cca`;
+        const { data: res } = await axios.get(api);
+
+        if (!res.status) {
+            return reply("*🚩 Movie details not found!*");
+        }
+
+        // The actual movie data is inside `res.data`
+        const movie = res.data || {};
+
+        // Build caption
+        let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title || 'N/A'}_*\n`;
+        if (movie.quality) msg += `*▫📊 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality}_\n`;
+        if (movie.size) msg += `*▫💾 𝗦𝗶𝘇𝗲 ➮* _${movie.size}_\n`;
+        if (movie.downloads) msg += `*▫⬇️ 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝘀 ➮* _${movie.downloads}_\n`;
+        msg += `\n_Select a quality below to download._`;
+
+        // 🎯 Extract download links – check both root and data
+        let downloadLinks = res.download_links || movie.download_links || [];
+        if (!downloadLinks.length && movie.download_url) {
+            // Fallback: if single download_url exists
+            downloadLinks = [{ url: movie.download_url, quality: movie.quality || 'N/A' }];
+        }
+
+        let buttons = [];
+        downloadLinks.forEach((dl, index) => {
+            // Try all possible link keys
+            const link = dl.stream_url || dl.original_url || dl.direct_url || dl.url;
+            if (link) {
+                const label = dl.quality ? `${dl.quality}` : `Download ${index + 1}`;
+                buttons.push({
+                    buttonId: `${prefix}scsend ${link}±${movie.title || 'Movie'}±${movie.thumbnail || ''}±${dl.quality || 'N/A'}`,
+                    buttonText: { displayText: label },
+                    type: 1
+                });
+            }
+        });
+
+        if (buttons.length === 0) {
+            return reply("*🚩 No download links available for this movie!*");
+        }
+
+        // 🖼️ Send button message with thumbnail
+        await conn.buttonMessage(from, {
+            image: { url: movie.thumbnail || 'https://via.placeholder.com/300x400?text=No+Image' },
+            caption: msg,
+            footer: config.FOOTER,
+            buttons,
+            headerType: 4
+        }, mek);
+
+    } catch (e) {
+        console.log(e);
+        reply("*🚩 Info error!*");
+    }
+});
+
+
+cmd({
+    pattern: "scsend",
+    react: "⬇️",
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, mek, m, { from, q, reply }) => {
+    try {
+        if (!q) return reply("*📍 Please provide link!*");
+
+        const [directUrl, movieName, thumbUrl, quality] = q.split("±");
+
+        const loading = await conn.sendMessage(from, {
+            text: "*Uploading movie... ⬆️*"
+        }, { quoted: mek });
+
+        let thumb = null;
+        if (thumbUrl && thumbUrl !== 'undefined') {
+            try {
+                const response = await axios.get(thumbUrl, { responseType: "arraybuffer" });
+                thumb = await sharp(Buffer.from(response.data))
+                    .resize(300, 300, { fit: "cover" })
+                    .jpeg({ quality: 80 })
+                    .toBuffer();
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        // 📤 Send as document
+        await conn.sendMessage(from, {
+            document: { url: directUrl },
+            mimetype: "video/mp4",
+            fileName: `🎬${movieName}.mp4`,
+            jpegThumbnail: thumb,
+            caption: `*🎬 ${movieName}*\n\n*\`${quality || 'N/A'}\`*\n\n${config.NAME}`
         }, { quoted: mek });
 
         await conn.sendMessage(from, { delete: loading.key });
