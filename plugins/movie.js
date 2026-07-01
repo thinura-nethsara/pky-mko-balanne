@@ -299,8 +299,8 @@ if (thumbUrl) {
 
 
 let isUploadingTv = false;
-const API_KEY = 'key_13be1374312cdd0a';   // new API key
-const BASE_URL = 'https://mr-thinuzz-api-build.vercel.app/api/cinesubz';
+config.CINESUBZ_API_KEY;   
+config.CINESUBZ_BASE_URL;
 
 async function getResizedThumb(url) {
     try {
