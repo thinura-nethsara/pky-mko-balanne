@@ -44,7 +44,7 @@ try {
     if (!q) return await reply('*Enter movie name..🎬*');
 
     const sources = [
-      { name: "CINESUBZ", cmd: "cine" },
+      { name: "CINESUBZ", cmd: "cinesubz" },
 	{name: "CINESUBZTV", cmd: "cinetv" },
       { name: "SINHALASUB", cmd: "sinhalasub" },
       { name: "SUBLK", cmd: "sublk" },
@@ -92,7 +92,7 @@ try {
 //••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
 cmd({
-    pattern: "cine",
+    pattern: "cinesubz",
     react: '🔎',
     category: "movie",
     alias: ["cz"],
@@ -126,7 +126,7 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
 
             srh.push({
                 title: cleanTitle,
-                description: `📺 ${movie.type.toUpperCase()} | ⭐ ${movie.rating} | 🎞 ${movie.quality}`,
+    
                 rowId: `${prefix}cinedl2 ${movie.link}`
             });
         });
@@ -297,7 +297,7 @@ cmd({
     pattern: "sinhalasub",
     react: '🔎',
     category: "movie",
-    alias: ["cz"],
+
     desc: "sinhalasub.lk movie search",
     use: ".cine 2025",
     filename: __filename
@@ -780,252 +780,282 @@ reply(`❌ *Error Accurated !!*\n\n${e}`)
 }
 })
 
+let isSubLkUploading = false
+const API_KEY = 'key_13be1374312cdd0a'
+const BASE_URL = 'https://mr-thinuzz-api-build.vercel.app/api/lksubs'
+
+function cleanTitle(title) {
+    return title
+        .replace(/Sinhala Subtitles \|.*$/gi, '')
+        .replace(/Sinhala Subtitle \|.*$/gi, '')
+        .replace(/\| සිංහල.*$/gi, '')
+        .trim()
+}
+
+async function getResizedThumb(url) {
+    try {
+        const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 15000 })
+        const buffer = Buffer.from(response.data, 'binary')
+        return await sharp(buffer)
+            .resize(200, 200, { fit: 'cover' })
+            .jpeg({ quality: 80 })
+            .toBuffer()
+    } catch (e) {
+        console.error('Sharp Error:', e.message)
+        return null
+    }
+}
+
+// ==================== 1. SEARCH ====================
 cmd({
-    pattern: "sublk",
+    pattern: 'sublk',
     react: '🔎',
-    category: "movie",
-    alias: ["cz"],
-    desc: "Search movies from SubzLK",
-    use: ".cine movie name",
+    category: 'movie',
+    desc: 'Search movies from SubzLK (new API)',
+    use: '.sublk movie name',
     filename: __filename
 },
 async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
     try {
-
-        if (config.MV_BLOCK === "true" && !isMe && !isSudo && !isOwner) {
-            return reply("*This command currently only works for the Bot owner.*");
+        if (config.MV_BLOCK === 'true' && !isMe && !isSudo && !isOwner) {
+            return reply('*This command currently only works for the Bot owner.*')
         }
 
-        if (!q) return reply("*Please give me a movie name 🎬*");
+        if (!q) return reply('*Please give me a movie name 🎬*')
 
-        const apiUrl = `https://apis.sadas.dev/api/v1/movie/sublk/search?q=${q}&apiKey=ea4d57a2a2db72e0bb3ba58f56b1ff9b`;
-        const { data: result } = await axios.get(apiUrl);
+        const searchUrl = `${BASE_URL}/search?q=${encodeURIComponent(q)}&apiKey=${API_KEY}`
+        const { data: result } = await axios.get(searchUrl, { timeout: 30000 })
 
-        if (!result.status || !result.data?.length) {
-            return reply("*No results found ❌*");
+        if (!result.status || !result.results?.length) {
+            return reply('*No results found ❌*')
         }
 
-        let rows = [];
-
-        result.data.slice(0, 30).forEach((movie) => {
-            const cleanTitle = movie.title
-                .replace(/Sinhala Subtitles \|.*$/gi, "")
-                .replace(/Sinhala Subtitle \|.*$/gi, "")
-                .replace(/\| සිංහල.*$/gi, "")
-                .trim();
-
-            rows.push({
-                title: cleanTitle,
-                description: `⭐ ${movie.imdb_rating || "N/A"} | 📅 ${movie.year || "N/A"}`,
-                rowId: `${prefix}sdl ${movie.url}`
-            });
-        });
-
-        const sections = [{
-            title: `Search Results (${rows.length})`,
-            rows
-        }];
+        const rows = result.results.slice(0, 30).map(movie => ({
+            title: cleanTitle(movie.title),
+            description: `📅 ${movie.year || 'N/A'}`,
+            rowId: `${prefix}sublkinfo ${movie.url}`
+        }))
 
         const listMessage = {
-            text: `🎬 *SUBZLK SEARCH*\n\n🔎 Query: *${q}*\n\n_Select a movie below._`,
+            text: `🎬 *SUBZLK SEARCH (NEW API)*\n\n🔎 Query: *${q}*\n\n_Select a movie below._`,
             footer: config.FOOTER,
             title: 'SubzLK Downloader',
             buttonText: '📂 View Results',
-            sections
-        };
+            sections: [{ title: `Results (${rows.length})`, rows }]
+        }
 
-        await conn.listMessage(from, listMessage, mek);
-
+        await conn.listMessage(from, listMessage, mek)
     } catch (e) {
-        console.log(e);
-        reply("*🚩 Error occurred while fetching data!*");
+        console.log(e)
+        reply('*🚩 Error occurred while fetching data!*')
     }
-});
+})
 
-
-
-
-
-
-
-
+// ==================== 2. INFO + QUALITY BUTTONS ====================
 cmd({
-    pattern: "sdl",
+    pattern: 'sublkinfo',
     react: '🎥',
-    desc: "SubzLK movie info",
+    desc: 'SubzLK movie info & download options',
     filename: __filename
 },
 async (conn, m, mek, { from, q, prefix, reply }) => {
     try {
-        if (!q) return reply("*Please provide a movie link!*");
+        if (!q) return reply('*Please provide a movie link!*')
 
-        const apiUrl = `https://apis.sadas.dev/api/v1/movie/sublk/infodl?q=${encodeURIComponent(q)}&apiKey=ea4d57a2a2db72e0bb3ba58f56b1ff9b`;
-        const { data: res } = await axios.get(apiUrl);
+        const infoUrl = `${BASE_URL}/info?url=${encodeURIComponent(q)}&apiKey=${API_KEY}`
+        const { data: res } = await axios.get(infoUrl, { timeout: 30000 })
 
         if (!res.status || !res.data) {
-            return reply("*🚩 Movie details not found!*");
+            return reply('*🚩 Movie details not found!*')
         }
 
-        const movie = res.data;
+        const movie = res.data
+        const cleanTitleStr = cleanTitle(movie.title)
+        const poster = movie.thumbnail || config.LOGO
 
-        const cleanTitle = movie.title
-            .replace(/Sinhala Subtitles \|.*$/gi, "")
-            .replace(/Sinhala Subtitle \|.*$/gi, "")
-            .replace(/\| සිංහල.*$/gi, "")
-            .trim();
+        const caption = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${cleanTitleStr}_*
 
-        let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${cleanTitle}_*
+*▫📅 𝗬𝗲𝗮𝗿 ➮* _${movie.year || 'N/A'}_
+*▫⭐ 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.rating || 'N/A'}/10_
+*▫🎭 𝗚𝗲𝗻𝗿𝗲𝘀 ➮* _${movie.genres?.join(', ') || 'N/A'}_
+*▫🎬 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality || 'N/A'}_
+*▫👁️ 𝗩𝗶𝗲𝘄𝘀 ➮* _${movie.views || 'N/A'}_
+*▫🌍 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || 'N/A'}_
+*▫🎥 𝗗𝗶𝗿𝗲𝗰𝘁𝗼𝗿 ➮* _${movie.director || 'N/A'}_
+*▫👥 𝗖𝗮𝘀𝘁 ➮* _${movie.cast?.slice(0, 3).join(', ') || 'N/A'}_`
 
-*▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 ➮* _${movie.releaseDate || "N/A"}_
-*▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || "N/A"}_
-*▫⏱ 𝗥𝘂𝗻𝘁𝗶𝗺𝗲 ➮* _${movie.runtime || "N/A"}_
-*▫🔞 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.contentRating || "N/A"}_
-*▫⭐ 𝗜𝗠𝗗𝗯 ➮* _${movie.ratingValue || "N/A"}/10_
-*▫🎭 𝗚𝗲𝗻𝗿𝗲 ➮* _${movie.genres?.join(", ") || "N/A"}_`;
+        let buttons = []
 
-     let buttons = [];
-
-        // details button
+        // Details button
         buttons.push({
-            buttonId: `${prefix}subdetails ${q}`,
-            buttonText: { displayText: "Details 📄" },
+            buttonId: `${prefix}sublkdetails ${q}`,
+            buttonText: { displayText: '📄 Full Details' },
             type: 1
-        });
+        })
 
-           movie.pixeldrainDownloads?.slice(0, 3).forEach(dl => {
-            buttons.push({
-                buttonId: `${prefix}subdl ${dl.finalDownloadUrl}±${cleanTitle}±${movie.imageUrl}±${dl.quality}`,
-                buttonText: {
-                    displayText: `${dl.quality} • ${dl.size}`
-                },
-                type: 1
-            });
-        });
-
-        const buttonMessage = {
-            image: { url: movie.imageUrl },
-            caption: msg,
-            footer: config.FOOTER,
-            buttons,
-            headerType: 4
-        };
-
-        await conn.buttonMessage(from, buttonMessage, mek);
-
-    } catch (e) {
-        console.log(e);
-        reply("*🚩 Error occurred while fetching movie info!*");
-    }
-});
-
-cmd({
-    pattern: "subdl",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-}, async (conn, mek, m, { from, q, reply }) => {
-
-    if (typeof isUploadinggggg !== 'undefined' && isUploadinggggg) {
-        return await conn.sendMessage(from, {
-            text: '*A movie is already being uploaded. Please wait until it finishes.* ⏳',
-            quoted: mek
-        });
-    }
-
-    try {
-        const [downloadUrl, title, imglink, quality] = q.split("±");
-
-        if (!downloadUrl || !title || !imglink) {
-            return await reply("⚠️ Invalid format.");
+        // Download links (including subtitles)
+        if (movie.download_links && movie.download_links.length) {
+            movie.download_links.forEach(dl => {
+                const isSub = dl.quality && (dl.quality.toLowerCase().includes('subtitle') || dl.quality.toLowerCase().includes('sub'))
+                const label = isSub ? `📝 ${dl.quality} (${dl.size})` : `⬇️ ${dl.quality} (${dl.size})`
+                buttons.push({
+                    buttonId: `${prefix}sublkdl ${dl.redirect_url}±${cleanTitleStr}±${poster}±${dl.quality}±${isSub ? 'sub' : 'video'}`,
+                    buttonText: { displayText: label },
+                    type: 1
+                })
+            })
         }
 
-        isUploadinggggg = true;
+        if (buttons.length === 1) {
+            buttons.push({
+                buttonId: `${prefix}sublkdl ${q}±${cleanTitleStr}±${poster}±N/A±video`,
+                buttonText: { displayText: '⬇️ Download (direct)' },
+                type: 1
+            })
+        }
 
-        await conn.sendMessage(from, {
-            text: '*Uploading your movie... ⬆️*',
-            quoted: mek
-        });
-
-        const message = {
-            document: { url: downloadUrl.trim() },
-            mimetype: "video/mp4",
-            fileName: `🎬𝕲𝖔𝖑𝖉𝖊𝖓 𝕾𝖈𝖗𝖊𝖊𝖓🎬${title.trim()} ${quality || ""}.mp4`,
-            jpegThumbnail: await (await fetch(imglink.trim())).buffer(),
-            caption: `🎬 *${title.trim()}*\n\n*${quality || "Movie"}*\n\n${config.NAME}`
-        };
-
-        await conn.sendMessage(config.JID || from, message, { quoted: mek });
-
-        await conn.sendMessage(from, {
-            react: { text: '✔️', key: mek.key }
-        });
+        await conn.buttonMessage(from, {
+            image: { url: poster },
+            caption: caption,
+            footer: config.FOOTER,
+            buttons: buttons,
+            headerType: 4
+        }, mek)
 
     } catch (e) {
-        console.error("subdl error:", e);
-        reply('🚫 *Error Occurred !!*\n\n' + e.message);
-    } finally {
-        isUploadinggggg = false;
+        console.log(e)
+        reply('*🚩 Error occurred while fetching movie info!*')
     }
-});
+})
 
+// ==================== 3. DETAILS CARD ====================
 cmd({
-    pattern: "subdetails",
-    react: '🎬',
-    desc: "Movie details sender from SubzLK",
+    pattern: 'sublkdetails',
+    react: '📄',
+    desc: 'Full movie details from SubzLK',
     filename: __filename
 },
 async (conn, m, mek, { from, q, reply }) => {
     try {
-        if (!q) return reply('*Please provide a link!*');
+        if (!q) return reply('*Please provide a link!*')
 
-        const apiUrl = `https://apis.sadas.dev/api/v1/movie/sublk/infodl?q=${encodeURIComponent(q)}&apiKey=ea4d57a2a2db72e0bb3ba58f56b1ff9b`;
-        const { data: res } = await axios.get(apiUrl);
+        const infoUrl = `${BASE_URL}/info?url=${encodeURIComponent(q)}&apiKey=${API_KEY}`
+        const { data: res } = await axios.get(infoUrl, { timeout: 30000 })
 
         if (!res.status || !res.data) {
-            return reply('*🚩 Movie details not found!*');
+            return reply('*🚩 Movie details not found!*')
         }
 
-        const movie = res.data;
+        const movie = res.data
+        const cleanTitleStr = cleanTitle(movie.title)
 
-        let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title}_*
+        let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${cleanTitleStr}_*
 
-*▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗗𝗮𝘁𝗲 ➮* _${movie.releaseDate || "N/A"}_
-*▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || "N/A"}_
-*▫⏱️ 𝗥𝘂𝗻𝘁𝗶𝗺𝗲 ➮* _${movie.runtime || "N/A"}_
-*▫🔞 𝗖𝗼𝗻𝘁𝗲𝗻𝘁 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.contentRating || "N/A"}_
-*▫⭐ 𝗜𝗠𝗗𝗯 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.ratingValue || "N/A"}/10_
-*▫🗳️ 𝗩𝗼𝘁𝗲𝘀 ➮* _${movie.ratingCount || "0"}_
+*▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗬𝗲𝗮𝗿 ➮* _${movie.year || 'N/A'}_
+*▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || 'N/A'}_
+*▫🎬 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality || 'N/A'}_
+*▫⭐ 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.rating || 'N/A'}/10_
+*▫👁️ 𝗩𝗶𝗲𝘄𝘀 ➮* _${movie.views || 'N/A'}_
 
-*▫🎭 𝗚𝗲𝗻𝗿𝗲 ➮*
-${movie.genres?.map(g => `• ${g}`).join('\n') || "N/A"}
+*▫🎥 𝗗𝗶𝗿𝗲𝗰𝘁𝗼𝗿 ➮* _${movie.director || 'N/A'}_
+*▫🎭 𝗚𝗲𝗻𝗿𝗲𝘀 ➮* _${movie.genres?.join(', ') || 'N/A'}_
+
+*▫👥 𝗖𝗮𝘀𝘁 ➮*
+${movie.cast?.map(c => `• ${c}`).join('\n') || 'N/A'}
+
+*📝 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻:*
+${movie.description || 'No description available.'}
 
 ⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛
-🪀Follow us : https://whatsapp.com/channel/0029Vb8NvTj5K3zbmo1MCo35
+🪀 Follow us : https://whatsapp.com/channel/0029Vb8NvTj5K3zbmo1MCo35
 ⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛
+${config.NAME}`
 
-${config.NAME}`;
-
-        await conn.sendMessage(
-            config.JID || from,
-            {
-                image: { url: movie.imageUrl },
-                caption: msg
-            },
-            { quoted: mek }
-        );
+        await conn.sendMessage(config.JID || from, {
+            image: { url: movie.thumbnail || config.LOGO },
+            caption: msg
+        }, { quoted: mek })
 
     } catch (error) {
-        console.error('Error:', error);
-
-        await conn.sendMessage(
-            from,
-            {
-                text: '⚠️ *An error occurred while fetching details.*'
-            },
-            { quoted: mek }
-        );
+        console.error('Error:', error)
+        reply('⚠️ *An error occurred while fetching details.*')
     }
-});
+})
+
+// ==================== 4. DOWNLOAD (VIDEO & SUBTITLE) ====================
+cmd({
+    pattern: 'sublkdl',
+    react: '⬇️',
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, reply }) => {
+    if (isSubLkUploading) {
+        return await reply('*A download is already in progress. Please wait ⏳*')
+    }
+
+    try {
+        const [linkUrl, title, img, quality, type] = q.split('±')
+        if (!linkUrl) return reply('⚠️ *Invalid download link.*')
+
+        isSubLkUploading = true
+
+        // ---------- SUBTITLE DOWNLOAD ----------
+        if (type === 'sub') {
+            const dlUrl = `${BASE_URL}/download?link_url=${encodeURIComponent(linkUrl)}&apiKey=${API_KEY}`
+            const { data: dlRes } = await axios.get(dlUrl, { timeout: 30000 })
+
+            if (!dlRes.status || !dlRes.data || !dlRes.data.final_url) {
+                return reply('❌ *Failed to get subtitle download link.*')
+            }
+
+            const finalUrl = dlRes.data.final_url
+            const fileName = `${cleanTitle(title)}.srt`
+
+            await conn.sendMessage(config.JID || from, {
+                document: { url: finalUrl },
+                mimetype: 'text/srt',
+                fileName: fileName,
+                caption: `📝 *Subtitle for:* ${title}\n\n${config.NAME}`
+            }, { quoted: mek })
+
+            await conn.sendMessage(from, { react: { text: '✅', key: mek.key } })
+            return
+        }
+
+        // ---------- VIDEO DOWNLOAD ----------
+        const dlUrl = `${BASE_URL}/download?link_url=${encodeURIComponent(linkUrl)}&apiKey=${API_KEY}`
+        const { data: dlRes } = await axios.get(dlUrl, { timeout: 30000 })
+
+        if (!dlRes.status || !dlRes.data || !dlRes.data.final_url) {
+            return reply('❌ *No direct download link found.*')
+        }
+
+        const finalUrl = dlRes.data.final_url
+        const fileInfo = dlRes.data.file_info || {}
+        const fileName = fileInfo.name || `${cleanTitle(title)}.mp4`
+
+        const thumb = await getResizedThumb(img)
+        const caption = `🎬 *${cleanTitle(title)}*\n\n*${quality || 'Movie'}*\n\n${config.NAME}`
+
+        await conn.sendMessage(config.JID || from, {
+            document: { url: finalUrl },
+            mimetype: 'video/mp4',
+            fileName: fileName,
+            jpegThumbnail: thumb,
+            caption: caption
+        }, { quoted: mek })
+
+        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } })
+
+    } catch (e) {
+        console.error('sublkdl error:', e)
+        reply('🚫 *Error Occurred !!*\n\n' + e.message)
+    } finally {
+        isSubLkUploading = false
+    }
+})
+
             
 
 //••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
