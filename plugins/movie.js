@@ -17,168 +17,6 @@ const { sizeFormatter} = require('human-readable');
 const fg = require('api-dylux');
 const { Octokit } = require("@octokit/rest");
 
-
-
-cmd({
-    pattern: "moviepro",
-    react: '🔎',
-    category: "movie",
-    alias: ["mp"],
-    desc: "moviepro search",
-    use: ".moviepro movie name",
-    filename: __filename
-},
-async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
-    try {
-
-        if (config.MV_BLOCK === "true" && !isMe && !isSudo && !isOwner) {
-            return reply("*This command currently only works for the Bot owner.*");
-        }
-
-        if (!q) return reply("*Please give movie or tv name 🎬*");
-
-        const api = `https://moviepro.sadas.dev/api/search?keyword=${encodeURIComponent(q)}&key=sadas2007`;
-        const { data: result } = await axios.get(api);
-
-        if (!result.status || !result.results?.length) {
-            return reply("*No results found ❌*");
-        }
-
-        let rows = [];
-
-        result.results.slice(0, 30).forEach(movie => {
-            rows.push({
-                title: movie.title,
-                description: `⭐ IMDb: ${movie.rating}`,
-                rowId: `${prefix}movieprodl ${movie.id}`
-            });
-        });
-
-        const sections = [{
-            title: `Search Results (${rows.length})`,
-            rows
-        }];
-
-        await conn.listMessage(from, {
-            text: `🎬 *MOVIEPRO SEARCH*\n\n🔎 Query: *${q}*\n\n_Select movie below._`,
-            footer: config.FOOTER,
-            title: "MoviePro Downloader",
-            buttonText: "📂 View Results",
-            sections
-        }, mek);
-
-    } catch (e) {
-        console.log(e);
-        reply("*🚩 Search error!*");
-    }
-});
-
-
-cmd({
-    pattern: "movieprodl",
-    react: '🎥',
-    desc: "movie info",
-    filename: __filename
-},
-async (conn, m, mek, { from, q, prefix, reply }) => {
-    try {
-        if (!q) return reply("*Please provide movie id!*");
-
-        const api = `https://moviepro.sadas.dev/api/info?id=${q}&key=sadas2007`;
-        const { data: res } = await axios.get(api);
-
-        if (!res.status || !res.movie_details) {
-            return reply("*🚩 Movie details not found!*");
-        }
-
-        const movie = res.movie_details;
-
-        let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title}_*
-
-*▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 ➮* _${movie.releaseDate}_
-*▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.countryName}_
-*▫🎭 𝗚𝗲𝗻𝗿𝗲 ➮* _${movie.genre}_
-*▫⭐ 𝗜𝗠𝗗𝗕 ➮* _${movie.imdbRatingValue}_`;
-
-        let buttons = [];
-
-        res.download_links.forEach(dl => {
-            buttons.push({
-                buttonId: `${prefix}movieprosend ${dl.direct_url}±${movie.title}±${movie.image}±${dl.quality}`,
-                buttonText: {
-                    displayText: `${dl.quality} - ${dl.size}`
-                },
-                type: 1
-            });
-        });
-
-        await conn.buttonMessage(from, {
-            image: { url: movie.image },
-            caption: msg,
-            footer: config.FOOTER,
-            buttons,
-            headerType: 4
-        }, mek);
-
-    } catch (e) {
-        console.log(e);
-        reply("*🚩 Info error!*");
-    }
-});
-
-
-cmd({
-    pattern: "movieprosend",
-    react: "⬇️",
-    dontAddCommandList: true,
-    filename: __filename
-},
-async (conn, mek, m, { from, q, reply }) => {
-    try {
-        if (!q) return reply("*📍 Please provide link!*");
-
-        const [directUrl, movieName, thumbUrl, quality] = q.split("±");
-
-        const loading = await conn.sendMessage(from, {
-            text: "*Uploading movie... ⬆️*"
-        }, { quoted: mek });
-
-        let thumb = null;
-
-        if (thumbUrl) {
-            try {
-                const response = await axios.get(thumbUrl, {
-                    responseType: "arraybuffer"
-                });
-
-                thumb = await sharp(Buffer.from(response.data))
-                    .resize(300, 300, { fit: "cover" })
-                    .jpeg({ quality: 80 })
-                    .toBuffer();
-
-            } catch (e) {
-                console.log(e);
-            }
-        }
-
-        await conn.sendMessage(from, {
-            document: { url: directUrl },
-            mimetype: "video/mp4",
-            fileName: `🎬${movieName}.mp4`,
-            jpegThumbnail: thumb,
-            caption: `*🎬 ${movieName}*\n\n*\`${quality}\`*\n\n${config.NAME}`
-        }, { quoted: mek });
-
-        await conn.sendMessage(from, { delete: loading.key });
-        await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
-
-    } catch (e) {
-        console.log(e);
-        reply("*❌ Error:* " + e.message);
-    }
-});
-
-
    cmd({
          pattern: "mv",
          react: "🔎",
@@ -250,7 +88,7 @@ try {
   }
 });
 
-
+//••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
 cmd({
     pattern: "cine",
@@ -1590,3 +1428,171 @@ async (conn, m, mek, { from, q, reply }) => {
 
 
 
+// moviepro.js
+
+cmd({
+    pattern: "moviepro",
+    react: '🔎',
+    category: "movie",
+    alias: ["mp"],
+    desc: "moviepro search",
+    use: ".moviepro movie name",
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
+    try {
+
+        if (config.MV_BLOCK === "true" && !isMe && !isSudo && !isOwner) {
+            return reply("*This command currently only works for the Bot owner.*");
+        }
+
+        if (!q) return reply("*Please give movie or tv name 🎬*");
+
+        const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/search?keyword=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
+        const { data: result } = await axios.get(api);
+
+        if (!result.status || !result.results?.length) {
+            return reply("*No results found ❌*");
+        }
+
+        let rows = [];
+
+        result.results.slice(0, 30).forEach(movie => {
+            rows.push({
+                title: movie.title,          // only title – no description
+                rowId: `${prefix}movieprodl ${movie.id}`
+            });
+        });
+
+        const sections = [{
+            title: `Search Results (${rows.length})`,
+            rows
+        }];
+
+        await conn.listMessage(from, {
+            text: `🎬 *MOVIEPRO SEARCH*\n\n🔎 Query: *${q}*\n\n_Select movie below._`,
+            footer: config.FOOTER,
+            title: "MoviePro Downloader",
+            buttonText: "📂 View Results",
+            sections
+        }, mek);
+
+    } catch (e) {
+        console.log(e);
+        reply("*🚩 Search error!*");
+    }
+});
+
+
+cmd({
+    pattern: "movieprodl",
+    react: '🎥',
+    desc: "movie info",
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        if (!q) return reply("*Please provide movie id!*");
+
+        const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/info?id=${q}&apiKey=key_4797e0dcedd66cca`;
+        const { data: res } = await axios.get(api);
+
+        if (!res.status || !res.movie) {
+            return reply("*🚩 Movie details not found!*");
+        }
+
+        const movie = res.movie;
+
+        let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title}_*
+
+*▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 ➮* _${movie.releaseDate || 'N/A'}_
+*▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || 'N/A'}_
+*▫🎭 𝗚𝗲𝗻𝗿𝗲 ➮* _${Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre || 'N/A'}_
+*▫⭐ 𝗜𝗠𝗗𝗕 ➮* _${movie.imdbRating || 'N/A'}_`;
+
+        let buttons = [];
+
+        if (res.download_links && res.download_links.length > 0) {
+            res.download_links.forEach(dl => {
+                const downloadUrl = dl.stream_url || dl.original_url;
+                if (downloadUrl) {
+                    buttons.push({
+                        buttonId: `${prefix}movieprosend ${downloadUrl}±${movie.title}±${movie.image}±${dl.quality}`,
+                        buttonText: {
+                            displayText: `${dl.quality} - ${dl.size}`
+                        },
+                        type: 1
+                    });
+                }
+            });
+        }
+
+        if (buttons.length === 0) {
+            return reply("*🚩 No download links available for this movie!*");
+        }
+
+        await conn.buttonMessage(from, {
+            image: { url: movie.image || 'https://via.placeholder.com/300x400?text=No+Image' },
+            caption: msg,
+            footer: config.FOOTER,
+            buttons,
+            headerType: 4
+        }, mek);
+
+    } catch (e) {
+        console.log(e);
+        reply("*🚩 Info error!*");
+    }
+});
+
+
+cmd({
+    pattern: "movieprosend",
+    react: "⬇️",
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, mek, m, { from, q, reply }) => {
+    try {
+        if (!q) return reply("*📍 Please provide link!*");
+
+        const [directUrl, movieName, thumbUrl, quality] = q.split("±");
+
+        const loading = await conn.sendMessage(from, {
+            text: "*Uploading movie... ⬆️*"
+        }, { quoted: mek });
+
+        let thumb = null;
+
+        if (thumbUrl) {
+            try {
+                const response = await axios.get(thumbUrl, {
+                    responseType: "arraybuffer"
+                });
+
+                thumb = await sharp(Buffer.from(response.data))
+                    .resize(300, 300, { fit: "cover" })
+                    .jpeg({ quality: 80 })
+                    .toBuffer();
+
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        await conn.sendMessage(from, {
+            document: { url: directUrl },
+            mimetype: "video/mp4",
+            fileName: `🎬${movieName}.mp4`,
+            jpegThumbnail: thumb,
+            caption: `*🎬 ${movieName}*\n\n*\`${quality}\`*\n\n${config.NAME}`
+        }, { quoted: mek });
+
+        await conn.sendMessage(from, { delete: loading.key });
+        await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
+
+    } catch (e) {
+        console.log(e);
+        reply("*❌ Error:* " + e.message);
+    }
+});
