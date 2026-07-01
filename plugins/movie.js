@@ -1060,8 +1060,7 @@ async (conn, m, mek, { from, q, reply }) => {
 
 //••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
-let isUploadingTv = false;
-const API_KEY = 'key_13be1374312cdd0a';   // new API key
+let isUploadingTv = false;   // new API key
 const BASE_URL = 'https://mr-thinuzz-api-build.vercel.app/api/cinesubz';
 
 async function getResizedThumb(url) {
