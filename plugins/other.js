@@ -1,4 +1,4 @@
-const config = require('../config');
+const config = require('../config'); //Require config.js
 const { cmd, commands } = require('../command');
 const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('../lib/functions');
 
