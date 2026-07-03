@@ -16,12 +16,6 @@ const { URL } = require('url');
 const { sizeFormatter} = require('human-readable');
 const fg = require('api-dylux');
 const { Octokit } = require("@octokit/rest");
-const config = require('../config')
-const { cmd, commands } = require('../command')
-const axios = require('axios')
-const sharp = require('sharp')
-const fetch = require('node-fetch')
-const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson } = require('../lib/functions')
 
 const API_KEY = 'key_13be1374312cdd0a'
 const BASE_URL = 'https://mr-thinuzz-api-build.vercel.app/api/'
