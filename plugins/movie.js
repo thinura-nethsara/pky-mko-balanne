@@ -1246,7 +1246,6 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
 
         const rows = result.results.slice(0, 30).map(movie => ({
             title: cleanTitle(movie.title),
-            description: `📅 ${movie.year || 'N/A'}`,
             rowId: `${prefix}sublkinfo ${movie.url}`
         }))
 
