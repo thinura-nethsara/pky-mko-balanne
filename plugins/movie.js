@@ -324,10 +324,12 @@ async function getResizedThumb(url) {
     }
 }
 
+
+
 // ==================== 1. TV SERIES SEARCH ====================
 cmd({
     pattern: "cinetv",
-	alias:["cinesubztv","cinetvseries"],
+	alias: ["ctztv","cztv","cinesubztv"],
     react: '🔎',
     category: "tv",
     filename: __filename
@@ -603,7 +605,7 @@ async (conn, m, mek, { from, q, reply }) => {
                 const epTitle = `${title} S${String(seasonNum).padStart(2, '0')}E${String(ep.number).padStart(2, '0')}`;
 
                 // fetch episode download links
-                const epInfoUrl = `${BASE_URL}cinesubz/episode?url=${encodeURIComponent(ep.url)}&apiKey=${API_KEY}`;
+                const epInfoUrl = `${BASE_URL}/episode?url=${encodeURIComponent(ep.url)}&apiKey=${API_KEY}`;
                 const { data: qData } = await axios.get(epInfoUrl, { timeout: 30000 });
 
                 if (!qData?.status || !qData?.data?.downloadUrl?.length) continue;
@@ -703,14 +705,6 @@ async (conn, m, mek, { from, q, reply }) => {
     }
     finally { isUploadingTv = false; }
 });
-
-
-
-
-
-
-
-
 
 
 cmd({
