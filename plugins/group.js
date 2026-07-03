@@ -239,7 +239,7 @@ cmd({
 }, async (conn, mek, m, { from, mentionByTag, isGroup, isAdmins, isMe, isBotAdmins, reply }) => {
     try {
         if (!isGroup) return reply("⛔ *Group Only Command*\nThis command works only in groups.");
-        if (!isAdmins && !isMe) return reply("⚠️ *Permission Denied*\nYou must be a group admin to use this.");
+        if (isAdmins && isMe) return reply("⚠️ *Permission Denied*\nYou must be a group admin to use this.");
         if (!isBotAdmins) return reply("❌ *Bot Lacks Permission*\nMake me an admin to perform this action.");
 
         const mention = await mentionByTag;
