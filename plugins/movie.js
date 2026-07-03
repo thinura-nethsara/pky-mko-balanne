@@ -1189,8 +1189,6 @@ reply(`❌ *Error Accurated !!*\n\n${e}`)
 })
 
 let isSubLkUploading = false
-const API_KEY = 'key_13be1374312cdd0a'
-const BASE_URL = 'https://mr-thinuzz-api-build.vercel.app/api/lksubs'
 
 function cleanTitle(title) {
     return title
