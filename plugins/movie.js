@@ -20,8 +20,8 @@ const { Octokit } = require("@octokit/rest");
 const API_KEY = config.APIKEY; 
 const BASE_URL = 'https://mr-thinuzz-api-build.vercel.app/api/'
 
-        
-   cmd(
+    
+   cmd({
          pattern: "mv",
          react: "🔎",
          alias: ["movie", "film", "cinema"],
@@ -91,7 +91,6 @@ try {
     reply('*❌ Error occurred*');
     l(e);
   }
-});
 
 //••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
