@@ -6,7 +6,8 @@
     "start": "pm2 start index.js --deep-monitoring --attach --name Visper-md",
     "stop": "pm2 stop Visper-md",
     "restart": "git pull && npm stop && npm start",
-    "stash": "git stash && git stash drop"
+    "stash": "git stash && git stash drop",
+    "postinstall": "npx playwright install chromium"
   },
   "dependencies": {
     "@adiwajshing/keyed-db": "latest",
