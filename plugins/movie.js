@@ -1820,5 +1820,3 @@ async (conn, mek, m, { from, q, reply }) => {
         reply("*❌ Error:* " + e.message);
     }
 });
-
-
