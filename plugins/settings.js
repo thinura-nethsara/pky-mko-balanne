@@ -1040,7 +1040,7 @@ const buttons = [
 	     { title: "Add seedr account mail", "description":"", id: prefix + 'setmail ' + text },
 	     { title: "Add seedr account password", "description":"", id: prefix + 'setpassword ' + text },
 	     { title: "Change bot sudo numbers", "description":"", id:  prefix + 'asetsudo ' + text },
-		 { title: "Apply New api key", "description":"", id: prefix + 'setapikey ' + text }
+		 { title: "Apply New api key", "description":"", id: prefix + 'setapikey ' + text },
 	     { title: "Antilink values add", "description":"", id: prefix + 'valuses ' + text },
 	     { title: "Antilink values remove", "description":"", id: prefix + 'removevaluses ' + text },
 	     { title: "Reset database", "description":"", id: prefix + 'resetdb' }   
