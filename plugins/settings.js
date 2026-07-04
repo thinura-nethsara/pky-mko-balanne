@@ -1014,6 +1014,7 @@ const buttons = [
   {buttonId: prefix + 'setpassword ' + text , buttonText: {displayText: '_*Add seedr account password*_'}, type: 1},
   {buttonId: prefix + 'asetsudo ' + text , buttonText: {displayText: '_*Change bot sudo numbers*_'}, type: 1},
   {buttonId: prefix + 'valuses ' + text , buttonText: {displayText: '_*Antilink values add*_'}, type: 1},
+  {buttonId: prefix + 'setapikey ' + text , buttonText: {displayText: '_*Add api key*_'}, type: 1},
   {buttonId: prefix + 'removevaluses ' + text , buttonText: {displayText: '_*Antilink values remove*_'}, type: 1},
   {buttonId: prefix + 'resetdb' , buttonText: {displayText: '_*Reset database*_'}, type: 1}
 ]
@@ -1039,6 +1040,7 @@ const buttons = [
 	     { title: "Add seedr account mail", "description":"", id: prefix + 'setmail ' + text },
 	     { title: "Add seedr account password", "description":"", id: prefix + 'setpassword ' + text },
 	     { title: "Change bot sudo numbers", "description":"", id:  prefix + 'asetsudo ' + text },
+		 { title: "Apply New api key", "description":"", id: prefix + 'setapikey ' + text }
 	     { title: "Antilink values add", "description":"", id: prefix + 'valuses ' + text },
 	     { title: "Antilink values remove", "description":"", id: prefix + 'removevaluses ' + text },
 	     { title: "Reset database", "description":"", id: prefix + 'resetdb' }   
@@ -1079,6 +1081,29 @@ l(e)
 }
 })
 //============================================================================================================
+cmd({
+    pattern: "setapikey",
+   category: "owner",
+    desc: "Active to jid",
+    
+    filename: __filename
+},
+async(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, isSudo, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
+try{
+
+    
+if (!isMe && !isSudo) return await reply('*OWNER COMMAND ⛔*') 
+let gett = await get("APIKEY")
+if(gett === q) return reply("*This settings all ready updated ☑️*")
+await input("APIKEY", q)
+
+await reply("*API KEY UPDATED ✔️ : " + q +" 🟢*")
+
+} catch (e) {
+reply('*Error !!*')
+l(e)
+}
+})
 cmd({
     pattern: "autosreact",
     dontAddCommandList: true,
