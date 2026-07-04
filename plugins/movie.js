@@ -266,7 +266,7 @@ cmd({
     await conn.sendMessage(from, {
       document: { url: directLink },
       mimetype: 'video/mp4',
-      fileName: `📽️𝘝𝘐𝘚𝘗𝘌𝘙-𝘔𝘋📽️${movieName}.mp4`,
+      fileName: `${config.TITLE}${movieName}.mp4`,
       jpegThumbnail: thumb,
       caption: `*🎬 ${movieName}*\n\n*\`${quality || res.data.size}\`*\n\n${config.NAME || 'VISPER MD'}`
     }, { quoted: mek });
@@ -584,7 +584,7 @@ async (conn, m, mek, { from, q, reply }) => {
         const targetJid = config.JID || from;
         await conn.sendMessage(targetJid, {
           document: { url: finalUrl },
-          fileName: '🎥 ' + epTitle.replace(/[^\w\s]/g, '').trim() + '.mp4',
+          fileName: `${config.TITLE} ${epTitle}.mkv`,
           mimetype: 'video/mp4',
           jpegThumbnail: resizedThumb,
           caption: caption
@@ -594,7 +594,7 @@ async (conn, m, mek, { from, q, reply }) => {
         console.error(`Error downloading episode ${ep.number}:`, err);
       }
     }
-    await reply(`*✅ All episodes of Season ${seasonNum} have been sent!*`);
+    await reply(`*☑️ All episodes of Season ${seasonNum} have been sent!*`);
   } catch (e) {
     console.error(e);
     reply('*Critical error in Download All!*');
@@ -643,12 +643,12 @@ async (conn, m, mek, { from, q, reply }) => {
     const targetJid = config.JID || from;
     await conn.sendMessage(targetJid, {
       document: { url: finalUrl },
-      fileName: '🎥' + title.replace(/[^\w\s]/g, '').trim() + '.mp4',
+      fileName: `${config.TITLE} ${title}.mkv`,
       mimetype: 'video/mp4',
       jpegThumbnail: resizedThumb,
       caption: caption
     });
-    await conn.sendMessage(from, { react: { text: '✔️', key: mek.key } });
+    await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
   } catch (e) {
     console.error(e);
     reply('*Download Error !!*');
@@ -835,7 +835,7 @@ cmd({
     await conn.sendMessage(from, {
       document: { url: direct_link },
       mimetype: 'video/mp4',
-      fileName: `📽️𝘝𝘐𝘚𝘗𝘌𝘙-𝘔𝘋📽️ ${movieName}.mp4`,
+      fileName: `${config.TITLE} ${movieName}.mp4`,
       caption: `*🎬 Name :* *${movieName}*\n\n*\`${quality}\`*\n\n${config.NAME || 'VISPER MD'}`,
       jpegThumbnail: resizedThumb
     }, { quoted: mek });
@@ -969,7 +969,7 @@ async (conn, mek, m, { from, q, reply }) => {
 *🌎 𝗖ᴏᴜɴᴛʀʏ ➮* ${data.Country}
 *💃 𝗥ᴀᴛɪɴɢ ➮* ${data.imdbRating}
 
-\n⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛\n🪀Follow us : https://whatsapp.com/channel/0029Vb8NvTj5K3zbmo1MCo35\n⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛\n*\n${config.NAME || 'VISPER MD'}`;
+\n⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛\n🪀Follow us : https://whatsapp.com/channel/0029Vb8NvTj5K3zbmo1MCo35\n⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛\n*\n ${config.NAME || 'VISPER MD'}`;
 
     const imageUrl = data.Poster && data.Poster !== 'N/A' ? data.Poster : config.LOGO || 'https://via.placeholder.com/300';
 
@@ -1149,6 +1149,7 @@ ${movie.description || 'No description available.'}
 ⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛
 🪀 Follow us : https://whatsapp.com/channel/0029Vb8NvTj5K3zbmo1MCo35
 ⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛⇛
+
 ${config.NAME || 'VISPER MD'}`;
 
     await conn.sendMessage(config.JID || from, {
@@ -1221,7 +1222,7 @@ async (conn, m, mek, { from, q, reply }) => {
     await conn.sendMessage(config.JID || from, {
       document: { url: finalUrl },
       mimetype: 'video/mp4',
-      fileName: fileName,
+      fileName: config.TITLE fileName,
       jpegThumbnail: thumb,
       caption: caption
     }, { quoted: mek });
@@ -1386,7 +1387,7 @@ async (conn, mek, m, { from, q, reply }) => {
     await conn.sendMessage(from, {
       document: { url: directUrl },
       mimetype: 'video/mp4',
-      fileName: `🎬${movieName}.mp4`,
+      fileName: `${config.TITLE}${movieName}.mkv`,
       jpegThumbnail: thumb,
       caption: `*🎬 ${movieName}*\n\n*\`${quality}\`*\n\n${config.NAME || 'VISPER MD'}`
     }, { quoted: mek });
@@ -1551,7 +1552,7 @@ async (conn, mek, m, { from, q, reply }) => {
     await conn.sendMessage(from, {
       document: { url: directUrl },
       mimetype: 'video/mp4',
-      fileName: `🎬${movieName}.mp4`,
+      fileName: `${config.TITLE}${movieName}.mkv`,
       jpegThumbnail: thumb,
       caption: `*🎬 ${movieName}*\n\n*\`${quality || 'N/A'}\`*\n\n${config.NAME || 'VISPER MD'}`
     }, { quoted: mek });
