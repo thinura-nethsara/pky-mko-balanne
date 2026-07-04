@@ -1010,6 +1010,7 @@ const buttons = [
   {buttonId: prefix + 'setalive ' + text, buttonText: {displayText: '_*Change bot alive*_'}, type: 1},
   {buttonId: prefix + 'setowner ' + text, buttonText: {displayText: '_*Change bot owner*_'}, type: 1},
   {buttonId: prefix + 'setmvfooter ' + text, buttonText: {displayText: '_*Change bot movie footer*_'}, type: 1},
+  {buttonId: prefix + 'setmvtitle ' + text , buttonText: {displayText: '_*Change bot movie titile*_'}, type: 1},
   {buttonId: prefix + 'setmail ' + text , buttonText: {displayText: '_*Add seedr account mail*_'}, type: 1},
   {buttonId: prefix + 'setpassword ' + text , buttonText: {displayText: '_*Add seedr account password*_'}, type: 1},
   {buttonId: prefix + 'asetsudo ' + text , buttonText: {displayText: '_*Change bot sudo numbers*_'}, type: 1},
@@ -1037,6 +1038,7 @@ const buttons = [
              { title: "Change bot alive", "description":"", id: prefix + 'setalive ' + text },
              { title: "Change bot owner", "description":"", id: prefix + 'setowner ' + text },
              { title: "Change bot movie footer", "description":"", id: prefix + 'setmvfooter ' + text },
+				 { title: "Change bot movie title", "description":"", id: prefix + 'setmvtitle ' + text },
 	     { title: "Add seedr account mail", "description":"", id: prefix + 'setmail ' + text },
 	     { title: "Add seedr account password", "description":"", id: prefix + 'setpassword ' + text },
 	     { title: "Change bot sudo numbers", "description":"", id:  prefix + 'asetsudo ' + text },
@@ -1082,9 +1084,34 @@ l(e)
 })
 //============================================================================================================
 cmd({
+    pattern: "setmvtitle",
+   category: "movie",
+    desc: "set movie title for your name",
+    
+    filename: __filename
+},
+async(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, isSudo, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
+try{
+
+    
+if (!isMe && !isSudo) return await reply('*OWNER COMMAND ⛔*') 
+let gett = await get("TITLE")
+if(gett === q) return reply("*This settings all ready updated ☑️*")
+await input("TITLE", q)
+
+await reply("*MOVIE TITLE SET : " + q +" 🟢 SUCCESSFULLY*")
+
+} catch (e) {
+reply('*Error !!*')
+l(e)
+}
+})
+
+
+cmd({
     pattern: "setapikey",
    category: "owner",
-    desc: "Active to jid",
+    desc: "add the api key for all download plugins",
     
     filename: __filename
 },
@@ -1097,7 +1124,7 @@ let gett = await get("APIKEY")
 if(gett === q) return reply("*This settings all ready updated ☑️*")
 await input("APIKEY", q)
 
-await reply("*API KEY UPDATED ✔️ : " + q +" 🟢*")
+await reply("*API KEY UPDADED ✔️ : " + q +" 🟢*")
 
 } catch (e) {
 reply('*Error !!*')
