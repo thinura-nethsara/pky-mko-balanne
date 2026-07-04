@@ -8,7 +8,7 @@ const fileType = require('file-type');
 const fg = require('api-dylux');
 
 // ==================== GLOBAL VARIABLES ====================
-const API_KEY = config.APIKEY || 'default_key';
+const API_KEY = config.APIKEY;
 const BASE_URL = 'https://mr-thinuzz-api-build.vercel.app/api/';
 let isUploadingTv = false;
 let isSubLkUploading = false;
