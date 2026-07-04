@@ -63,7 +63,7 @@
     "translate-google-api": "latest",
     "wa-sticker-formatter": "^4.4.4",
     "ytsearch-venom": "latest",
-    "playwright": "latest",
+    "puppeteer": "latest",
     "@octokit/rest": "^19.0.5"
   },
   "overrides": {
