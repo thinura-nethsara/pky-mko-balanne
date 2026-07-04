@@ -17,7 +17,7 @@ const { sizeFormatter} = require('human-readable');
 const fg = require('api-dylux');
 const { Octokit } = require("@octokit/rest");
 
-const API_KEY: config.APIKEY
+const API_KEY = config.APIKEY; 
 const BASE_URL = 'https://mr-thinuzz-api-build.vercel.app/api/'
 
         
