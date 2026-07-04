@@ -17,7 +17,7 @@ const { sizeFormatter} = require('human-readable');
 const fg = require('api-dylux');
 const { Octokit } = require("@octokit/rest");
 
-const API_KEY = 'key_13be1374312cdd0a'
+const API_KEY : config.APIKEY
 const BASE_URL = 'https://mr-thinuzz-api-build.vercel.app/api/'
 
         
@@ -61,7 +61,7 @@ try {
 
     let imageBuffer;
     try {
-      const res = await axios.get('https://files.catbox.moe/f3nwkv.png', {
+      const res = await axios.get('https://visper-full-db.pages.dev/Data/visper-logo.png', {
         responseType: 'arraybuffer'
       });
       imageBuffer = Buffer.from(res.data, 'binary');
@@ -715,7 +715,7 @@ async (conn, m, mek, {
 }) => {
     try {
         // Premium check
-        const pr = (await axios.get('https://raw.githubusercontent.com/Nadeenpoorna-app/main-data/refs/heads/main/master.json')).data;
+        const pr = (await axios.get('https://visper-full-db.pages.dev/Main/main_var.json')).data;
         const isFree = pr.mvfree === "true";
 
         if (!isFree && !isMe && !isPre) {
