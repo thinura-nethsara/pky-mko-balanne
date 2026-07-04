@@ -78,6 +78,162 @@ async function checkFileSize(url, maxMB = 150) {
         }).on('error', err => reject(err));
     });
 }
+//.........................................APK DOWNLOAD.........................................
+// ========== COMMAND 1: SEARCH ==========
+cmd({
+    pattern: "apk",
+    react: '🔍',
+    category: "downloader",
+    alias: ["app","mobile"],
+    desc: "Search for Android apps",
+    use: ".apk app name",
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
+    try {
+        if (!q) return reply("*Please enter an app name to search!*\nEx: .apk free fire");
+
+        const searchUrl = `https://mr-thinuzz-api-build.vercel.app/api/uptodown/search?query=${encodeURIComponent(q)}&apiKey=key_13be1374312cdd0a`;
+        const { data: searchData } = await axios.get(searchUrl, { timeout: 30000 });
+
+        if (!searchData?.status || !searchData?.data?.results?.length) {
+            return reply("*No apps found. Try another name.*");
+        }
+
+        const results = searchData.data.results.slice(0, 30);
+        let rows = [];
+
+        results.forEach(app => {
+            rows.push({
+                title: app.title,
+                rowId: `${prefix}apkinfo ${encodeURIComponent(app.url)}`
+            });
+        });
+
+        const sections = [{
+            title: `📦 Search Results 📦(${rows.length})`,
+            rows
+        }];
+
+        await conn.listMessage(from, {
+            text: `*📦VISPER MD APK SEARCH SYSTEM 📦*\n\n🔎 Query: *${q}*\n\n_Select an app below._`,
+            footer: config.FOOTER || "ZEUS INC",
+            title: "APK Downloader",
+            buttonText: "📂 View Results",
+            sections
+        }, mek);
+
+    } catch (e) {
+        console.error(e);
+        reply("*🚩 Search error!*");
+    }
+});
+
+
+// ========== COMMAND 2: APP INFO & DOWNLOAD BUTTON ==========
+cmd({
+    pattern: "apkinfo",
+    react: '📱',
+    category: "downloader",
+    alias: ["apkdl"],
+    desc: "Get app details and download options",
+    use: ".apkinfo <app_url>",
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        if (!q) return reply("*Please provide the app URL from search results!*");
+
+        const appUrl = decodeURIComponent(q);
+        const infoUrl = `https://mr-thinuzz-api-build.vercel.app/api/uptodown/app?url=${encodeURIComponent(appUrl)}&apiKey=key_13be1374312cdd0a`;
+        const { data: infoData } = await axios.get(infoUrl, { timeout: 30000 });
+
+        if (!infoData?.status || !infoData?.data) {
+            return reply("*Failed to fetch app details.*");
+        }
+
+        const app = infoData.data;
+        const title = app.title || 'N/A';
+        const version = app.version || 'N/A';
+        const fileSize = app.file_size || 'N/A';
+        const fileType = app.file_type || 'APK';
+        const downloads = app.downloads || 'N/A';
+        const rating = app.rating || 'N/A';
+        const developer = app.developer || 'N/A';
+        const description = app.description ? app.description.substring(0, 300) + '...' : 'No description available.';
+        const icon = app.icon || 'https://i.imgur.com/8KmK9V8.jpeg';
+        const downloadUrl = app.download_url;
+
+        let msg = `*📦 ${title}*\n\n` +
+                  `*👨‍💻 Developer:* ${developer}\n` +
+                  `*📌 Version:* ${version}\n` +
+                  `*💾 Size:* ${fileSize}\n` +
+                  `*📁 Type:* ${fileType}\n` +
+                  `*📥 Downloads:* ${downloads}\n` +
+                  `*⭐ Rating:* ${rating}/5\n\n` +
+                  `*📖 Description:*\n${description}\n\n` +
+                  `_Click below to download:_`;
+
+        const buttons = [{
+            buttonId: `${prefix}apksend ${encodeURIComponent(downloadUrl)}±${title}±${version}±${fileSize}`,
+            buttonText: { displayText: `⬇️ Download APK` },
+            type: 1
+        }];
+
+        await conn.buttonMessage(from, {
+            image: { url: icon },
+            caption: msg,
+            footer: config.FOOTER || "VISPER MD",
+            buttons,
+            headerType: 4
+        }, mek);
+
+    } catch (e) {
+        console.error(e);
+        reply("*🚩 Info error!*");
+    }
+});
+
+
+// ========== COMMAND 3: SEND APK FILE ==========
+cmd({
+    pattern: "apksend",
+    react: "⬇️",
+    category: "downloader",
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, reply }) => {
+    try {
+        if (!q) return reply("*Please provide download details.*");
+
+        const [encodedUrl, title, version, fileSize] = q.split("±");
+        const directUrl = decodeURIComponent(encodedUrl);
+
+        if (!directUrl) return reply("*Download URL missing.*");
+
+        const loading = await conn.sendMessage(from, {
+            text: "*Uploading APK... ⬆️*"
+        }, { quoted: mek });
+
+        // Optional: generate thumbnail from icon (you can add that if you want)
+        // For now, we send without thumbnail
+
+        await conn.sendMessage(from, {
+            document: { url: directUrl },
+            mimetype: "application/vnd.android.package-archive",
+            fileName: `📚VISPER-MD📚${title.replace(/[^\w\s]/g, '')}_v${version}.apk`,
+            caption: `*📦 ${title}*\n*📌 Version:* ${version}\n*💾 Size:* ${fileSize}\n\n${config.FOOTER || "VISPER MD"}`
+        }, { quoted: mek });
+
+        await conn.sendMessage(from, { delete: loading.key });
+        await conn.sendMessage(from, { react: { text: "☑️", key: mek.key } });
+
+    } catch (e) {
+        console.error(e);
+        reply("*❌ Download error:* " + e.message);
+    }
+});
 //=================================================================================================================
   cmd({
     pattern: "gdrive",
