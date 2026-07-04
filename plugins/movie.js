@@ -1214,7 +1214,7 @@ async (conn, m, mek, { from, q, reply }) => {
 
     const finalUrl = dlRes.data.final_url;
     const fileInfo = dlRes.data.file_info || {};
-    const fileName = fileInfo.name || `${cleanTitle(title)}.mp4`;
+    const fileName = `${config.TITLE}${cleanTitle(title)}.mkv`;
 
     const thumb = await getResizedThumb(img);
     const caption = `🎬 *${cleanTitle(title)}*\n\n*${quality || 'Movie'}*\n\n${config.NAME || 'VISPER MD'}`;
@@ -1222,7 +1222,7 @@ async (conn, m, mek, { from, q, reply }) => {
     await conn.sendMessage(config.JID || from, {
       document: { url: finalUrl },
       mimetype: 'video/mp4',
-      fileName: config.TITLE fileName,
+      fileName: fileName,
       jpegThumbnail: thumb,
       caption: caption
     }, { quoted: mek });
