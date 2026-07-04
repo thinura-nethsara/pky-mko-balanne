@@ -91,7 +91,7 @@ cmd({
 },
 async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
     try {
-        if (!q) return reply("*Please enter an app name to search!*\nEx: .apk free fire");
+        if (!q) return reply("*Please enter an app name to search❗🟢*");
 
         const searchUrl = `https://mr-thinuzz-api-build.vercel.app/api/uptodown/search?query=${encodeURIComponent(q)}&apiKey=key_13be1374312cdd0a`;
         const { data: searchData } = await axios.get(searchUrl, { timeout: 30000 });
@@ -116,8 +116,8 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
         }];
 
         await conn.listMessage(from, {
-            text: `*📦VISPER MD APK SEARCH SYSTEM 📦*\n\n🔎 Query: *${q}*\n\n_Select an app below._`,
-            footer: config.FOOTER || "ZEUS INC",
+            text: `*📦 VISPER MD APK SEARCH SYSTEM 📦*\n\n🔎 Query: *${q}*\n\n_Select an app below._`,
+            footer: config.FOOTER || "VISPER MD",
             title: "APK Downloader",
             buttonText: "📂 View Results",
             sections
