@@ -6,7 +6,7 @@ function convertToBool(text, fault = 'true') {
     return text === fault;
 }
 module.exports = {
-    SESSION_ID: '4VkRWZoa#gAp1J4whlwNPX3jK7UoDweYGvOyy7i6AwATpR-EKi84',
+    SESSION_ID: 'MI1znBQZ#U6EbF7U4WwvpJ9gFmZzBmk0e36RqKTAiPZjMlSOg58A',
 
     ANTI_DELETE: process.env.ANTI_DELETE === undefined ? 'true' : process.env.ANTI_DELETE,
     MV_BLOCK: process.env.MV_BLOCK === undefined ? 'true' : process.env.MV_BLOCK,
