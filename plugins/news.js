@@ -1,4 +1,4 @@
-// newsfirst.js - Plugin for Sinhala NewsFirst news
+const { cmd } = require('../command');
 const config = require('../config');
 const { getNews } = require('../lib/news-first.js');
 
