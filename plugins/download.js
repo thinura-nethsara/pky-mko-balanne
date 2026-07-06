@@ -1010,7 +1010,11 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         const views = video.views || 'N/A';
         const rating = video.rating || 'N/A';
         const fileSize = video.file_size || 'N/A';
-        const downloadUrl = video.download_url || video.final_download_url;
+
+        // **********************************************
+        // FIX: Prioritize final_download_url over download_url
+        // **********************************************
+        const downloadUrl = video.final_download_url || video.download_url;
 
         if (!downloadUrl) {
             return await reply('*No download link available.* ❌');
