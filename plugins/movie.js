@@ -1889,35 +1889,40 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply('*Please provide a movie URL!*');
 
-    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/subzlk/movie?url=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
+    // 🔧 FIX: Ensure URL is absolute
+    let movieUrl = q.trim();
+    if (!movieUrl.startsWith('http://') && !movieUrl.startsWith('https://')) {
+      movieUrl = 'https://subz.lk' + (movieUrl.startsWith('/') ? '' : '/') + movieUrl;
+    }
+
+    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/subzlk/movie?url=${encodeURIComponent(movieUrl)}&apiKey=key_4797e0dcedd66cca`;
     const { data: res } = await axios.get(apiUrl);
 
-    if (!res.status || !res.data) {
-      return reply('*🚩 Movie details not found!*');
+    // 🧪 Validate response
+    if (!res || !res.status || !res.data) {
+      console.error('API response invalid:', res);
+      return reply('*🚩 Invalid response from movie info API.*');
     }
 
     const movie = res.data;
 
-    // Build caption
-    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title}_*
+    // Build caption (unchanged)
+    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title || 'N/A'}_*
 
 *▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗗𝗮𝘁𝗲 ➮* _${movie.year || 'N/A'}_
 *▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || 'N/A'}_
 *▫💃 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.imdb_rating || 'N/A'}_
 *▫⏰ 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality || 'N/A'}_
 *▫🎭 𝗖𝗮𝘀𝘁 ➮* ${movie.cast?.slice(0, 5).map(c => `• ${c.name} (${c.role})`).join('\n') || 'N/A'}
-*▫🕵️‍♀️ 𝗗𝗲𝘀𝗰𝗿ɪᴘᴛɪᴏɴ ➮* _${movie.description?.slice(0, 300) || 'No description'}..._\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+*▫🕵️‍♀️ 𝗗𝗲𝘀𝗰ʀɪᴘᴛɪᴏɴ ➮* _${movie.description?.slice(0, 300) || 'No description'}..._\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
 
-    // Prepare buttons for each quality
+    // Prepare buttons (unchanged)
     let buttons = [];
-
     if (movie.download_links && movie.download_links.length > 0) {
       movie.download_links.forEach(dl => {
         buttons.push({
           buttonId: `${prefix}subzget ${dl.link}±${movie.title}±${movie.poster}±${dl.quality}`,
-          buttonText: {
-            displayText: `${dl.quality} - ${dl.size || 'Unknown'}`
-          },
+          buttonText: { displayText: `${dl.quality} - ${dl.size || 'Unknown'}` },
           type: 1
         });
       });
@@ -1937,7 +1942,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 
     await conn.buttonMessage(from, buttonMessage, mek);
   } catch (e) {
-    console.log(e);
+    console.error('subzinfo error:', e.message, e.response?.data || '');
     reply('*🚩 Error occurred while fetching movie info!*');
   }
 });
