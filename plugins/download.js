@@ -906,6 +906,10 @@ async (conn, m, mek, { from, q, reply }) => {
 // 2. JILHUB VIDEO DOWNLOADER
 // ============================================================
 
+
+
+
+
 cmd({
     pattern: 'jilhub',
     alias: ['jilsearch'],
@@ -923,11 +927,35 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         const searchUrl = `${JIL_BASE_URL}search?query=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
         const { data } = await axios.get(searchUrl, { timeout: 30000 });
 
-        const videos = data?.data || [];
+        // --- DEBUG: Uncomment the next line to see the full response in console ---
+        // console.log(JSON.stringify(data, null, 2));
+
+        // Check API status
+        if (!data?.status) {
+            return await reply('*API error: ' + (data?.message || 'Unknown') + '* ❌');
+        }
+
+        // Try to extract videos array from various possible structures
+        let videos = [];
+        if (Array.isArray(data.data)) {
+            videos = data.data;
+        } else if (data.data && Array.isArray(data.data.videos)) {
+            videos = data.data.videos;
+        } else if (data.data && Array.isArray(data.data.results)) {
+            videos = data.data.results;
+        } else if (data.data && typeof data.data === 'object') {
+            // If data.data is an object with video properties, maybe it's a single result?
+            // Try to see if it contains 'id' or 'title' – then treat as a single video
+            if (data.data.id || data.data.title) {
+                videos = [data.data];
+            }
+        }
+
         if (!videos.length) {
             return await reply('*No videos found for that query.* ❌');
         }
 
+        // Limit to 10 results
         const results = videos.slice(0, 10);
         let rows = results.map(v => ({
             title: v.title || 'Untitled',
@@ -947,6 +975,10 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         await reply('*An error occurred while searching.* 🚩');
     }
 });
+
+// ============================================================
+// JILVIDEO and JILDL commands (unchanged – they work)
+// ============================================================
 
 cmd({
     pattern: 'jilvideo',
