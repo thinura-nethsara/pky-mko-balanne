@@ -772,4 +772,152 @@ async (conn, mek, m, { from, q, reply }) => {
     await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
   } catch (e) { console.error(e); reply('*Error*'); }
 });
-    
+
+
+
+
+// ============================================================
+// PLUGIN: Facebook Video Downloader
+// ============================================================
+// This plugin uses the Mr Thinuzz API to fetch and download
+// Facebook videos directly in your WhatsApp chat.
+// ============================================================
+
+const BASE_URL = 'https://mr-thinuzz-api-build.zone.id/api/fbdown/';
+const API_KEY = 'key_4797e0dcedd66cca'; // Your API Key
+let isUploadingFb = false; // Flag to prevent concurrent downloads
+
+// ============================================================
+// COMMAND: fbdl – Fetch and display Facebook video info
+// ============================================================
+cmd({
+    pattern: 'fb',
+    react: '📥',
+    desc: 'Download Facebook videos',
+    category: 'download',
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        // Check if a Facebook URL is provided
+        if (!q) {
+            return await reply('*Please send a Facebook video link!* 📎\n\nExample:\n`' + prefix + 'fbdl https://www.facebook.com/share/v/18t6KjNmeK/`');
+        }
+
+        // Extract the URL from the query (in case the user sends extra text)
+        const urlMatch = q.match(/(https?:\/\/[^\s]+)/);
+        if (!urlMatch) {
+            return await reply('*Invalid URL! Please send a valid Facebook video link.*');
+        }
+        const videoUrl = urlMatch[0];
+
+        // Call the API to get video information
+        const apiUrl = `${BASE_URL}download?url=${encodeURIComponent(videoUrl)}&apiKey=${API_KEY}`;
+        const { data } = await axios.get(apiUrl, { timeout: 30000 });
+
+        // Check if the API response is successful
+        if (!data?.status || !data?.data) {
+            return await reply('*Could not fetch video details. Please check the link and try again.* ❌');
+        }
+
+        const videoData = data.data;
+        const title = videoData.title || 'Facebook Video';
+        const thumbnail = videoData.thumbnail || config.LOGO || 'https://via.placeholder.com/300';
+        const duration = videoData.duration || 'N/A';
+        const qualityFound = videoData.quality_found || 'N/A';
+        const hdLink = videoData.links?.hd;
+        const sdLink = videoData.links?.sd;
+
+        // Check if any download links are available
+        if (!hdLink && !sdLink) {
+            return await reply('*No download links found for this video.* ❌');
+        }
+
+        // Prepare the info message
+        let infoMessage = `*📹 𝗙𝗮𝗰𝗲𝗯𝗼𝗼𝗸 𝗩𝗶𝗱𝗲𝗼 𝗜𝗻𝗳𝗼*\n\n` +
+                          `*📌 𝗧𝗶𝘁𝗹𝗲:* ${title}\n` +
+                          `*⏱️ 𝗗𝘂𝗿𝗮𝘁𝗶𝗼𝗻:* ${duration}\n` +
+                          `*🎞️ 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 𝗙𝗼𝘂𝗻𝗱:* ${qualityFound}\n\n` +
+                          `*Select a quality below to download:*`;
+
+        // Create buttons for HD and SD
+        let buttons = [];
+        if (hdLink) {
+            buttons.push({
+                buttonId: `${prefix}fbget ${hdLink}±${title}±HD`,
+                buttonText: { displayText: '📹 HD (High Quality)' },
+                type: 1
+            });
+        }
+        if (sdLink) {
+            buttons.push({
+                buttonId: `${prefix}fbget ${sdLink}±${title}±SD`,
+                buttonText: { displayText: '🎬 SD (Standard Quality)' },
+                type: 1
+            });
+        }
+
+        // Send the video info with buttons
+        await conn.buttonMessage(from, {
+            image: { url: thumbnail },
+            caption: infoMessage,
+            footer: config.FOOTER || 'VISPER MD',
+            buttons: buttons,
+            headerType: 4
+        }, mek);
+
+    } catch (e) {
+        console.error('Error in fbdl command:', e);
+        await reply('*An error occurred while fetching video info. Please try again later.* 🚩');
+    }
+});
+
+// ============================================================
+// COMMAND: fbget – Download and send the video
+// ============================================================
+cmd({
+    pattern: 'fbget',
+    react: '⬇️',
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, reply }) => {
+    // Prevent multiple downloads at the same time
+    if (isUploadingFb) {
+        return await reply('*Another download is in progress. Please wait.* ⏳');
+    }
+
+    try {
+        // Parse the data sent from the button
+        const [downloadUrl, title, quality] = q.split('±');
+
+        if (!downloadUrl) {
+            return await reply('*Download link not found.* ❌');
+        }
+
+        // Set the flag to prevent concurrent downloads
+        isUploadingFb = true;
+
+        // Notify the user that the download is starting
+        await reply(`*⬇️ Downloading ${title} (${quality})...*`);
+
+        // Send the video as a document (to avoid compression)
+        // You can change this to 'videoMessage' if you prefer
+        await conn.sendMessage(from, {
+            document: { url: downloadUrl },
+            fileName: `${title}_${quality}.mp4`,
+            mimetype: 'video/mp4',
+            caption: `*✅ Download Complete!*\n\n📹 *${title}*\n🎞️ *Quality:* ${quality}\n\n${config.FOOTER || 'VISPER MD'}`
+        }, { quoted: mek });
+
+        // Send a success reaction
+        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+
+    } catch (e) {
+        console.error('Error in fbget command:', e);
+        await reply('*Failed to download the video. Please try again.* 🚩');
+    } finally {
+        // Always clear the flag, even if an error occurs
+        isUploadingFb = false;
+    }
+});
