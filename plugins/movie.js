@@ -1579,7 +1579,7 @@ async (conn, mek, m, { from, q, reply }) => {
 
 // ----- Command: moviestv (search) -----
 cmd({
-    pattern: 'moviesublktv',
+    pattern: 'moviestv',
     alias: ['mstv'],
     react: '🔍',
     desc: 'Search TV series on MovieSubLK',
