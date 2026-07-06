@@ -64,13 +64,14 @@ async (conn, mek, m, { from, prefix, q, isMe, isSudo, isOwner, reply }) => {
     if (!q) return await reply('*Enter movie name..🎬*');
 
     const sources = [
-      { name: 'cinesubz', cmd: 'cinesubz' },
-      { name: 'cine tv', cmd: 'cinetv' },
-      { name: 'sinhalasub', cmd: 'sinhalasub' },
-      { name: 'sublk', cmd: 'sublk' },
-      { name: 'moviepro', cmd: 'moviepro' },
-      { name: 'sl sinhala cartoons', cmd: 'sinhalacartoons' },
-      { name: 'moviesublktv', cmd: 'moviesublktv' }
+      { name: 'CINESUBZ', cmd: 'cinesubz' },
+      { name: 'CINESUBZ TV', cmd: 'cinetv' },
+      { name: 'SINHALASUB', cmd: 'sinhalasub' },
+      { name: 'SUBLK', cmd: 'sublk' },
+      { name: 'MOVIEPRO', cmd: 'moviepro' },
+      { name: 'SL SINHALA CARTOONS', cmd: 'sinhalacartoons' },
+      { name: 'MOVIESUBLK TV', cmd: 'moviesublktv' },
+      { name: 'SUBZLK', cmd: 'subzlk' }
     ];
 
     const caption = `_*VISPER MOVIE SYSTEM 🎬*_\n\n*\`🔍Input :\`* ${q}\n\n_*🌟 Select your preferred movie download site*_`;
@@ -1818,4 +1819,193 @@ async (conn, m, mek, { from, q, reply }) => {
         console.error('msdown error:', e);
         await reply('*Failed to download. The link may be invalid or require authentication.* 🚩');
     }
+});
+
+
+// ============================================================
+// COMMAND: subz – Search movies on subz.lk
+// ============================================================
+cmd({
+  pattern: 'subzlk',
+  react: '🔍',
+  category: 'movie',
+  alias: ['sz'],
+  desc: 'Search movies on subz.lk',
+  use: '.subz movie name',
+  filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
+  try {
+    if (config.MV_BLOCK === 'true' && !isMe && !isSudo && !isOwner) {
+      return reply('*This command currently only works for the Bot owner.*');
+    }
+    if (!q) return reply('*Please give me a movie name 🎬*');
+
+    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/subzlk/search?query=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
+    const { data: result } = await axios.get(apiUrl);
+
+    if (!result.status || !result.data?.length) {
+      return reply('*No results found ❌*');
+    }
+
+    let srh = [];
+    result.data.slice(0, 30).forEach((movie) => {
+      srh.push({
+        title: movie.title,
+        rowId: `${prefix}subzinfo ${movie.url}`  // movie.url is the full page link
+      });
+    });
+
+    const sections = [{
+      title: `Search Results (${srh.length})`,
+      rows: srh
+    }];
+
+    const listMessage = {
+      text: `🎬 *SUBZ.LK SEARCH*\n\n🔎 Query: *${q}*\n\n_Select a movie below._`,
+      footer: config.FOOTER || 'VISPER MD',
+      title: 'Subz.lk Downloader',
+      buttonText: '📂 View Results',
+      sections
+    };
+
+    await conn.listMessage(from, listMessage, mek);
+  } catch (e) {
+    console.log(e);
+    reply('*🚩 Error occurred while searching!*');
+  }
+});
+
+// ============================================================
+// COMMAND: subzinfo – Movie info & quality buttons
+// ============================================================
+cmd({
+  pattern: 'subzinfo',
+  react: '🎥',
+  desc: 'Get movie details and download options',
+  filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+  try {
+    if (!q) return reply('*Please provide a movie URL!*');
+
+    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/subzlk/movie?url=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
+    const { data: res } = await axios.get(apiUrl);
+
+    if (!res.status || !res.data) {
+      return reply('*🚩 Movie details not found!*');
+    }
+
+    const movie = res.data;
+
+    // Build caption
+    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title}_*
+
+*▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗗𝗮𝘁𝗲 ➮* _${movie.year || 'N/A'}_
+*▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || 'N/A'}_
+*▫💃 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.imdb_rating || 'N/A'}_
+*▫⏰ 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality || 'N/A'}_
+*▫🎭 𝗖𝗮𝘀𝘁 ➮* ${movie.cast?.slice(0, 5).map(c => `• ${c.name} (${c.role})`).join('\n') || 'N/A'}
+*▫🕵️‍♀️ 𝗗𝗲𝘀𝗰𝗿ɪᴘᴛɪᴏɴ ➮* _${movie.description?.slice(0, 300) || 'No description'}..._\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+
+    // Prepare buttons for each quality
+    let buttons = [];
+
+    if (movie.download_links && movie.download_links.length > 0) {
+      movie.download_links.forEach(dl => {
+        buttons.push({
+          buttonId: `${prefix}subzget ${dl.link}±${movie.title}±${movie.poster}±${dl.quality}`,
+          buttonText: {
+            displayText: `${dl.quality} - ${dl.size || 'Unknown'}`
+          },
+          type: 1
+        });
+      });
+    }
+
+    if (buttons.length === 0) {
+      return reply('*No download links available for this movie.*');
+    }
+
+    const buttonMessage = {
+      image: { url: movie.poster },
+      caption: msg,
+      footer: config.FOOTER || 'VISPER MD',
+      buttons,
+      headerType: 4
+    };
+
+    await conn.buttonMessage(from, buttonMessage, mek);
+  } catch (e) {
+    console.log(e);
+    reply('*🚩 Error occurred while fetching movie info!*');
+  }
+});
+
+// ============================================================
+// COMMAND: subzget – Final download via GDrive → direct CDN
+// ============================================================
+cmd({
+  pattern: 'subzget',
+  react: '⬇️',
+  dontAddCommandList: true,
+  filename: __filename
+},
+async (conn, mek, m, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*📍 Please provide the required data!*');
+
+    const [linkUrl, movieName, thumbUrl, quality] = q.split('±');
+    if (!linkUrl) return reply('*⚠️ Invalid input!*');
+
+    // Step 1: Get GDrive URL from subzlk download API
+    const dlApi = `https://mr-thinuzz-api-build.zone.id/api/subzlk/download?link_url=${encodeURIComponent(linkUrl)}&apiKey=key_4797e0dcedd66cca`;
+    const { data: dlRes } = await axios.get(dlApi);
+    if (!dlRes.status || !dlRes.data?.download_url) {
+      return reply('*❌ Failed to retrieve download link from subz.lk*');
+    }
+    const gdriveUrl = dlRes.data.download_url;
+
+    // Step 2: Get direct CDN link from ominisave
+    const gdriveApi = `https://www.ominisave.com/api/gdrive?url=${encodeURIComponent(gdriveUrl)}`;
+    const { data: gdriveRes } = await axios.get(gdriveApi);
+    if (!gdriveRes.status || !gdriveRes.result?.download) {
+      return reply('*❌ Failed to get direct download link from GDrive*');
+    }
+    const directUrl = gdriveRes.result.download;
+    const fileName = gdriveRes.result.fileName || `${movieName}.mp4`;
+
+    // Step 3: Send the file
+    const loading = await conn.sendMessage(from, {
+      text: '*Uploading movie... ⬆️*'
+    }, { quoted: mek });
+
+    // Prepare thumbnail (if poster available)
+    let thumb = null;
+    if (thumbUrl) {
+      try {
+        const response = await axios.get(thumbUrl, { responseType: 'arraybuffer' });
+        thumb = await sharp(Buffer.from(response.data))
+          .resize(300, 300, { fit: 'cover' })
+          .jpeg({ quality: 80 })
+          .toBuffer();
+      } catch (e) {
+        console.log('Thumbnail error:', e);
+      }
+    }
+
+    await conn.sendMessage(from, {
+      document: { url: directUrl },
+      mimetype: 'video/mp4',
+      fileName: fileName,
+      jpegThumbnail: thumb,
+      caption: `*🎬 ${movieName}*\n\n*\`${quality || 'Movie'}\`*\n\n${config.NAME || 'VISPER MD'}`
+    }, { quoted: mek });
+
+    await conn.sendMessage(from, { delete: loading.key });
+    await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+  } catch (e) {
+    console.log(e);
+    reply('*❌ Error:* ' + e.message);
+  }
 });
