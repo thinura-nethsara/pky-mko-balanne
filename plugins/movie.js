@@ -1577,7 +1577,6 @@ async (conn, mek, m, { from, q, reply }) => {
 
 
 
-
 // ----- Command: moviestv (search) -----
 cmd({
     pattern: 'moviesublktv',
@@ -1605,7 +1604,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         }));
 
         await conn.listMessage(from, {
-            text: `*🔎 MovieSubLK TV Search Results*\n\n*Query:* ${q}\n*Found:* ${results.length} series\n\nSelect a series to view episodes.`,
+            text: `*🔎 MovieSubLK TV Search Results*\n\n*Query:* ${q}\n*Found:* ${results.length} series\n\nSelect a series to view details and episodes.`,
             footer: config.FOOTER || 'VISPER MD',
             title: 'Select TV Series',
             buttonText: '📋 View Series',
@@ -1618,7 +1617,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     }
 });
 
-// ----- Command: mstvinfo (show episodes) -----
+// ----- Command: mstvinfo (show info card + button for episodes) -----
 cmd({
     pattern: 'mstvinfo',
     react: '📺',
@@ -1638,20 +1637,57 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
             return await reply('*No episodes found for this series.* ❌');
         }
 
-        // Get unique episode names (e.g., 'E01', 'E02')
+        // Get unique episode names
         const episodes = [...new Set(info.downloadLinks.map(item => item.episode))].sort();
 
-        // Send series info with image
-        const caption = `*🎬 ${info.title || 'TV Series'}*\n\n` +
-                        (info.description ? `*📖 Description:* ${info.description}\n\n` : '') +
-                        `*📦 Total Episodes:* ${episodes.length}\n\n` +
-                        `*Select an episode from the list below to get download links.*`;
+        // Build the info card caption
+        let caption = `*🎬 ${info.title || 'TV Series'}*\n\n`;
+        if (info.description) {
+            caption += `*📖 Description:* ${info.description}\n\n`;
+        }
+        caption += `*📦 Total Episodes:* ${episodes.length}\n\n`;
+        caption += `*Tap the button below to see the episode list.*`;
 
-        await conn.sendMessage(from, {
+        // Send as button message: image + caption + "View Episodes" button
+        await conn.buttonMessage(from, {
             image: { url: info.image || config.LOGO || 'https://via.placeholder.com/300' },
-            caption: caption
-        }, { quoted: mek });
+            caption: caption,
+            footer: config.FOOTER || 'VISPER MD',
+            buttons: [{
+                buttonId: `${prefix}mstepisodes ${seriesUrl}`,
+                buttonText: { displayText: '📺 View Episodes' },
+                type: 1
+            }],
+            headerType: 4
+        }, mek);
 
+    } catch (e) {
+        console.error('mstvinfo error:', e);
+        await reply('*Error fetching series details. Please check the URL or try again later.* 🚩');
+    }
+});
+
+// ----- Command: mstepisodes (show episode list) -----
+cmd({
+    pattern: 'mstepisodes',
+    react: '📋',
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        if (!q) {
+            return await reply('*Series URL missing.*');
+        }
+
+        const seriesUrl = q.trim();
+        const info = await getMoviesublkInfo(seriesUrl);
+
+        if (!info.downloadLinks || info.downloadLinks.length === 0) {
+            return await reply('*No episodes found for this series.* ❌');
+        }
+
+        const episodes = [...new Set(info.downloadLinks.map(item => item.episode))].sort();
         const rows = episodes.map(ep => ({
             title: `Episode ${ep}`,
             rowId: `${prefix}mstepisode ${seriesUrl}±${ep}`
@@ -1666,12 +1702,12 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         }, mek);
 
     } catch (e) {
-        console.error('mstvinfo error:', e);
-        await reply('*Error fetching series details. Please check the URL or try again later.* 🚩');
+        console.error('mstepisodes error:', e);
+        await reply('*Error fetching episode list.* 🚩');
     }
 });
 
-// ----- Command: mstepisode (show download buttons) -----
+// ----- Command: mstepisode (show download buttons for a specific episode) -----
 cmd({
     pattern: 'mstepisode',
     react: '🎯',
@@ -1692,7 +1728,6 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
             return await reply(`*No download links for ${episodeKey}.*`);
         }
 
-        // Filter links for this episode
         const epLinks = info.downloadLinks.filter(item => item.episode === episodeKey);
         if (epLinks.length === 0) {
             return await reply(`*No links found for ${episodeKey}.*`);
@@ -1737,7 +1772,6 @@ async (conn, m, mek, { from, q, reply }) => {
         const type = parts[1];
         const title = parts[2];
 
-        // Subtitles: send as text link
         if (type.toLowerCase() === 'subtitle') {
             await conn.sendMessage(from, {
                 text: `*📄 Subtitle for ${title}*\n\nLink: ${url}\n\n*Download manually or use a downloader.*`
