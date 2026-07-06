@@ -318,16 +318,15 @@ I am alive now 🎈\n✨ Thank you for choosing \`Visper-MD\` — your trusted W
 *├ \`👤 𝐔𝐬𝐞𝐫\`* : ${pushname}
 *├ \`🗃️ 𝐑𝐚𝐦 𝐮𝐬𝐬𝐚𝐠𝐞\`* : ${ramUsage}
 *├ \`⚖ 𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐞𝐫𝐬\`* : *VISPER ᴵᴺᶜ*
-*├ \`🧬 𝐕𝐞𝐫𝐬𝐢𝐨𝐧\`* : 6.0.0
+*├ \`🧬 𝐕𝐞𝐫𝐬𝐢𝐨𝐧\`* : 4.0.0
 *└────────────────────┘*
 *┌────────────────────┐*
 *├ 👨‍💻ᴠɪꜱᴘᴇʀ ᴅᴇᴠᴇʟᴏᴘᴇʀꜱ* :
-  \`• Founder & Developer\` : 𝗦avithu Induwara
-  \`• Co-Develper\` : 𝗗arksadas YT
-  \`• Co-Developer\` : 𝗡adeen Poorna
-  \`• Main-Supplier\` : 𝗣oorna Thalisha
-  \`• System Leader\` : 𝗔lex-ID
-  \`• API Developer\` : 𝗣athum 𝗥ajapakshe
+  \`• Founder & Author\` : 𝐃arksadas YT
+  \`• Owner & Leader\` : 𝐏athum 𝐑ajapakshe
+  \`• Co-Owner & Developer\` : 𝐕ihnga 𝐏ehesara (mcerror)
+  \`• API Developer & Co-Developer\` : 𝐓ithura 𝐍ethsara
+  \`• Main-Supplier\` : 𝐏oorna Thalisha
 *└────────────────────┘*
 *🫟 Your all-in-one WhatsApp assistant — fast, reliable, and easy to use!* 
 *🔗 Official Links:*  
@@ -727,7 +726,7 @@ I am *VISPER-MD* Userbot🎈
 *├ \`⛵ 𝐑𝐚𝐦 𝐮𝐬𝐬𝐚𝐠𝐞\`* : ${ramUsage}
 *├ \`👨🏻‍💻 𝐎𝐰𝐧𝐞𝐫\`* : ${number}
 *├ \`⚖ 𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐞𝐫𝐬\`* : *VISPER ᴵᴺᶜ*
-*├ \`🧬 𝐕𝐞𝐫𝐬𝐢𝐨𝐧\`* : 6.0.0
+*├ \`🧬 𝐕𝐞𝐫𝐬𝐢𝐨𝐧\`* : 4.0.0
 *├ \`💼 𝐖𝐨𝐫𝐤 𝐓𝐲𝐩𝐞\`* : ${config.WORK_TYPE}
 *└────────────────────┘*
 
@@ -1600,7 +1599,7 @@ async (conn, mek, m, { reply, from }) => {
 ⏰ *Uptime :* ${rtime}
 📊 *Ram usage :* ${ram}
 ☁️ *Platform :* ${hostname}
-🧬 *Version :* v6.0.0
+🧬 *Version :* v4.0.0
 👨‍💻 *Developer :* VISPER INC
 🟢 *Status :* Active`;
 
