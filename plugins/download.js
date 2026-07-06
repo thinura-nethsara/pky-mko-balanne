@@ -760,8 +760,7 @@ async (conn, mek, m, { from, q, reply }) => {
     if (!q) return reply('*URL required*');
     const data = await getYTVideo(q, '1080');
     const thumbBuf = await fetch(data.thumbnail).then(r => r.buffer());
-    const resized = await resizeImage(thumbBuf, 200, 200);
-    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
+    const resized = await resizeImage(thumbBuf, 200, 200);    await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
     await conn.sendMessage(from, {
       document: { url: data.links.video },
       jpegThumbnail: resized,
@@ -777,21 +776,27 @@ async (conn, mek, m, { from, q, reply }) => {
 
 
 // ============================================================
-// PLUGIN: Facebook Video Downloader
+// PLUGIN: Social Media Downloader (Facebook + JilHub)
 // ============================================================
-// This plugin uses the Mr Thinuzz API to fetch and download
-// Facebook videos directly in your WhatsApp chat.
+// Supports:
+//   - Facebook videos (fbdl)
+//   - JilHub videos (jilhub)
 // ============================================================
 
-const BASE_URL = 'https://mr-thinuzz-api-build.zone.id/api/fbdown/';
-const API_KEY = 'key_4797e0dcedd66cca'; // Your API Key
-let isUploadingFb = false; // Flag to prevent concurrent downloads
+// --------------------- Configuration -------------------------
+const FB_BASE_URL = 'https://mr-thinuzz-api-build.zone.id/api/fbdown/';
+const JIL_BASE_URL = 'https://mr-thinuzz-api-build.zone.id/api/jilhub/';
+const API_KEY = 'key_4797e0dcedd66cca';
+
+let isUploadingFb = false;
+let isUploadingJil = false;
 
 // ============================================================
-// COMMAND: fbdl – Fetch and display Facebook video info
+// 1. FACEBOOK VIDEO DOWNLOADER
 // ============================================================
+
 cmd({
-    pattern: 'fb',
+    pattern: 'fbdl',
     react: '📥',
     desc: 'Download Facebook videos',
     category: 'download',
@@ -799,25 +804,19 @@ cmd({
 },
 async (conn, m, mek, { from, q, prefix, reply }) => {
     try {
-        // Check if a Facebook URL is provided
         if (!q) {
             return await reply('*Please send a Facebook video link!* 📎\n\nExample:\n`' + prefix + 'fbdl https://www.facebook.com/share/v/18t6KjNmeK/`');
         }
 
-        // Extract the URL from the query (in case the user sends extra text)
         const urlMatch = q.match(/(https?:\/\/[^\s]+)/);
-        if (!urlMatch) {
-            return await reply('*Invalid URL! Please send a valid Facebook video link.*');
-        }
+        if (!urlMatch) return await reply('*Invalid URL!*');
         const videoUrl = urlMatch[0];
 
-        // Call the API to get video information
-        const apiUrl = `${BASE_URL}download?url=${encodeURIComponent(videoUrl)}&apiKey=${API_KEY}`;
+        const apiUrl = `${FB_BASE_URL}download?url=${encodeURIComponent(videoUrl)}&apiKey=${API_KEY}`;
         const { data } = await axios.get(apiUrl, { timeout: 30000 });
 
-        // Check if the API response is successful
         if (!data?.status || !data?.data) {
-            return await reply('*Could not fetch video details. Please check the link and try again.* ❌');
+            return await reply('*Could not fetch video details. Please check the link.* ❌');
         }
 
         const videoData = data.data;
@@ -828,19 +827,16 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         const hdLink = videoData.links?.hd;
         const sdLink = videoData.links?.sd;
 
-        // Check if any download links are available
         if (!hdLink && !sdLink) {
-            return await reply('*No download links found for this video.* ❌');
+            return await reply('*No download links found.* ❌');
         }
 
-        // Prepare the info message
         let infoMessage = `*📹 𝗙𝗮𝗰𝗲𝗯𝗼𝗼𝗸 𝗩𝗶𝗱𝗲𝗼 𝗜𝗻𝗳𝗼*\n\n` +
                           `*📌 𝗧𝗶𝘁𝗹𝗲:* ${title}\n` +
                           `*⏱️ 𝗗𝘂𝗿𝗮𝘁𝗶𝗼𝗻:* ${duration}\n` +
                           `*🎞️ 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 𝗙𝗼𝘂𝗻𝗱:* ${qualityFound}\n\n` +
                           `*Select a quality below to download:*`;
 
-        // Create buttons for HD and SD
         let buttons = [];
         if (hdLink) {
             buttons.push({
@@ -857,7 +853,6 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
             });
         }
 
-        // Send the video info with buttons
         await conn.buttonMessage(from, {
             image: { url: thumbnail },
             caption: infoMessage,
@@ -867,14 +862,11 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         }, mek);
 
     } catch (e) {
-        console.error('Error in fbdl command:', e);
-        await reply('*An error occurred while fetching video info. Please try again later.* 🚩');
+        console.error('fbdl error:', e);
+        await reply('*An error occurred. Please try again.* 🚩');
     }
 });
 
-// ============================================================
-// COMMAND: fbget – Download and send the video
-// ============================================================
 cmd({
     pattern: 'fbget',
     react: '⬇️',
@@ -882,27 +874,17 @@ cmd({
     filename: __filename
 },
 async (conn, m, mek, { from, q, reply }) => {
-    // Prevent multiple downloads at the same time
     if (isUploadingFb) {
         return await reply('*Another download is in progress. Please wait.* ⏳');
     }
 
     try {
-        // Parse the data sent from the button
         const [downloadUrl, title, quality] = q.split('±');
+        if (!downloadUrl) return await reply('*Download link missing.* ❌');
 
-        if (!downloadUrl) {
-            return await reply('*Download link not found.* ❌');
-        }
-
-        // Set the flag to prevent concurrent downloads
         isUploadingFb = true;
-
-        // Notify the user that the download is starting
         await reply(`*⬇️ Downloading ${title} (${quality})...*`);
 
-        // Send the video as a document (to avoid compression)
-        // You can change this to 'videoMessage' if you prefer
         await conn.sendMessage(from, {
             document: { url: downloadUrl },
             fileName: `${title}_${quality}.mp4`,
@@ -910,31 +892,20 @@ async (conn, m, mek, { from, q, reply }) => {
             caption: `*✅ Download Complete!*\n\n📹 *${title}*\n🎞️ *Quality:* ${quality}\n\n${config.FOOTER || 'VISPER MD'}`
         }, { quoted: mek });
 
-        // Send a success reaction
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
 
     } catch (e) {
-        console.error('Error in fbget command:', e);
-        await reply('*Failed to download the video. Please try again.* 🚩');
+        console.error('fbget error:', e);
+        await reply('*Failed to download. Please try again.* 🚩');
     } finally {
-        // Always clear the flag, even if an error occurs
         isUploadingFb = false;
     }
 });
 
 // ============================================================
-// PLUGIN: JilHub Video Downloader
-// ============================================================
-// Uses Mr Thinuzz API to search and download videos from JilHub.
+// 2. JILHUB VIDEO DOWNLOADER
 // ============================================================
 
-const BASE_URL = 'https://mr-thinuzz-api-build.zone.id/api/jilhub/';
-const API_KEY = 'key_4797e0dcedd66cca';
-let isUploadingJil = false; // Prevent concurrent downloads
-
-// ============================================================
-// COMMAND: jilhub – Search for JilHub videos
-// ============================================================
 cmd({
     pattern: 'jilhub',
     alias: ['jilsearch'],
@@ -949,17 +920,14 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
             return await reply('*Please enter a search query!* 📝\n\nExample:\n`' + prefix + 'jilhub sri lankan`');
         }
 
-        // Call search API
-        const searchUrl = `${BASE_URL}search?query=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+        const searchUrl = `${JIL_BASE_URL}search?query=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
         const { data } = await axios.get(searchUrl, { timeout: 30000 });
 
-        // Check response structure (assume data.data is array of videos)
         const videos = data?.data || [];
         if (!videos.length) {
             return await reply('*No videos found for that query.* ❌');
         }
 
-        // Limit to 10 results
         const results = videos.slice(0, 10);
         let rows = results.map(v => ({
             title: v.title || 'Untitled',
@@ -975,14 +943,11 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         }, mek);
 
     } catch (e) {
-        console.error('Error in jilhub search:', e);
-        await reply('*An error occurred while searching. Please try again later.* 🚩');
+        console.error('jilhub search error:', e);
+        await reply('*An error occurred while searching.* 🚩');
     }
 });
 
-// ============================================================
-// COMMAND: jilvideo – Fetch video info and provide download
-// ============================================================
 cmd({
     pattern: 'jilvideo',
     react: '🎬',
@@ -995,15 +960,11 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
             return await reply('*Video URL missing.*');
         }
 
-        // Extract URL from the query (in case extra text)
         const urlMatch = q.match(/(https?:\/\/[^\s]+)/);
-        if (!urlMatch) {
-            return await reply('*Invalid video URL.*');
-        }
+        if (!urlMatch) return await reply('*Invalid video URL.*');
         const videoUrl = urlMatch[0];
 
-        // Fetch video details
-        const infoUrl = `${BASE_URL}video?url=${encodeURIComponent(videoUrl)}&apiKey=${API_KEY}`;
+        const infoUrl = `${JIL_BASE_URL}video?url=${encodeURIComponent(videoUrl)}&apiKey=${API_KEY}`;
         const { data } = await axios.get(infoUrl, { timeout: 30000 });
 
         if (!data?.status || !data?.data) {
@@ -1020,10 +981,9 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         const downloadUrl = video.download_url || video.final_download_url;
 
         if (!downloadUrl) {
-            return await reply('*No download link available for this video.* ❌');
+            return await reply('*No download link available.* ❌');
         }
 
-        // Build info message
         let caption = `*🎥 JilHub Video Details*\n\n` +
                       `*📌 Title:* ${title}\n` +
                       `*⏱️ Duration:* ${duration}\n` +
@@ -1032,14 +992,12 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
                       `*💾 Size:* ${fileSize}\n\n` +
                       `*Press the button below to download.*`;
 
-        // Create a download button
         let buttons = [{
             buttonId: `${prefix}jildl ${downloadUrl}±${title}`,
             buttonText: { displayText: '⬇️ Download Video' },
             type: 1
         }];
 
-        // Send the info with image and button
         await conn.buttonMessage(from, {
             image: { url: thumbnail },
             caption: caption,
@@ -1049,14 +1007,11 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         }, mek);
 
     } catch (e) {
-        console.error('Error in jilvideo:', e);
+        console.error('jilvideo error:', e);
         await reply('*An error occurred while fetching video details.* 🚩');
     }
 });
 
-// ============================================================
-// COMMAND: jildl – Final download (send video)
-// ============================================================
 cmd({
     pattern: 'jildl',
     react: '⬇️',
@@ -1070,14 +1025,11 @@ async (conn, m, mek, { from, q, reply }) => {
 
     try {
         const [downloadUrl, title] = q.split('±');
-        if (!downloadUrl) {
-            return await reply('*Download link missing.* ❌');
-        }
+        if (!downloadUrl) return await reply('*Download link missing.* ❌');
 
         isUploadingJil = true;
         await reply(`*⬇️ Downloading:* ${title} ...`);
 
-        // Send video as document to preserve quality
         await conn.sendMessage(from, {
             document: { url: downloadUrl },
             fileName: `${title}.mp4`,
@@ -1088,10 +1040,9 @@ async (conn, m, mek, { from, q, reply }) => {
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
 
     } catch (e) {
-        console.error('Error in jildl:', e);
-        await reply('*Failed to download the video. Please try again.* 🚩');
+        console.error('jildl error:', e);
+        await reply('*Failed to download. Please try again.* 🚩');
     } finally {
         isUploadingJil = false;
     }
 });
-
