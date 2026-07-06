@@ -1822,6 +1822,7 @@ async (conn, m, mek, { from, q, reply }) => {
 });
 
 
+
 // ============================================================
 // COMMAND: subz – Search movies on subz.lk
 // ============================================================
@@ -1850,9 +1851,14 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
 
     let srh = [];
     result.data.slice(0, 30).forEach((movie) => {
+      // 🔧 Ensure URL is absolute
+      let url = movie.url || '';
+      if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://subz.lk' + (url.startsWith('/') ? '' : '/') + url;
+      }
       srh.push({
         title: movie.title,
-        rowId: `${prefix}subzinfo ${movie.url}`  // movie.url is the full page link
+        rowId: `${prefix}subzinfo ${url}`
       });
     });
 
@@ -1871,7 +1877,7 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
 
     await conn.listMessage(from, listMessage, mek);
   } catch (e) {
-    console.log(e);
+    console.error('subz error:', e.message);
     reply('*🚩 Error occurred while searching!*');
   }
 });
@@ -1889,9 +1895,9 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply('*Please provide a movie URL!*');
 
-    // 🔧 FIX: Ensure URL is absolute
+    // 🔧 Ensure URL is absolute
     let movieUrl = q.trim();
-    if (!movieUrl.startsWith('http://') && !movieUrl.startsWith('https://')) {
+    if (movieUrl && !movieUrl.startsWith('http://') && !movieUrl.startsWith('https://')) {
       movieUrl = 'https://subz.lk' + (movieUrl.startsWith('/') ? '' : '/') + movieUrl;
     }
 
@@ -1900,40 +1906,74 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 
     // 🧪 Validate response
     if (!res || !res.status || !res.data) {
-      console.error('API response invalid:', res);
-      return reply('*🚩 Invalid response from movie info API.*');
+      console.error('Invalid API response:', res);
+      return reply('*🚩 Could not fetch movie details. The movie might not exist on subz.lk.*');
     }
 
     const movie = res.data;
 
-    // Build caption (unchanged)
-    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title || 'N/A'}_*
+    // ✅ Safe access to all fields
+    const title = movie.title || 'N/A';
+    const year = movie.year || 'N/A';
+    const country = movie.country || 'N/A';
+    const imdbRating = movie.imdb_rating || movie.rating || 'N/A';
+    const quality = movie.quality || 'N/A';
+    const description = movie.description || movie.overview || 'No description available.';
+    const poster = movie.poster || movie.thumbnail || '';
 
-*▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗗𝗮𝘁𝗲 ➮* _${movie.year || 'N/A'}_
-*▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || 'N/A'}_
-*▫💃 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.imdb_rating || 'N/A'}_
-*▫⏰ 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality || 'N/A'}_
-*▫🎭 𝗖𝗮𝘀𝘁 ➮* ${movie.cast?.slice(0, 5).map(c => `• ${c.name} (${c.role})`).join('\n') || 'N/A'}
-*▫🕵️‍♀️ 𝗗𝗲𝘀𝗰ʀɪᴘᴛɪᴏɴ ➮* _${movie.description?.slice(0, 300) || 'No description'}..._\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
-
-    // Prepare buttons (unchanged)
-    let buttons = [];
-    if (movie.download_links && movie.download_links.length > 0) {
-      movie.download_links.forEach(dl => {
-        buttons.push({
-          buttonId: `${prefix}subzget ${dl.link}±${movie.title}±${movie.poster}±${dl.quality}`,
-          buttonText: { displayText: `${dl.quality} - ${dl.size || 'Unknown'}` },
-          type: 1
-        });
-      });
+    // Cast - safely map
+    let castText = 'N/A';
+    if (Array.isArray(movie.cast) && movie.cast.length > 0) {
+      castText = movie.cast.slice(0, 5).map(c => `• ${c.name || 'Unknown'} (${c.role || 'Actor'})`).join('\n');
     }
 
+    // Build caption
+    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${title}_*
+
+*▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗗𝗮𝘁𝗲 ➮* _${year}_
+*▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${country}_
+*▫💃 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${imdbRating}_
+*▫⏰ 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${quality}_
+*▫🎭 𝗖𝗮𝘀𝘁 ➮* ${castText}
+*▫🕵️‍♀️ 𝗗𝗲𝘀𝗰ʀɪᴘᴛɪᴏɴ ➮* _${description.slice(0, 300)}${description.length > 300 ? '...' : ''}_
+
+*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18
+*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+
+    // 🔧 Get download links safely
+    let downloadLinks = [];
+    if (movie.download_links && Array.isArray(movie.download_links)) {
+      downloadLinks = movie.download_links;
+    } else if (movie.downloads && Array.isArray(movie.downloads)) {
+      // Some APIs use "downloads" key
+      downloadLinks = movie.downloads;
+    }
+
+    if (downloadLinks.length === 0) {
+      return reply('*No download links available for this movie.*');
+    }
+
+    // Prepare buttons
+    let buttons = [];
+    downloadLinks.forEach(dl => {
+      const link = dl.link || dl.url || '';
+      const qualityLabel = dl.quality || 'Unknown';
+      const size = dl.size || '';
+      buttons.push({
+        buttonId: `${prefix}subzget ${link}±${title}±${poster}±${qualityLabel}`,
+        buttonText: { displayText: `${qualityLabel}${size ? ' - ' + size : ''}` },
+        type: 1
+      });
+    });
+
+    // If no buttons created (should not happen)
     if (buttons.length === 0) {
       return reply('*No download links available for this movie.*');
     }
 
     const buttonMessage = {
-      image: { url: movie.poster },
+      image: { url: poster || 'https://via.placeholder.com/300x400?text=No+Poster' },
       caption: msg,
       footer: config.FOOTER || 'VISPER MD',
       buttons,
@@ -1943,7 +1983,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     await conn.buttonMessage(from, buttonMessage, mek);
   } catch (e) {
     console.error('subzinfo error:', e.message, e.response?.data || '');
-    reply('*🚩 Error occurred while fetching movie info!*');
+    reply('*🚩 Error occurred while fetching movie info! Please try again later.*');
   }
 });
 
@@ -1960,13 +2000,17 @@ async (conn, mek, m, { from, q, reply }) => {
   try {
     if (!q) return reply('*📍 Please provide the required data!*');
 
-    const [linkUrl, movieName, thumbUrl, quality] = q.split('±');
-    if (!linkUrl) return reply('*⚠️ Invalid input!*');
+    const parts = q.split('±');
+    if (parts.length < 2) return reply('*⚠️ Invalid input!*');
+
+    const [linkUrl, movieName, thumbUrl, quality] = parts;
+    if (!linkUrl) return reply('*⚠️ Invalid download link!*');
 
     // Step 1: Get GDrive URL from subzlk download API
     const dlApi = `https://mr-thinuzz-api-build.zone.id/api/subzlk/download?link_url=${encodeURIComponent(linkUrl)}&apiKey=key_4797e0dcedd66cca`;
     const { data: dlRes } = await axios.get(dlApi);
-    if (!dlRes.status || !dlRes.data?.download_url) {
+    if (!dlRes || !dlRes.status || !dlRes.data?.download_url) {
+      console.error('Download API response:', dlRes);
       return reply('*❌ Failed to retrieve download link from subz.lk*');
     }
     const gdriveUrl = dlRes.data.download_url;
@@ -1974,28 +2018,29 @@ async (conn, mek, m, { from, q, reply }) => {
     // Step 2: Get direct CDN link from ominisave
     const gdriveApi = `https://www.ominisave.com/api/gdrive?url=${encodeURIComponent(gdriveUrl)}`;
     const { data: gdriveRes } = await axios.get(gdriveApi);
-    if (!gdriveRes.status || !gdriveRes.result?.download) {
+    if (!gdriveRes || !gdriveRes.status || !gdriveRes.result?.download) {
+      console.error('Ominisave API response:', gdriveRes);
       return reply('*❌ Failed to get direct download link from GDrive*');
     }
     const directUrl = gdriveRes.result.download;
-    const fileName = gdriveRes.result.fileName || `${movieName}.mp4`;
+    const fileName = gdriveRes.result.fileName || `${movieName || 'movie'}.mp4`;
 
     // Step 3: Send the file
     const loading = await conn.sendMessage(from, {
       text: '*Uploading movie... ⬆️*'
     }, { quoted: mek });
 
-    // Prepare thumbnail (if poster available)
+    // Prepare thumbnail
     let thumb = null;
-    if (thumbUrl) {
+    if (thumbUrl && thumbUrl.startsWith('http')) {
       try {
-        const response = await axios.get(thumbUrl, { responseType: 'arraybuffer' });
+        const response = await axios.get(thumbUrl, { responseType: 'arraybuffer', timeout: 10000 });
         thumb = await sharp(Buffer.from(response.data))
           .resize(300, 300, { fit: 'cover' })
           .jpeg({ quality: 80 })
           .toBuffer();
       } catch (e) {
-        console.log('Thumbnail error:', e);
+        console.warn('Thumbnail download error:', e.message);
       }
     }
 
@@ -2004,13 +2049,14 @@ async (conn, mek, m, { from, q, reply }) => {
       mimetype: 'video/mp4',
       fileName: fileName,
       jpegThumbnail: thumb,
-      caption: `*🎬 ${movieName}*\n\n*\`${quality || 'Movie'}\`*\n\n${config.NAME || 'VISPER MD'}`
+      caption: `*🎬 ${movieName || 'Movie'}*\n\n*\`${quality || 'Movie'}\`*\n\n${config.NAME || 'VISPER MD'}`
     }, { quoted: mek });
 
+    // Clean up and react
     await conn.sendMessage(from, { delete: loading.key });
     await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
   } catch (e) {
-    console.log(e);
-    reply('*❌ Error:* ' + e.message);
+    console.error('subzget error:', e.message, e.response?.data || '');
+    reply('*❌ Error:* ' + (e.message || 'Unknown error'));
   }
 });
