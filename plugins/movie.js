@@ -1826,6 +1826,9 @@ async (conn, m, mek, { from, q, reply }) => {
 // ============================================================
 // COMMAND: subz – Search movies on subz.lk
 // ============================================================
+// ============================================================
+// COMMAND: subz – Search movies on subz.lk
+// ============================================================
 cmd({
   pattern: 'subzlk',
   react: '🔍',
@@ -1851,8 +1854,8 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
 
     let srh = [];
     result.data.slice(0, 30).forEach((movie) => {
-      // 🔧 Ensure URL is absolute
-      let url = movie.url || '';
+      // 🔧 FIX: use 'link' instead of 'url'
+      let url = movie.link || movie.url || '';
       if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://subz.lk' + (url.startsWith('/') ? '' : '/') + url;
       }
