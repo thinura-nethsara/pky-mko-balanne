@@ -559,7 +559,8 @@ async (conn, m, mek, { from, q, reply }) => {
       try {
         const epTitle = `${title} S${String(seasonNum).padStart(2, '0')}E${String(ep.number).padStart(2, '0')}`;
 
-        const epInfoUrl = `${BASE_URL}/episode?url=${encodeURIComponent(ep.url)}&apiKey=${API_KEY}`;
+        // ✅ FIXED: correct endpoint
+        const epInfoUrl = `${BASE_URL}cinesubz/episode?url=${encodeURIComponent(ep.url)}&apiKey=${API_KEY}`;
         const { data: qData } = await axios.get(epInfoUrl, { timeout: 30000 });
 
         if (!qData?.status || !qData?.data?.downloadUrl?.length) continue;
