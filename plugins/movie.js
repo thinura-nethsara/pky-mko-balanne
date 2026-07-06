@@ -6,6 +6,9 @@ const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, 
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const fileType = require('file-type');
 const fg = require('api-dylux');
+const { searchMoviesublk } = require('../lib/moviesublk_tv_search');
+const { getMoviesublkInfo } = require('../lib/moviesublk_tv_info');
+
 
 // ==================== GLOBAL VARIABLES ====================
 const API_KEY = config.APIKEY || 'key_13be1374312cdd0a';
@@ -66,7 +69,8 @@ async (conn, mek, m, { from, prefix, q, isMe, isSudo, isOwner, reply }) => {
       { name: 'sinhalasub', cmd: 'sinhalasub' },
       { name: 'sublk', cmd: 'sublk' },
       { name: 'moviepro', cmd: 'moviepro' },
-      { name: 'sl sinhala cartoons', cmd: 'sinhalacartoons' }
+      { name: 'sl sinhala cartoons', cmd: 'sinhalacartoons' },
+      { name: 'moviesublktv', cmd: 'moviesublktv' }
     ];
 
     const caption = `_*VISPER MOVIE SYSTEM 🎬*_\n\n*\`🔍Input :\`* ${q}\n\n_*🌟 Select your preferred movie download site*_`;
@@ -1571,7 +1575,189 @@ async (conn, mek, m, { from, q, reply }) => {
   }
 });
 
-// ============================================================
-// (REMOVED) cineauto & stopauto – They caused errors due to missing functions/variables.
-// If you still need them, please implement the missing helpers first.
-// ============================================================
+
+
+
+// ----- Command: moviestv (search) -----
+cmd({
+    pattern: 'moviesublktv',
+    alias: ['mstv'],
+    react: '🔍',
+    desc: 'Search TV series on MovieSubLK',
+    category: 'download',
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        if (!q) {
+            return await reply('*Please enter a TV series name to search!* 📺\n\nExample:\n`' + prefix + 'moviestv The Husband`');
+        }
+
+        const results = await searchMoviesublk(q);
+        if (!results.length) {
+            return await reply('*No TV series found for that query.* ❌');
+        }
+
+        const sliced = results.slice(0, 10);
+        const rows = sliced.map(item => ({
+            title: item.title,
+            rowId: `${prefix}mstvinfo ${item.link}`
+        }));
+
+        await conn.listMessage(from, {
+            text: `*🔎 MovieSubLK TV Search Results*\n\n*Query:* ${q}\n*Found:* ${results.length} series\n\nSelect a series to view episodes.`,
+            footer: config.FOOTER || 'VISPER MD',
+            title: 'Select TV Series',
+            buttonText: '📋 View Series',
+            sections: [{ title: 'Available Series', rows }]
+        }, mek);
+
+    } catch (e) {
+        console.error('moviestv error:', e);
+        await reply('*An error occurred during search. Please try again later.* 🚩');
+    }
+});
+
+// ----- Command: mstvinfo (show episodes) -----
+cmd({
+    pattern: 'mstvinfo',
+    react: '📺',
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        if (!q) {
+            return await reply('*Series URL missing.*');
+        }
+
+        const seriesUrl = q.trim();
+        const info = await getMoviesublkInfo(seriesUrl);
+
+        if (!info.downloadLinks || info.downloadLinks.length === 0) {
+            return await reply('*No episodes found for this series.* ❌');
+        }
+
+        // Get unique episode names (e.g., 'E01', 'E02')
+        const episodes = [...new Set(info.downloadLinks.map(item => item.episode))].sort();
+
+        // Send series info with image
+        const caption = `*🎬 ${info.title || 'TV Series'}*\n\n` +
+                        (info.description ? `*📖 Description:* ${info.description}\n\n` : '') +
+                        `*📦 Total Episodes:* ${episodes.length}\n\n` +
+                        `*Select an episode from the list below to get download links.*`;
+
+        await conn.sendMessage(from, {
+            image: { url: info.image || config.LOGO || 'https://via.placeholder.com/300' },
+            caption: caption
+        }, { quoted: mek });
+
+        const rows = episodes.map(ep => ({
+            title: `Episode ${ep}`,
+            rowId: `${prefix}mstepisode ${seriesUrl}±${ep}`
+        }));
+
+        await conn.listMessage(from, {
+            text: `*📋 Episodes of ${info.title || 'this series'}*`,
+            footer: config.FOOTER || 'VISPER MD',
+            title: 'Select Episode',
+            buttonText: '📺 View Episodes',
+            sections: [{ title: 'Episodes', rows }]
+        }, mek);
+
+    } catch (e) {
+        console.error('mstvinfo error:', e);
+        await reply('*Error fetching series details. Please check the URL or try again later.* 🚩');
+    }
+});
+
+// ----- Command: mstepisode (show download buttons) -----
+cmd({
+    pattern: 'mstepisode',
+    react: '🎯',
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        const parts = q.split('±');
+        if (parts.length < 2) {
+            return await reply('*Invalid episode selection.*');
+        }
+        const seriesUrl = parts[0];
+        const episodeKey = parts[1];
+
+        const info = await getMoviesublkInfo(seriesUrl);
+        if (!info.downloadLinks) {
+            return await reply(`*No download links for ${episodeKey}.*`);
+        }
+
+        // Filter links for this episode
+        const epLinks = info.downloadLinks.filter(item => item.episode === episodeKey);
+        if (epLinks.length === 0) {
+            return await reply(`*No links found for ${episodeKey}.*`);
+        }
+
+        const buttons = epLinks.map(link => ({
+            buttonId: `${prefix}msdown ${link.url}±${link.type}±${info.title} ${episodeKey}`,
+            buttonText: { displayText: `📥 ${link.type}` },
+            type: 1
+        }));
+
+        const caption = `*📺 ${info.title} - ${episodeKey}*\n\nSelect a download source:`;
+
+        await conn.buttonMessage(from, {
+            image: { url: info.image || config.LOGO || 'https://via.placeholder.com/300' },
+            caption: caption,
+            footer: config.FOOTER || 'VISPER MD',
+            buttons: buttons,
+            headerType: 4
+        }, mek);
+
+    } catch (e) {
+        console.error('mstepisode error:', e);
+        await reply('*Error fetching episode details.* 🚩');
+    }
+});
+
+// ----- Command: msdown (final download) -----
+cmd({
+    pattern: 'msdown',
+    react: '⬇️',
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, reply }) => {
+    try {
+        const parts = q.split('±');
+        if (parts.length < 3) {
+            return await reply('*Invalid download request.*');
+        }
+        const url = parts[0];
+        const type = parts[1];
+        const title = parts[2];
+
+        // Subtitles: send as text link
+        if (type.toLowerCase() === 'subtitle') {
+            await conn.sendMessage(from, {
+                text: `*📄 Subtitle for ${title}*\n\nLink: ${url}\n\n*Download manually or use a downloader.*`
+            }, { quoted: mek });
+            return;
+        }
+
+        await reply(`*⬇️ Downloading ${title} (${type})...*`);
+
+        await conn.sendMessage(from, {
+            document: { url: url },
+            fileName: `${title}.mp4`,
+            mimetype: 'video/mp4',
+            caption: `*✅ Download Complete!*\n\n📹 *${title}*\n📦 *Source:* ${type}\n\n${config.FOOTER || 'VISPER MD'}`
+        }, { quoted: mek });
+
+        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+
+    } catch (e) {
+        console.error('msdown error:', e);
+        await reply('*Failed to download. The link may be invalid or require authentication.* 🚩');
+    }
+});
