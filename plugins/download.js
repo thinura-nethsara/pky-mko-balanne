@@ -921,3 +921,177 @@ async (conn, m, mek, { from, q, reply }) => {
         isUploadingFb = false;
     }
 });
+
+// ============================================================
+// PLUGIN: JilHub Video Downloader
+// ============================================================
+// Uses Mr Thinuzz API to search and download videos from JilHub.
+// ============================================================
+
+const BASE_URL = 'https://mr-thinuzz-api-build.zone.id/api/jilhub/';
+const API_KEY = 'key_4797e0dcedd66cca';
+let isUploadingJil = false; // Prevent concurrent downloads
+
+// ============================================================
+// COMMAND: jilhub – Search for JilHub videos
+// ============================================================
+cmd({
+    pattern: 'jilhub',
+    alias: ['jilsearch'],
+    react: '🔍',
+    desc: 'Search JilHub videos',
+    category: 'download',
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        if (!q) {
+            return await reply('*Please enter a search query!* 📝\n\nExample:\n`' + prefix + 'jilhub sri lankan`');
+        }
+
+        // Call search API
+        const searchUrl = `${BASE_URL}search?query=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+        const { data } = await axios.get(searchUrl, { timeout: 30000 });
+
+        // Check response structure (assume data.data is array of videos)
+        const videos = data?.data || [];
+        if (!videos.length) {
+            return await reply('*No videos found for that query.* ❌');
+        }
+
+        // Limit to 10 results
+        const results = videos.slice(0, 10);
+        let rows = results.map(v => ({
+            title: v.title || 'Untitled',
+            rowId: `${prefix}jilvideo ${v.url}`
+        }));
+
+        await conn.listMessage(from, {
+            text: `*🔎 JilHub Search Results*\n\n*Query:* ${q}\n*Found:* ${videos.length} videos\n\nSelect a video from the list below to get download options.`,
+            footer: config.FOOTER || 'VISPER MD',
+            title: 'Select Video',
+            buttonText: '📋 View Results',
+            sections: [{ title: 'Available Videos', rows }]
+        }, mek);
+
+    } catch (e) {
+        console.error('Error in jilhub search:', e);
+        await reply('*An error occurred while searching. Please try again later.* 🚩');
+    }
+});
+
+// ============================================================
+// COMMAND: jilvideo – Fetch video info and provide download
+// ============================================================
+cmd({
+    pattern: 'jilvideo',
+    react: '🎬',
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+    try {
+        if (!q) {
+            return await reply('*Video URL missing.*');
+        }
+
+        // Extract URL from the query (in case extra text)
+        const urlMatch = q.match(/(https?:\/\/[^\s]+)/);
+        if (!urlMatch) {
+            return await reply('*Invalid video URL.*');
+        }
+        const videoUrl = urlMatch[0];
+
+        // Fetch video details
+        const infoUrl = `${BASE_URL}video?url=${encodeURIComponent(videoUrl)}&apiKey=${API_KEY}`;
+        const { data } = await axios.get(infoUrl, { timeout: 30000 });
+
+        if (!data?.status || !data?.data) {
+            return await reply('*Could not fetch video details. The link may be invalid.* ❌');
+        }
+
+        const video = data.data;
+        const title = video.title || 'JilHub Video';
+        const thumbnail = video.thumbnail || config.LOGO || 'https://via.placeholder.com/300';
+        const duration = video.duration || 'N/A';
+        const views = video.views || 'N/A';
+        const rating = video.rating || 'N/A';
+        const fileSize = video.file_size || 'N/A';
+        const downloadUrl = video.download_url || video.final_download_url;
+
+        if (!downloadUrl) {
+            return await reply('*No download link available for this video.* ❌');
+        }
+
+        // Build info message
+        let caption = `*🎥 JilHub Video Details*\n\n` +
+                      `*📌 Title:* ${title}\n` +
+                      `*⏱️ Duration:* ${duration}\n` +
+                      `*👁️ Views:* ${views}\n` +
+                      `*⭐ Rating:* ${rating}\n` +
+                      `*💾 Size:* ${fileSize}\n\n` +
+                      `*Press the button below to download.*`;
+
+        // Create a download button
+        let buttons = [{
+            buttonId: `${prefix}jildl ${downloadUrl}±${title}`,
+            buttonText: { displayText: '⬇️ Download Video' },
+            type: 1
+        }];
+
+        // Send the info with image and button
+        await conn.buttonMessage(from, {
+            image: { url: thumbnail },
+            caption: caption,
+            footer: config.FOOTER || 'VISPER MD',
+            buttons: buttons,
+            headerType: 4
+        }, mek);
+
+    } catch (e) {
+        console.error('Error in jilvideo:', e);
+        await reply('*An error occurred while fetching video details.* 🚩');
+    }
+});
+
+// ============================================================
+// COMMAND: jildl – Final download (send video)
+// ============================================================
+cmd({
+    pattern: 'jildl',
+    react: '⬇️',
+    dontAddCommandList: true,
+    filename: __filename
+},
+async (conn, m, mek, { from, q, reply }) => {
+    if (isUploadingJil) {
+        return await reply('*Another download is in progress. Please wait.* ⏳');
+    }
+
+    try {
+        const [downloadUrl, title] = q.split('±');
+        if (!downloadUrl) {
+            return await reply('*Download link missing.* ❌');
+        }
+
+        isUploadingJil = true;
+        await reply(`*⬇️ Downloading:* ${title} ...`);
+
+        // Send video as document to preserve quality
+        await conn.sendMessage(from, {
+            document: { url: downloadUrl },
+            fileName: `${title}.mp4`,
+            mimetype: 'video/mp4',
+            caption: `*✅ Download Complete!*\n\n📹 *${title}*\n\n${config.FOOTER || 'VISPER MD'}`
+        }, { quoted: mek });
+
+        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+
+    } catch (e) {
+        console.error('Error in jildl:', e);
+        await reply('*Failed to download the video. Please try again.* 🚩');
+    } finally {
+        isUploadingJil = false;
+    }
+});
+
