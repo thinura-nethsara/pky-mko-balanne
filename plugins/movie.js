@@ -1755,6 +1755,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     }
 });
 
+
 // ----- Command: msdown (final download) -----
 cmd({
     pattern: 'msdown',
@@ -1768,10 +1769,11 @@ async (conn, m, mek, { from, q, reply }) => {
         if (parts.length < 3) {
             return await reply('*Invalid download request.*');
         }
-        const url = parts[0];
+        let url = parts[0];
         const type = parts[1];
         const title = parts[2];
 
+        // Handle subtitle separately
         if (type.toLowerCase() === 'subtitle') {
             await conn.sendMessage(from, {
                 text: `*📄 Subtitle for ${title}*\n\nLink: ${url}\n\n*Download manually or use a downloader.*`
@@ -1779,6 +1781,28 @@ async (conn, m, mek, { from, q, reply }) => {
             return;
         }
 
+        // ---------- Google Drive resolver ----------
+        if (url.includes('drive.google.com') || url.includes('drive.usercontent.google.com')) {
+            await reply(`*🔗 Resolving Google Drive link...*`);
+            try {
+                const apiUrl = `https://www.ominisave.com/api/gdrive?url=${encodeURIComponent(url)}`;
+                const response = await axios.get(apiUrl);
+                const data = response.data;
+
+                if (data.status && data.result && data.result.download) {
+                    url = data.result.download; // replace with temporary direct link
+                    await reply(`*✅ Direct link obtained! Sending file...*`);
+                } else {
+                    await reply(`*⚠️ Could not resolve GDrive link. Falling back to original URL.*`);
+                }
+            } catch (apiErr) {
+                console.error('GDrive API error:', apiErr);
+                await reply(`*⚠️ Error resolving GDrive link. Trying original URL...*`);
+                // continue with original URL
+            }
+        }
+
+        // Send the file
         await reply(`*⬇️ Downloading ${title} (${type})...*`);
 
         await conn.sendMessage(from, {
