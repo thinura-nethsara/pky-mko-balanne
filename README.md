@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://files.catbox.moe/f3nwkv.png" alt="VISPER MD Logo" width="650" style="border-radius: 20px; box-shadow: 0 0 30px #1E90FF; animation: pulse 2s infinite;"/>
+  <img src="https://visper-full-db.pages.dev/Data/visper-logo.png" alt="VISPER MD Logo" width="650" style="border-radius: 20px; box-shadow: 0 0 30px #1E90FF; animation: pulse 2s infinite;"/>
 </p>
 
 <h1 align="center">
