@@ -1300,7 +1300,7 @@ cmd({
   pattern: 'moviepro',
   react: '🔎',
   category: 'movie',
-  alias: ['mp'],
+  alias: ['mp','mvpro','mvp','moviepro'],
   desc: 'moviepro search',
   use: '.moviepro movie name',
   filename: __filename
@@ -1430,9 +1430,9 @@ cmd({
 },
 async (conn, m, mek, { from, q, reply }) => {
   try {
-    if (!q) return reply('*Please provide movie id!*');
+    if (!q) return reply('*Please provide a link!*');
 
-    const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/info?id=${q}&apiKey=key_4797e0dcedd66cca`;
+    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/moviepro/info?id=${q}&apiKey=key_13be1374312cdd0a`;
     const { data: res } = await axios.get(api);
 
     if (!res.status || !res.movie) {
@@ -1440,33 +1440,28 @@ async (conn, m, mek, { from, q, reply }) => {
     }
 
     const movie = res.movie;
+    
+    let msg = `*▫🍿 𝗧𝗶𝘁𝗹𝗲 ➮* *_${movie.title}_*
 
-    let details = `*🎬 Title:* ${movie.title || 'N/A'}\n`;
-    details += `*📅 Release Date:* ${movie.releaseDate || 'N/A'}\n`;
-    details += `*🌍 Country:* ${movie.country || 'N/A'}\n`;
-    details += `*🎭 Genre:* ${Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre || 'N/A'}\n`;
-    details += `*⭐ IMDb Rating:* ${movie.imdbRating || 'N/A'}\n`;
-    details += `*🗣️ Language:* ${movie.language || 'N/A'}\n`;
-    details += `*🎬 Director:* ${movie.director || 'N/A'}\n`;
-    details += `*✍️ Writer:* ${movie.writer || 'N/A'}\n`;
-    details += `*👥 Cast:* ${Array.isArray(movie.cast) ? movie.cast.join(', ') : movie.cast || 'N/A'}\n\n`;
-    details += `*📝 Description:*\n${movie.description || 'No description available.'}\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n\n${config.DCARD}`;
+*▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗗𝗮𝘁𝗲 ➮* _${movie.releaseDate}_
+*▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || 'N/A'}_
+*▫⭐ 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.imdbRating || 'N/A'}_
+*▫🔮 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality || 'N/A'}_
+*▫🎭 𝗖𝗮𝘀𝘁 ➮* ${Array.isArray(movie.cast) ? movie.cast.join(', ') : movie.cast || 'N/A'}\n\n
+*▫🕵️‍♀️ 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻 ➮* _${movie.description || 'No description available.'}..._\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
 
-    await conn.sendMessage(from, {
-      image: { url: movie.image || 'https://via.placeholder.com/300x400?text=No+Image' },
-      text: details,
-      contextInfo: {
-        mentionedJid: [],
-        forwardingScore: 0,
-        isForwarded: false
-      }
-    }, {  quoted: mek });
-  
-  } catch (e) {
-    console.log(e);
-    reply('*🚩 Error fetching details!*');
+${config.DCARD}`;
+
+    await conn.sendMessage(config.JID || from, {
+      image: { movie.image || 'https://via.placeholder.com/300x400?text=No+Image' },
+      caption: msg
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    await conn.sendMessage(from, '⚠️ *An error occurred while fetching details.*', { quoted: mek });
   }
 });
+
 
 // ============================================================
 // COMMAND: movieprosend – Final download with JID forward
