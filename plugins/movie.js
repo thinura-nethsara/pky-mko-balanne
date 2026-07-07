@@ -1453,21 +1453,15 @@ async (conn, m, mek, { from, q, reply }) => {
     details += `*📝 Description:*\n${movie.description || 'No description available.'}\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n\n${config.DCARD}`;
 
     await conn.sendMessage(from, {
+      image: { url: movie.image || 'https://via.placeholder.com/300x400?text=No+Image' },
       text: details,
       contextInfo: {
         mentionedJid: [],
         forwardingScore: 0,
         isForwarded: false
       }
-    }, { quoted: mek });
-
-    // Also send the poster if available
-    if (movie.image) {
-      await conn.sendMessage(from, {
-        image: { url: movie.image },
-        caption: `*Poster : ${movie.title}*`
-      }, { quoted: mek });
-    }
+    }, {  quoted: mek });
+  
   } catch (e) {
     console.log(e);
     reply('*🚩 Error fetching details!*');
