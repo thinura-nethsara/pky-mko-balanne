@@ -1453,7 +1453,7 @@ async (conn, m, mek, { from, q, reply }) => {
 ${config.DCARD}`;
 
     await conn.sendMessage(config.JID || from, {
-      image: { movie.image || 'https://via.placeholder.com/300x400?text=No+Image' },
+      image: { url: movie.image || 'https://via.placeholder.com/300x400?text=No+Image' },
       caption: msg
     });
   } catch (error) {
