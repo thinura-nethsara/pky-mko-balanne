@@ -67,6 +67,7 @@ async (conn, mek, m, { from, prefix, q, isMe, isSudo, isOwner, reply }) => {
       { name: 'CINESUBZ', cmd: 'cinesubz' },
       { name: 'CINESUBZ TV', cmd: 'cinetv' },
       { name: 'SINHALASUB', cmd: 'sinhalasub' },
+      { name: 'SINHALASUB TV' , cmd: 'sinhalasubtv' },
       { name: 'SUBLK', cmd: 'sublk' },
       { name: 'MOVIEPRO', cmd: 'moviepro' },
       { name: 'SL SINHALA CARTOONS', cmd: 'sinhalacartoons' },
