@@ -1275,8 +1275,10 @@ async (conn, m, mek, { from, q, reply }) => {
   }
 });
 
+
+
 // ============================================================
-// COMMAND: moviepro – Search from moviepro
+// COMMAND: moviepro – Search
 // ============================================================
 cmd({
   pattern: 'moviepro',
@@ -1329,7 +1331,7 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
 });
 
 // ============================================================
-// COMMAND: movieprodl – Info & download buttons
+// COMMAND: movieprodl – Info & download buttons (with Details Card)
 // ============================================================
 cmd({
   pattern: 'movieprodl',
@@ -1357,9 +1359,16 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 *▫🎭 𝗚𝗲𝗻𝗿𝗲 ➮* _${Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre || 'N/A'}_
 *▫⭐ 𝗜𝗠𝗗𝗕 ➮* _${movie.imdbRating || 'N/A'}_\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
 
-
     let buttons = [];
 
+    // Details Card button (always show)
+    buttons.push({
+      buttonId: `${prefix}movieprodetails ${q}`,
+      buttonText: { displayText: '📄 Details Card' },
+      type: 1
+    });
+
+    // Download buttons
     if (res.download_links && res.download_links.length > 0) {
       res.download_links.forEach(dl => {
         const downloadUrl = dl.stream_url || dl.original_url;
@@ -1393,7 +1402,63 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 });
 
 // ============================================================
-// COMMAND: movieprosend – Final download
+// COMMAND: movieprodetails – Detailed info card
+// ============================================================
+cmd({
+  pattern: 'movieprodetails',
+  react: '📄',
+  dontAddCommandList: true,
+  filename: __filename
+},
+async (conn, m, mek, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*Please provide movie id!*');
+
+    const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/info?id=${q}&apiKey=key_4797e0dcedd66cca`;
+    const { data: res } = await axios.get(api);
+
+    if (!res.status || !res.movie) {
+      return reply('*🚩 Movie details not found!*');
+    }
+
+    const movie = res.movie;
+
+    let details = `📽️ *FULL DETAILS*\n\n`;
+    details += `*🎬 Title:* ${movie.title || 'N/A'}\n`;
+    details += `*📅 Release Date:* ${movie.releaseDate || 'N/A'}\n`;
+    details += `*🌍 Country:* ${movie.country || 'N/A'}\n`;
+    details += `*🎭 Genre:* ${Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre || 'N/A'}\n`;
+    details += `*⭐ IMDb Rating:* ${movie.imdbRating || 'N/A'}\n`;
+    details += `*🗣️ Language:* ${movie.language || 'N/A'}\n`;
+    details += `*🎬 Director:* ${movie.director || 'N/A'}\n`;
+    details += `*✍️ Writer:* ${movie.writer || 'N/A'}\n`;
+    details += `*👥 Cast:* ${Array.isArray(movie.cast) ? movie.cast.join(', ') : movie.cast || 'N/A'}\n\n`;
+    details += `*📝 Description:*\n${movie.description || 'No description available.'}`;
+
+    await conn.sendMessage(from, {
+      text: details,
+      contextInfo: {
+        mentionedJid: [],
+        forwardingScore: 0,
+        isForwarded: false
+      }
+    }, { quoted: mek });
+
+    // Also send the poster if available
+    if (movie.image) {
+      await conn.sendMessage(from, {
+        image: { url: movie.image },
+        caption: `*Poster : ${movie.title}*`
+      }, { quoted: mek });
+    }
+  } catch (e) {
+    console.log(e);
+    reply('*🚩 Error fetching details!*');
+  }
+});
+
+// ============================================================
+// COMMAND: movieprosend – Final download with JID forward
 // ============================================================
 cmd({
   pattern: 'movieprosend',
@@ -1424,12 +1489,15 @@ async (conn, mek, m, { from, q, reply }) => {
       }
     }
 
-    await conn.sendMessage(from, {
+    // ----- JID Forward Support -----
+    const targetJid = config.JID || from;
+
+    await conn.sendMessage(targetJid, {
       document: { url: directUrl },
       mimetype: 'video/mp4',
-      fileName: `${config.TITLE}${movieName}.mkv`,
+      fileName: `${config.TITLE || 'Movie'} ${movieName}.mkv`,
       jpegThumbnail: thumb,
-      caption: `*🎬 ${movieName}*\n\n*\`${quality}\`*\n\n${config.NAME || 'VISPER MD'}`
+      caption: `*🎬 ${movieName}*\n\n*\`${quality || 'HD'}\`*\n\n${config.NAME || 'VISPER MD'}`
     }, { quoted: mek });
 
     await conn.sendMessage(from, { delete: loading.key });
@@ -1439,7 +1507,6 @@ async (conn, mek, m, { from, q, reply }) => {
     reply('*❌ Error:* ' + e.message);
   }
 });
-
 // ============================================================
 // COMMAND: sinhalacartoons – Search Sinhala cartoons
 // ============================================================
