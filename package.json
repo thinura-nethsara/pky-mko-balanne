@@ -64,6 +64,7 @@
     "wa-sticker-formatter": "^4.4.4",
     "ytsearch-venom": "latest",
     "puppeteer": "latest",
+    "user-agents": "latest",
     "@octokit/rest": "^19.0.5"
   },
   "overrides": {
