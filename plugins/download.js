@@ -123,32 +123,29 @@ try {
 
 
 
+
 // ============================================================
-// 🛠️ HELPER FUNCTIONS
+// 🛠️ UNIQUE HELPER FUNCTIONS (prefixed with "song_")
 // ============================================================
 
 // Clean YouTube URL – remove tracking parameters
-function cleanYtUrl(url) {
-    return url.replace(/\?si=[^&]*/, '').split('&')[0];
-}
+const song_cleanYtUrl = (url) => url.replace(/\?si=[^&]*/, '').split('&')[0];
 
 // Fetch JSON from an API with error handling
-async function fetchJson(url) {
+const song_fetchJson = async (url) => {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
-}
+};
 
-// Simple image resize stub (if you have a real resizer, replace this)
-async function resizeImage(buffer, width, height) {
-    return buffer; // just pass through
-}
+// Simple image resize stub (pass-through)
+const song_resizeImage = async (buffer, width, height) => buffer;
 
 // YouTube search wrapper using yt-search
-async function yts(query) {
+const song_yts = async (query) => {
     const results = await ytSearch(query);
     return { videos: results.videos };
-}
+};
 
 // ============================================================
 // 🔍 MAIN SEARCH COMMAND
@@ -168,7 +165,7 @@ cmd({
         if (!q) return await reply('🔎 *Please provide a song name or YouTube link!*');
 
         const url = q.replace(/\?si=[^&]*/, '');
-        const results = await yts(url);
+        const results = await song_yts(url);
         const result = results.videos[0];
 
         let caption = `*🎶VISPER MD SONG DOWNLODER🎶*
@@ -223,12 +220,12 @@ cmd({
     if (!q) return await reply('*Need a YouTube URL!*');
 
     try {
-        const cleanUrl = cleanYtUrl(q);
+        const cleanUrl = song_cleanYtUrl(q);
         const encodedUrl = encodeURIComponent(cleanUrl);
         const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
         console.log('➡️ Requesting API:', apiUrl);
-        const prog = await fetchJson(apiUrl);
+        const prog = await song_fetchJson(apiUrl);
 
         console.log('📦 ytaa response:', JSON.stringify(prog, null, 2));
 
@@ -279,12 +276,12 @@ cmd({
     if (!q) return await reply('*Need a YouTube URL!*');
 
     try {
-        const cleanUrl = cleanYtUrl(q);
+        const cleanUrl = song_cleanYtUrl(q);
         const encodedUrl = encodeURIComponent(cleanUrl);
         const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
         console.log('➡️ Requesting API:', apiUrl);
-        const prog = await fetchJson(apiUrl);
+        const prog = await song_fetchJson(apiUrl);
 
         console.log('📦 ytaap response:', JSON.stringify(prog, null, 2));
 
@@ -360,12 +357,12 @@ cmd({
     try {
         if (!q) return await reply('*Need a YouTube URL!*');
 
-        const cleanUrl = cleanYtUrl(q);
+        const cleanUrl = song_cleanYtUrl(q);
         const encodedUrl = encodeURIComponent(cleanUrl);
         const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/ytmp3/download?url=${encodedUrl}&apiKey=key_4797e0dcedd66cca`;
 
         console.log('➡️ Requesting API:', apiUrl);
-        const prog = await fetchJson(apiUrl);
+        const prog = await song_fetchJson(apiUrl);
 
         console.log('📦 ytad response:', JSON.stringify(prog, null, 2));
 
@@ -388,7 +385,7 @@ cmd({
                 const thumbRes = await fetch(thumbnailUrl);
                 const thumbArray = await thumbRes.arrayBuffer();
                 thumbnailBuffer = Buffer.from(thumbArray);
-                thumbnailBuffer = await resizeImage(thumbnailBuffer, 200, 200);
+                thumbnailBuffer = await song_resizeImage(thumbnailBuffer, 200, 200);
             } catch (e) {
                 console.log('Thumbnail fetch error:', e);
             }
@@ -454,7 +451,7 @@ cmd({
         await reply('❌ Direct download failed.');
     }
 });
-
+      
 
 
 
