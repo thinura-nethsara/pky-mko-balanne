@@ -122,6 +122,34 @@ try {
 
 
 
+
+// ============================================================
+// 🛠️ HELPER FUNCTIONS
+// ============================================================
+
+// Clean YouTube URL – remove tracking parameters
+function cleanYtUrl(url) {
+    return url.replace(/\?si=[^&]*/, '').split('&')[0];
+}
+
+// Fetch JSON from an API with error handling
+async function fetchJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+}
+
+// Simple image resize stub (if you have a real resizer, replace this)
+async function resizeImage(buffer, width, height) {
+    return buffer; // just pass through
+}
+
+// YouTube search wrapper using yt-search
+async function yts(query) {
+    const results = await ytSearch(query);
+    return { videos: results.videos };
+}
+
 // ============================================================
 // 🔍 MAIN SEARCH COMMAND
 // ============================================================
@@ -142,7 +170,6 @@ cmd({
         const url = q.replace(/\?si=[^&]*/, '');
         const results = await yts(url);
         const result = results.videos[0];
-        const wm = config.FOOTER;
 
         let caption = `*🎶VISPER MD SONG DOWNLODER🎶*
 
@@ -172,7 +199,6 @@ cmd({
         const buttonMessage = {
             image: { url: result.thumbnail },
             caption: caption,
-            footer: wm,
             buttons: buttons,
             headerType: 4
         };
@@ -186,7 +212,7 @@ cmd({
 });
 
 // ============================================================
-// 🎶 AUDIO FORMAT (ytaa) – with HTTP error handling
+// 🎶 AUDIO FORMAT (ytaa) – no size check
 // ============================================================
 cmd({
     pattern: "ytaa",
@@ -217,17 +243,6 @@ cmd({
 
         const audioUrl = prog.data.links.audio;
 
-        // Optional file size check
-        try {
-            const bytes = await checkFileSize(audioUrl, config.MAX_SIZE);
-            const sizeInMB = (bytes / (1024 * 1024)).toFixed(2);
-            if (sizeInMB > config.MAX_SIZE) {
-                return reply(`*⚠️ File too large!*\n\n*📌 Maximum allowed: \`${config.MAX_SIZE}\` MB*`);
-            }
-        } catch (err) {
-            return reply(`*⚠️ File too large or cannot determine size!*\n\n*📌 Maximum allowed: \`${config.MAX_SIZE}\` MB*`);
-        }
-
         await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
 
         await conn.sendMessage(
@@ -240,7 +255,6 @@ cmd({
 
     } catch (e) {
         console.error('❌ ytaa error:', e);
-        // Check if it's a 404/network error
         let msg = '❌ Download failed.';
         if (e.status === 404 || e.message.includes('404')) {
             msg = '❌ Video not found or unavailable. Please try another song.';
@@ -254,7 +268,7 @@ cmd({
 });
 
 // ============================================================
-// 🎤 VOICE FORMAT (ytaap) – with HTTP error handling
+// 🎤 VOICE FORMAT (ytaap)
 // ============================================================
 cmd({
     pattern: "ytaap",
@@ -294,6 +308,7 @@ cmd({
         const arrayBuffer = await res.arrayBuffer();
         fs.writeFileSync(inputPath, Buffer.from(arrayBuffer));
 
+        const ffmpegPath = 'ffmpeg'; // change if full path needed
         exec(`${ffmpegPath} -i ${inputPath} -c:a libopus -b:a 64k -vbr on -f ogg ${outputPath}`, async (error) => {
             if (error) {
                 console.error('ffmpeg error:', error);
@@ -312,6 +327,7 @@ cmd({
                 { quoted: mek }
             );
 
+            // Clean up temp files
             if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
             if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
 
@@ -333,7 +349,7 @@ cmd({
 });
 
 // ============================================================
-// 📂 DOCUMENT FORMAT (ytad) – with HTTP error handling
+// 📂 DOCUMENT FORMAT (ytad) – no footer
 // ============================================================
 cmd({
     pattern: "ytad",
@@ -372,9 +388,7 @@ cmd({
                 const thumbRes = await fetch(thumbnailUrl);
                 const thumbArray = await thumbRes.arrayBuffer();
                 thumbnailBuffer = Buffer.from(thumbArray);
-                if (typeof resizeImage === 'function') {
-                    thumbnailBuffer = await resizeImage(thumbnailBuffer, 200, 200);
-                }
+                thumbnailBuffer = await resizeImage(thumbnailBuffer, 200, 200);
             } catch (e) {
                 console.log('Thumbnail fetch error:', e);
             }
@@ -388,7 +402,7 @@ cmd({
                 document: { url: audioUrl },
                 jpegThumbnail: thumbnailBuffer,
                 mimetype: 'audio/mpeg',
-                caption: `*${title}*\n\n${config.FOOTER}`,
+                caption: `*${title}*`,
                 fileName: `${title}.mpeg`
             },
             { quoted: mek }
@@ -411,7 +425,7 @@ cmd({
 });
 
 // ============================================================
-// ⬇️ DIRECT MP3 DOWNLOAD (unchanged)
+// ⬇️ DIRECT MP3 DOWNLOAD – no caption
 // ============================================================
 cmd({
     pattern: "directmp3",
@@ -421,7 +435,6 @@ cmd({
 }, async (conn, mek, m, { from, q, reply }) => {
     try {
         if (!q) return await reply('*Need a youtube url!*');
-      
 
         await conn.sendMessage(from, { react: { text: '⬆️', key: mek.key } });
         const up_mg = await conn.sendMessage(from, { text: `*Uploading request ..⬆️*` }, { quoted: mek });
@@ -430,7 +443,6 @@ cmd({
             from,
             {
                 audio: { url: q },
-                caption: config.FOOTER,
                 mimetype: 'audio/mpeg',
                 fileName: `test.mp3`
             }
@@ -443,10 +455,9 @@ cmd({
     }
 });
 
-// ============================================================
-//  FULLY FIXED VIDEO DOWNLOADER (uses Mr Thinuzz API)
-//  All video/doc commands now use the new endpoint.
-// ============================================================
+
+
+
 
 // ---------- HELPER ----------
 async function getYTVideo(url, quality) {
