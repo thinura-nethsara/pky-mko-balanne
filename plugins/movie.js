@@ -224,6 +224,9 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 // ============================================================
 // COMMAND: nadeendl – Final download for Cinesubz
 // ============================================================
+// ============================================================
+// COMMAND: nadeendl – Final download for Cinesubz (updated)
+// ============================================================
 cmd({
   pattern: 'nadeendl',
   react: '⬇️',
@@ -269,22 +272,34 @@ cmd({
       }
     }
 
-    await conn.sendMessage(from, {
+    // ----- NEW SEND METHOD WITH CONFIG.JID SUPPORT -----
+    const targetJid = config.JID || from;  // forward to configured JID if set
+
+    const caption = `*🎬 ${movieName}*\n\n*\`${quality || res.data.size}\`*\n\n${config.NAME || 'VISPER MD'}`;
+
+    await conn.sendMessage(targetJid, {
       document: { url: directLink },
       mimetype: 'video/mp4',
-      fileName: `${config.TITLE}${movieName}.mp4`,
+      fileName: `🎥${movieName.replace(/[^\w\s]/g, '').trim()}.mp4`,
       jpegThumbnail: thumb,
-      caption: `*🎬 ${movieName}*\n\n*\`${quality || res.data.size}\`*\n\n${config.NAME || 'VISPER MD'}`
-    }, { quoted: mek });
+      caption: caption
+    });
+    // ----------------------------------------------------
 
-    await conn.sendMessage(from, { delete: loading.key });
-    await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+    // Delete loading message and react (only if sent to the same chat, optional)
+    if (targetJid === from) {
+      await conn.sendMessage(from, { delete: loading.key });
+      await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+    } else {
+      // If forwarded to another JID, we can still react on original chat
+      await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+      await conn.sendMessage(from, { delete: loading.key });
+    }
   } catch (e) {
     console.log(e);
     reply('*❌ Error:* ' + e.message);
   }
 });
-
 // ============================================================
 // COMMAND: cinetv – TV series search
 // ============================================================
