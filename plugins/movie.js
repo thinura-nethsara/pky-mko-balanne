@@ -828,6 +828,9 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 // ============================================================
 // COMMAND: sinhalasubdl – Final download (Pixeldrain direct)
 // ============================================================
+// ============================================================
+// COMMAND: sinhalasubdl – Final download (Pixeldrain direct) with JID forward
+// ============================================================
 cmd({
   pattern: 'sinhalasubdl',
   react: '⬇️',
@@ -856,7 +859,16 @@ cmd({
       }
     }
 
-    await conn.sendMessage(from, {
+    // ----- යවන ලිපිනය තීරණය කරන්න -----
+    const targetJid = config.JID || from; // JID පිහිටුවා ඇත්නම් එතැනට, නැතිනම් කතාබස් කරන තැනට
+
+    // පූරණ පණිවිඩය (විකල්ප)
+    const loading = await conn.sendMessage(from, {
+      text: '*Uploading movie... ⬆️*'
+    }, { quoted: mek });
+
+    // චිත්‍රපටය යවන්න
+    await conn.sendMessage(targetJid, {
       document: { url: direct_link },
       mimetype: 'video/mp4',
       fileName: `${config.TITLE} ${movieName}.mp4`,
@@ -864,6 +876,10 @@ cmd({
       jpegThumbnail: resizedThumb
     }, { quoted: mek });
 
+    // පූරණ පණිවිඩය මකා දමන්න (මුල් කතාබස් එකෙන්)
+    await conn.sendMessage(from, { delete: loading.key });
+
+    // ප්‍රතික්‍රියාව එක් කරන්න (මුල් කතාබස් එකේ)
     await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
   } catch (e) {
     console.log('Error Log:', e);
@@ -871,7 +887,6 @@ cmd({
     await conn.sendMessage(from, { react: { text: '⚠️', key: mek.key } });
   }
 });
-
 // ============================================================
 // COMMAND: cdetails – Cinesubz details card
 // ============================================================
