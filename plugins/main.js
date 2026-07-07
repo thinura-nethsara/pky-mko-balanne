@@ -4,7 +4,6 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const UserAgent = require('user-agents');
 const cluster = require('cluster');
-const os = require('os');
 const mimeTypes = require("mime-types");
 const fs = require('fs');
 const path = require('path');
