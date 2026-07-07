@@ -176,14 +176,16 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 
     const movie = res.data;
 
-    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title}_*
+    let msg = `*▫🍿 𝗧𝗶𝘁𝗹𝗲 ➮* *_${movie.title}_*
 
 *▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗗𝗮𝘁𝗲 ➮* _${movie.year}_
 *▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _N/A_
 *▫💃 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.imdb_rating}_
 *▫⏰ 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality}_
 *▫🎭 𝗖𝗮𝘀𝘁 ➮* ${movie.cast?.slice(0, 5).map(c => `• ${c.name} (${c.role})`).join('\n') || 'N/A'}
-*▫🕵️‍♀️ 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻 ➮* _${movie.description?.slice(0, 300) || 'No description'}..._\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+*▫🕵️‍♀️ 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻 ➮* _${movie.description?.slice(0, 300) || 'No description'}..._\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+
+${config.DCARD}`;
 
 
     let buttons = [];
@@ -280,7 +282,7 @@ cmd({
     await conn.sendMessage(targetJid, {
       document: { url: directLink },
       mimetype: 'video/mp4',
-      fileName: `🎥${movieName.replace(/[^\w\s]/g, '').trim()}.mp4`,
+      fileName: `${config.TITLE}${movieName.replace(/[^\w\s]/g, '').trim()}.mp4`,
       jpegThumbnail: thumb,
       caption: caption
     });
@@ -289,10 +291,10 @@ cmd({
     // Delete loading message and react (only if sent to the same chat, optional)
     if (targetJid === from) {
       await conn.sendMessage(from, { delete: loading.key });
-      await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+      await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
     } else {
       // If forwarded to another JID, we can still react on original chat
-      await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+      await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
       await conn.sendMessage(from, { delete: loading.key });
     }
   } catch (e) {
@@ -450,7 +452,9 @@ async (conn, m, mek, { from, q, reply }) => {
       `*⭐ 𝐈𝐌𝐃𝐛 ➮* _${imdb}_\n` +
       `*🎭 𝐆𝐞𝐧𝐫𝐞𝐬 ➮* _${genres}_\n` +
       `*👥 𝐂𝐚𝐬𝐭 ➮* _${cast}_\n\n` +
-      `✨ *Follow us:* ${details.mvchlink}\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+      `✨ *Follow us:* ${details.mvchlink}\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+      
+      ${config.DCARD}`;
 
 
     await conn.sendMessage(from, {
@@ -786,7 +790,9 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 *💃 𝗥ᴀᴛɪɴɢ ➮* _${sadas.data.rating || 'N/A'}_
 *⏰ 𝗗ᴜʀᴀᴛɪᴏɴ ➮* _${sadas.data.duration || 'N/A'}_
 *💁 𝗦ᴜʙᴛɪᴛʟᴇ ʙʏ ➮* _${sadas.data.subtitles || 'N/A'}_
-*🎭 𝗗ᴇꜱᴄʀɪᴘᴛɪᴏɴ ➮* _${sadas.data.description ? sadas.data.description.substring(0, 100) + '...' : 'N/A'}_\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+*🎭 𝗗ᴇꜱᴄʀɪᴘᴛɪᴏɴ ➮* _${sadas.data.description ? sadas.data.description.substring(0, 100) + '...' : 'N/A'}_\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+
+${config.DCARD}`;
 
 
     let rows = [];
@@ -880,7 +886,7 @@ cmd({
     await conn.sendMessage(from, { delete: loading.key });
 
     // ප්‍රතික්‍රියාව එක් කරන්න (මුල් කතාබස් එකේ)
-    await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+    await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
   } catch (e) {
     console.log('Error Log:', e);
     await reply(`*❌ Error:* ${e.message}`);
@@ -909,14 +915,16 @@ async (conn, m, mek, { from, q, reply }) => {
 
     const movie = res.data;
 
-    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title}_*
+    let msg = `*▫🍿 𝗧𝗶𝘁𝗹𝗲 ➮* *_${movie.title}_*
 
 *▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗗𝗮𝘁𝗲 ➮* _${movie.year}_
 *▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _N/A_
 *▫⭐ 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.imdb_rating}_
 *▫🔮 𝗤𝘂𝗮𝗹𝗶𝘁𝘆 ➮* _${movie.quality}_
 *▫🎭 𝗖𝗮𝘀𝘁 ➮* ${movie.cast?.slice(0, 5).map(c => `• ${c.name} (${c.role})`).join('\n') || 'N/A'}
-*▫🕵️‍♀️ 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻 ➮* _${movie.description?.slice(0, 300) || 'No description'}..._\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+*▫🕵️‍♀️ 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻 ➮* _${movie.description?.slice(0, 300) || 'No description'}..._\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+
+${config.DCARD}`;
 
     await conn.sendMessage(config.JID || from, {
       image: { url: movie.poster },
@@ -965,7 +973,9 @@ async (conn, m, mek, { from, q, reply }) => {
 *📂 𝗦ᴜʙᴛɪᴛʟᴇꜱ ➮* _${movie.subtitles || 'N/A'}_
 *📝 𝗗ᴇsᴄʀɪᴘᴛɪᴏɴ ➮*
 _${movie.description || 'N/A'}_
-\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+
+${config.DCARD}`;
 
     await conn.sendMessage(from, {
       image: { url: movie.images[0] || config.LOGO || 'https://via.placeholder.com/300' },
@@ -1008,7 +1018,9 @@ async (conn, mek, m, { from, q, reply }) => {
 *🌎 𝗖ᴏᴜɴᴛʀʏ ➮* ${data.Country}
 *💃 𝗥ᴀᴛɪɴɢ ➮* ${data.imdbRating}
 
-\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+
+${config.DCARD}`;
 
     const imageUrl = data.Poster && data.Poster !== 'N/A' ? data.Poster : config.LOGO || 'https://via.placeholder.com/300';
 
@@ -1093,7 +1105,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     const cleanTitleStr = cleanTitle(movie.title);
     const poster = movie.thumbnail || config.LOGO || 'https://via.placeholder.com/300';
 
-    const caption = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${cleanTitleStr}_*
+    const caption = `*▫🍿 𝗧𝗶𝘁𝗹𝗲 ➮* *_${cleanTitleStr}_*
 
 *▫📅 𝗬𝗲𝗮𝗿 ➮* _${movie.year || 'N/A'}_
 *▫⭐ 𝗥𝗮𝘁𝗶𝗻𝗴 ➮* _${movie.rating || 'N/A'}/10_
@@ -1102,7 +1114,9 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 *▫👁️ 𝗩𝗶𝗲𝘄𝘀 ➮* _${movie.views || 'N/A'}_
 *▫🌍 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || 'N/A'}_
 *▫🎥 𝗗𝗶𝗿𝗲𝗰𝘁𝗼𝗿 ➮* _${movie.director || 'N/A'}_
-*▫👥 𝗖𝗮𝘀𝘁 ➮* _${movie.cast?.slice(0, 3).join(', ') || 'N/A'}_\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+*▫👥 𝗖𝗮𝘀𝘁 ➮* _${movie.cast?.slice(0, 3).join(', ') || 'N/A'}_\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+
+${config.DCARD}`;
 
 
     let buttons = [];
@@ -1169,7 +1183,7 @@ async (conn, m, mek, { from, q, reply }) => {
     const movie = res.data;
     const cleanTitleStr = cleanTitle(movie.title);
 
-    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${cleanTitleStr}_*
+    let msg = `*▫🍿 𝗧𝗶𝘁𝗹𝗲 ➮* *_${cleanTitleStr}_*
 
 *▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗬𝗲𝗮𝗿 ➮* _${movie.year || 'N/A'}_
 *▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || 'N/A'}_
@@ -1189,7 +1203,9 @@ ${movie.description || 'No description available.'}
 
 *➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
 *👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18
-*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+
+${config.DCARD}`;
 
     await conn.sendMessage(config.JID || from, {
       image: { url: movie.thumbnail || config.LOGO || 'https://via.placeholder.com/300' },
@@ -1239,7 +1255,7 @@ async (conn, m, mek, { from, q, reply }) => {
         caption: `📝 *Subtitle for:* ${title}\n\n${config.NAME || 'VISPER MD'}`
       }, { quoted: mek });
 
-      await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+      await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
       return;
     }
 
@@ -1266,7 +1282,7 @@ async (conn, m, mek, { from, q, reply }) => {
       caption: caption
     }, { quoted: mek });
 
-    await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+    await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
   } catch (e) {
     console.error('sublkdl error:', e);
     reply('🚫 *Error Occurred !!*\n\n' + e.message);
@@ -1352,12 +1368,14 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 
     const movie = res.movie;
 
-    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title}_*
+    let msg = `*▫🍿 𝗧𝗶𝘁𝗹𝗲 ➮* *_${movie.title}_*
 
 *▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 ➮* _${movie.releaseDate || 'N/A'}_
 *▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${movie.country || 'N/A'}_
 *▫🎭 𝗚𝗲𝗻𝗿𝗲 ➮* _${Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre || 'N/A'}_
-*▫⭐ 𝗜𝗠𝗗𝗕 ➮* _${movie.imdbRating || 'N/A'}_\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+*▫⭐ 𝗜𝗠𝗗𝗕 ➮* _${movie.imdbRating || 'N/A'}_\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+
+${config.DCARD}`;
 
     let buttons = [];
 
@@ -1423,8 +1441,7 @@ async (conn, m, mek, { from, q, reply }) => {
 
     const movie = res.movie;
 
-    let details = `📽️ *FULL DETAILS*\n\n`;
-    details += `*🎬 Title:* ${movie.title || 'N/A'}\n`;
+    let details = `*🎬 Title:* ${movie.title || 'N/A'}\n`;
     details += `*📅 Release Date:* ${movie.releaseDate || 'N/A'}\n`;
     details += `*🌍 Country:* ${movie.country || 'N/A'}\n`;
     details += `*🎭 Genre:* ${Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre || 'N/A'}\n`;
@@ -1433,7 +1450,7 @@ async (conn, m, mek, { from, q, reply }) => {
     details += `*🎬 Director:* ${movie.director || 'N/A'}\n`;
     details += `*✍️ Writer:* ${movie.writer || 'N/A'}\n`;
     details += `*👥 Cast:* ${Array.isArray(movie.cast) ? movie.cast.join(', ') : movie.cast || 'N/A'}\n\n`;
-    details += `*📝 Description:*\n${movie.description || 'No description available.'}`;
+    details += `*📝 Description:*\n${movie.description || 'No description available.'}\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n\n${config.DCARD}`;
 
     await conn.sendMessage(from, {
       text: details,
@@ -1501,7 +1518,7 @@ async (conn, mek, m, { from, q, reply }) => {
     }, { quoted: mek });
 
     await conn.sendMessage(from, { delete: loading.key });
-    await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+    await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
   } catch (e) {
     console.log(e);
     reply('*❌ Error:* ' + e.message);
@@ -1583,7 +1600,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 
     const movie = res.data || {};
 
-    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title || 'N/A'}_*\n`;
+    let msg = `*▫🍿 𝗧𝗶𝘁𝗹𝗲 ➮* *_${movie.title || 'N/A'}_*\n`;
     if (movie.year) msg += `*▫📅 𝗬𝗲𝗮𝗿 ➮* _${movie.year}_\n`;
     if (movie.director) msg += `*▫🎬 𝗗𝗶𝗿𝗲𝗰𝘁𝗼𝗿 ➮* _${movie.director}_\n`;
     if (movie.imdb_rating) msg += `*▫⭐ 𝗜𝗠𝗗𝗕 ➮* _${movie.imdb_rating}_\n`;
@@ -1593,7 +1610,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     if (movie.cast && movie.cast.length > 0) {
       msg += `\n*▫🎭 𝗖𝗮𝘀𝘁 ➮* _`;
       const castNames = movie.cast.slice(0, 3).map(c => c.name).join(', ');
-      msg += `${castNames}${movie.cast.length > 3 ? '...' : ''}_\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+      msg += `${castNames}${movie.cast.length > 3 ? '...' : ''}_\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n\n${config.DCARD}`;
 
     }
 
@@ -1666,7 +1683,7 @@ async (conn, mek, m, { from, q, reply }) => {
     }, { quoted: mek });
 
     await conn.sendMessage(from, { delete: loading.key });
-    await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+    await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
   } catch (e) {
     console.log(e);
     reply('*❌ Error:* ' + e.message);
@@ -1741,7 +1758,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
         // Build the info card caption
         let caption = `*🎬 ${info.title || 'TV Series'}*\n\n`;
         if (info.description) {
-            caption += `*📖 Description:* ${info.description}\n\n`;
+            caption += `*📖 Description:* ${info.description}\n\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n\n${config.DCARD}`;
         }
         caption += `*📦 Total Episodes:* ${episodes.length}\n\n`;
         caption += `*Tap the button below to see the episode list.*`;
@@ -1905,12 +1922,12 @@ async (conn, m, mek, { from, q, reply }) => {
 
         await conn.sendMessage(from, {
             document: { url: url },
-            fileName: `${title}.mp4`,
+            fileName: `${config.TITLE}${title}.mp4`,
             mimetype: 'video/mp4',
-            caption: `*✅ Download Complete!*\n\n📹 *${title}*\n📦 *Source:* ${type}\n\n${config.FOOTER || 'VISPER MD'}`
+            caption: `*☑️ Download Complete!*\n\n📹 *${title}*\n📦 *Source:* ${type}\n\n${config.FOOTER || 'VISPER MD'}`
         }, { quoted: mek });
 
-        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+        await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
 
     } catch (e) {
         console.error('msdown error:', e);
@@ -2028,7 +2045,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     }
 
     // Build caption
-    let msg = `*▫🍿 𝗧ɪᴛʟᴇ ➮* *_${title}_*
+    let msg = `*▫🍿 𝗧𝗶𝘁𝗹𝗲 ➮* *_${title}_*
 
 *▫📅 𝗥𝗲𝗹𝗲𝗮𝘀𝗲𝗱 𝗗𝗮𝘁𝗲 ➮* _${year}_
 *▫🌎 𝗖𝗼𝘂𝗻𝘁𝗿𝘆 ➮* _${country}_
@@ -2039,7 +2056,9 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 
 *➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
 *👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18
-*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*`;
+*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*
+
+${config.DCARD}`;
 
     // 🔧 Get download links safely
     let downloadLinks = [];
@@ -2123,7 +2142,7 @@ async (conn, mek, m, { from, q, reply }) => {
       return reply('*❌ Failed to get direct download link from GDrive*');
     }
     const directUrl = gdriveRes.result.download;
-    const fileName = gdriveRes.result.fileName || `${movieName || 'movie'}.mp4`;
+    const fileName = gdriveRes.result.fileName || `${comfig.TITLE}${movieName || 'movie'}.mp4`;
 
     // Step 3: Send the file
     const loading = await conn.sendMessage(from, {
@@ -2154,7 +2173,7 @@ async (conn, mek, m, { from, q, reply }) => {
 
     // Clean up and react
     await conn.sendMessage(from, { delete: loading.key });
-    await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+    await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
   } catch (e) {
     console.error('subzget error:', e.message, e.response?.data || '');
     reply('*❌ Error:* ' + (e.message || 'Unknown error'));
