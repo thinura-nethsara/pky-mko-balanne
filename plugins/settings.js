@@ -26,7 +26,7 @@ try{
 if (!isMe && !isSudo) return await reply('*OWNER COMMAND ⛔*') 
 const sections = [
   {
-title: "`🔮 WORK_TYPE 🔮`",
+title: "`🔵 WORK_TYPE 🔵`",
 rows: [{
 title: '_PUBLIC ✔️_',
 rowId: prefix + 'work_type public'
@@ -48,7 +48,7 @@ rowId: prefix +'work_type inbox'
 ]},  
 
 {
-title: "`🔮 AUTO_STATUS_READ 🔮`",
+title: "`🔵 AUTO_STATUS_READ 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'autos on'
@@ -59,7 +59,7 @@ rowId: prefix +'autos off'
 }
 ]},
  {
-title: "`🔮 AUTO_MSG_READ 🔮`",
+title: "`🔵 AUTO_MSG_READ 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'autoread on'
@@ -70,7 +70,7 @@ rowId: prefix +'autoread off'
 }
 ]},
  {
-title: "`🔮 AUTO_RECORDING 🔮`",
+title: "`🔵 AUTO_RECORDING 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'autorec on'
@@ -81,7 +81,7 @@ rowId: prefix +'autorec off'
 }
 ]},
  {
-title: "`🔮 AUTO_TYPING 🔮`",
+title: "`🔵 AUTO_TYPING 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'autotyping on'
@@ -92,7 +92,7 @@ rowId: prefix +'autotyping off'
 }
 ]},
  {
-title: "`🔮 READ_ONLY_COMMANDS 🔮`",
+title: "`🔵 READ_ONLY_COMMANDS 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'ronly on'
@@ -103,7 +103,7 @@ rowId: prefix +'ronly off'
 }
 ]},
 {
-title: "`🔮 AUTO_BLOCK 🔮`",
+title: "`🔵 AUTO_BLOCK 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'autoblock on'
@@ -114,7 +114,7 @@ rowId: prefix +'autoblock off'
 }
 ]},
 {
-title: "`🔮 ANTI_SPAM 🔮`",
+title: "`🔵 ANTI_SPAM 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'anti-spam on'
@@ -125,7 +125,7 @@ rowId: prefix +'anti-spam off'
 }
 ]},
 {
-title: "`🔮 ANTI_CALL 🔮`",
+title: "`🔵 ANTI_CALL 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'anticall on'
@@ -136,7 +136,7 @@ rowId: prefix +'anticall off'
 }
 ]},
 {
-title: "`🔮 AUTO_REACT 🔮`",
+title: "`🔵 AUTO_REACT 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'autoreact on'
@@ -147,7 +147,7 @@ rowId: prefix +'autoreact off'
 }
 ]},
  {
-title: "`🔮 AI_CHAT 🔮`",
+title: "`🔵 AI_CHAT 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'chatbot on'
@@ -158,7 +158,7 @@ rowId: prefix +'chatbot off'
 }
 ]},
 {
-title: "`🔮 ANTI_DELETE 🔮`",
+title: "`🔵 ANTI_DELETE 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'antdel on'
@@ -169,7 +169,7 @@ rowId: prefix +'antdel off'
 }
 ]},
  {
-title: "`🔮 ANTI_LINK 🔮`",
+title: "`🔵 ANTI_LINK 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'antilink on'
@@ -180,7 +180,7 @@ rowId: prefix +'antilink off'
 }
 ]},
 {
-title: "`🔮 ANTILINK_ACTION 🔮`",
+title: "`🔵 ANTILINK_ACTION 🔵`",
 rows: [{
 title: '_Delete ✔️_',
 rowId: prefix +'antilinkaction delete'
@@ -191,7 +191,7 @@ rowId: prefix +'antilinkaction remove'
 }
 ]},
 {
-title: "`🔮 ANTIBAD_ACTION 🔮`",
+title: "`🔵 ANTIBAD_ACTION 🔵`",
 rows: [{
 title: '_Delete ✔️_',
 rowId: prefix +'antibadaction delete'
@@ -202,7 +202,7 @@ rowId: prefix +'antibadaction remove'
 }
 ]},	
 {
-title: "`🔮 ANTI_BOT 🔮`",
+title: "`🔵 ANTI_BOT 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'antibot on'
@@ -213,7 +213,7 @@ rowId: prefix +'antibot off'
 }
 ]},
  {
-title: "`🔮 ANTI_BAD 🔮`",
+title: "`🔵 ANTI_BAD 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'antibad on'
@@ -224,7 +224,7 @@ rowId: prefix +'antibad off'
 }
 ]},
  {
-title: "`🔮 XNXX_BLOCK 🔮`",
+title: "`🔵 XNXX_BLOCK 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'xblock on'
@@ -235,7 +235,7 @@ rowId: prefix +'xblock off'
 }
 ]},
  {
-title: "`🔮 MOVIE_BLOCK 🔮`",
+title: "`🔵 MOVIE_BLOCK 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'mvblock on'
@@ -247,7 +247,7 @@ rowId: prefix +'mvblock off'
         
 ]}, 	
  {
-title: "`🔮 ALWAYS_ONLINE 🔮`",
+title: "`🔵 ALWAYS_ONLINE 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'alo off'
@@ -258,7 +258,7 @@ rowId: prefix +'alo on'
 }
 ]},
  {
-title: "`🔮 AUTO_VOICE 🔮`",
+title: "`🔵 AUTO_VOICE 🔵`",
 rows: [{
 title: '_ON ✔️_',
 rowId: prefix +'autovoice on'
@@ -1011,6 +1011,7 @@ const buttons = [
   {buttonId: prefix + 'setowner ' + text, buttonText: {displayText: '_*Change bot owner*_'}, type: 1},
   {buttonId: prefix + 'setmvfooter ' + text, buttonText: {displayText: '_*Change bot movie footer*_'}, type: 1},
   {buttonId: prefix + 'setmvtitle ' + text , buttonText: {displayText: '_*Change bot movie titile*_'}, type: 1},
+  {buttonId: prefix + 'setmvdcard ' + text , buttonText: {displayText: '_*Change bot movie details card*_'}, type: 1},
   {buttonId: prefix + 'setmail ' + text , buttonText: {displayText: '_*Add seedr account mail*_'}, type: 1},
   {buttonId: prefix + 'setpassword ' + text , buttonText: {displayText: '_*Add seedr account password*_'}, type: 1},
   {buttonId: prefix + 'asetsudo ' + text , buttonText: {displayText: '_*Change bot sudo numbers*_'}, type: 1},
@@ -1039,6 +1040,7 @@ const buttons = [
              { title: "Change bot owner", "description":"", id: prefix + 'setowner ' + text },
              { title: "Change bot movie footer", "description":"", id: prefix + 'setmvfooter ' + text },
 				 { title: "Change bot movie title", "description":"", id: prefix + 'setmvtitle ' + text },
+					 { title: "Change bot movie details card", "description":"", id: prefix + 'setmvdcard ' + text },
 	     { title: "Add seedr account mail", "description":"", id: prefix + 'setmail ' + text },
 	     { title: "Add seedr account password", "description":"", id: prefix + 'setpassword ' + text },
 	     { title: "Change bot sudo numbers", "description":"", id:  prefix + 'asetsudo ' + text },
@@ -1106,6 +1108,31 @@ reply('*Error !!*')
 l(e)
 }
 })
+
+cmd({
+    pattern: "setmvdcard",
+   category: "movie",
+    desc: "set movie title for your name",
+    
+    filename: __filename
+},
+async(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, isSudo, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
+try{
+
+    
+if (!isMe && !isSudo) return await reply('*OWNER COMMAND ⛔*') 
+let gett = await get("DCARD")
+if(gett === q) return reply("*This settings all ready updated ☑️*")
+await input("DCARD", q)
+
+await reply("*MOVIE DETAILS CARD SET : " + q +" 🟢*")
+
+} catch (e) {
+reply('*Error !!*')
+l(e)
+}
+})
+
 
 
 cmd({
