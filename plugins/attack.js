@@ -7,7 +7,8 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const UserAgent = require('user-agents');
-const config = require('../config'); // config එක require කරන්න
+const config = require('../config');
+const { cmd, commands } = require('../command');// config එක require කරන්න
 
 // ======================================================
 // WEBSITE ATTACK MODULE - CUSTOM REQUEST COUNT
