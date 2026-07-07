@@ -1432,7 +1432,7 @@ async (conn, m, mek, { from, q, reply }) => {
   try {
     if (!q) return reply('*Please provide a link!*');
 
-    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/moviepro/info?id=${q}&apiKey=key_13be1374312cdd0a`;
+    const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/info?id=${q}&apiKey=key_13be1374312cdd0a`;
     const { data: res } = await axios.get(api);
 
     if (!res.status || !res.movie) {
