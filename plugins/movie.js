@@ -8,7 +8,7 @@ const fileType = require('file-type');
 const fg = require('api-dylux');
 const { searchMoviesublk } = require('../lib/moviesublk_tv_search');
 const { getMoviesublkInfo } = require('../lib/moviesublk_tv_info');
-const { searchAnimeClub, getShowInfo, getEpisodeDownloads } = require('../lib/animeclubtv');
+const { searchAnimeClub, getShowInfo, getEpisodeDownloads, getDirectDownloads } = require('../lib/animeclub');
 
 
 // ==================== GLOBAL VARIABLES ====================
@@ -688,6 +688,8 @@ async (conn, m, mek, { from, q, reply }) => {
 });
 
 
+
+
 // ============================================================
 // COMMAND: anime – search animeclub2.com
 // ============================================================
@@ -705,6 +707,9 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     if (!q) return reply('*Please provide an anime name to search 🎬*');
 
     const result = await searchAnimeClub(q);
+    if (result.error) {
+      return reply(`*🚩 Search error:* ${result.error}`);
+    }
     if (!result.results || result.results.length === 0) {
       return reply('*No results found ❌*');
     }
@@ -749,7 +754,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 
     const data = await getShowInfo(q);
     if (data.error || !data.title) {
-      return reply('*🚩 Could not fetch anime details!*');
+      return reply(`*🚩 Could not fetch anime details:* ${data.error || 'Unknown error'}`);
     }
 
     // Build info caption
@@ -795,7 +800,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
       // No episodes – try direct downloads (movie/special)
       const movieData = await getDirectDownloads(q);
       if (movieData.error) {
-        return reply('*🚩 No episodes or download links found for this title.*');
+        return reply(`*🚩 No episodes or download links found for this title.*\nError: ${movieData.error}`);
       }
 
       if (!movieData.downloadLinks || movieData.downloadLinks.length === 0) {
@@ -847,22 +852,18 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 
     const data = await getEpisodeDownloads(q);
     if (data.error || !data.downloadLinks || data.downloadLinks.length === 0) {
-      return reply('*🚩 No download links found for this episode!*');
+      return reply(`*🚩 No download links found for this episode.*\n${data.error || ''}`);
     }
 
     const caption = `*🎬 ${data.title}*\n\n📅 Season ${data.season || '?'} – Episode ${data.episode || '?'}\n\n📝 ${data.description ? data.description.slice(0, 200) + '...' : ''}\n\n*Choose your download option below.*`;
 
-    // Prepare buttons
-    const buttons = [];
-    data.downloadLinks.forEach(link => {
-      if (link.finalUrl) {
-        buttons.push({
-          buttonId: `${prefix}animeget ${link.finalUrl}±${data.title}±${data.poster}±${link.quality}±${link.platform}`,
-          buttonText: { displayText: `${link.platform} - ${link.quality}` },
-          type: 1
-        });
-      }
-    });
+    const buttons = data.downloadLinks
+      .filter(link => link.finalUrl)
+      .map(link => ({
+        buttonId: `${prefix}animeget ${link.finalUrl}±${data.title}±${data.poster}±${link.quality}±${link.platform}`,
+        buttonText: { displayText: `${link.platform} - ${link.quality}` },
+        type: 1
+      }));
 
     if (buttons.length === 0) {
       return reply('*No valid download links (all failed to resolve).*');
@@ -899,12 +900,10 @@ async (conn, m, mek, { from, q, reply }) => {
     const [fileUrl, title, poster, quality, platform] = q.split('±');
     if (!fileUrl) return reply('*⚠️ Invalid download URL!*');
 
-    // Send loading message
     const loading = await conn.sendMessage(from, {
       text: '*📤 Uploading your anime... Please wait.*'
     }, { quoted: mek });
 
-    // Prepare thumbnail
     let thumb = null;
     if (poster && poster !== 'undefined') {
       try {
@@ -918,7 +917,6 @@ async (conn, m, mek, { from, q, reply }) => {
 
     const fileName = `${title || 'anime'} - ${quality || 'unknown'}.mp4`.replace(/[^\w\s.-]/g, '');
 
-    // Optionally forward to config.JID if set
     const targetJid = config.JID || from;
 
     await conn.sendMessage(targetJid, {
@@ -942,7 +940,6 @@ async (conn, m, mek, { from, q, reply }) => {
     reply('*❌ Error while sending file:* ' + e.message);
   }
 });
-
 
 
 
