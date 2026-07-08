@@ -752,10 +752,14 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
       return reply('*🚩 Could not fetch anime details!*');
     }
 
-    // Send poster + info
-    const caption = `*🎬 ${data.title}*\n\n${data.description ? data.description.slice(0, 300) + '...' : ''}\n\n_Total Episodes: ${data.episodes.length}_\n\n📌 Select an episode below.`;
+    // Build info caption
+    let caption = `*🎬 ${data.title}*\n\n`;
+    if (data.description) {
+      caption += `${data.description.slice(0, 300)}...\n\n`;
+    }
+    caption += `_Total Episodes: ${data.episodes.length}_\n\n📌 Select an episode below.`;
 
-    // Send the poster image
+    // Send poster
     if (data.poster) {
       await conn.sendMessage(from, {
         image: { url: data.poster },
@@ -766,30 +770,62 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
       await reply(caption);
     }
 
-    // Build episode list
-    if (data.episodes.length === 0) {
-      return reply('*No episodes found.*');
+    // If episodes exist, show list
+    if (data.episodes && data.episodes.length > 0) {
+      const rows = data.episodes.slice(0, 50).map(ep => ({
+        title: ep.title,
+        rowId: `${prefix}animedl ${ep.url}`
+      }));
+
+      const sections = [{
+        title: `📺 Episodes (${rows.length})`,
+        rows
+      }];
+
+      const listMessage = {
+        text: `*Select an episode to get download links.*`,
+        footer: config.FOOTER || 'VISPER MD',
+        title: 'Episodes',
+        buttonText: '📂 View Episodes',
+        sections
+      };
+
+      await conn.listMessage(from, listMessage, mek);
+    } else {
+      // No episodes – try direct downloads (movie/special)
+      const movieData = await getDirectDownloads(q);
+      if (movieData.error) {
+        return reply('*🚩 No episodes or download links found for this title.*');
+      }
+
+      if (!movieData.downloadLinks || movieData.downloadLinks.length === 0) {
+        return reply('*🚩 This appears to be a movie/special, but no download links were found.*');
+      }
+
+      const buttons = movieData.downloadLinks
+        .filter(link => link.finalUrl)
+        .map(link => ({
+          buttonId: `${prefix}animeget ${link.finalUrl}±${movieData.title}±${movieData.poster}±${link.quality}±${link.platform}`,
+          buttonText: { displayText: `${link.platform} - ${link.quality}` },
+          type: 1
+        }));
+
+      if (buttons.length === 0) {
+        return reply('*🚩 No valid download links found (failed to resolve).*');
+      }
+
+      const movieCaption = `*🎬 ${movieData.title}*\n\n${movieData.description ? movieData.description.slice(0, 300) + '...' : ''}\n\n*Select a download option below.*`;
+
+      const buttonMessage = {
+        image: { url: movieData.poster || 'https://via.placeholder.com/300x450?text=No+Poster' },
+        caption: movieCaption,
+        footer: config.FOOTER || 'VISPER MD',
+        buttons,
+        headerType: 4
+      };
+
+      await conn.buttonMessage(from, buttonMessage, mek);
     }
-
-    const rows = data.episodes.slice(0, 50).map(ep => ({
-      title: ep.title,
-      rowId: `${prefix}animedl ${ep.url}`
-    }));
-
-    const sections = [{
-      title: `📺 Episodes (${rows.length})`,
-      rows
-    }];
-
-    const listMessage = {
-      text: `*Select an episode to get download links.*`,
-      footer: config.FOOTER || 'VISPER MD',
-      title: 'Episodes',
-      buttonText: '📂 View Episodes',
-      sections
-    };
-
-    await conn.listMessage(from, listMessage, mek);
   } catch (e) {
     console.error(e);
     reply('*🚩 Error fetching anime details!*');
