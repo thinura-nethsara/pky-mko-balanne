@@ -694,12 +694,18 @@ async (conn, m, mek, { from, q, reply }) => {
 
 
 
-// Temporary storage: chatId -> { urls: [], timestamp: number }
-const episodeStore = new Map();
+
+
+
+
+// In-memory stores
+const episodeStore = new Map();   // chatId -> { urls: [], type: 'episode'|'movie', title, poster, description }
+const downloadStore = new Map();  // chatId -> { links: [], title, poster, description }
+
 const STORE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // ============================================================
-// COMMAND: anime – search animeclub2.com
+// COMMAND: anime – search
 // ============================================================
 cmd({
   pattern: 'animeclub2tv',
@@ -715,12 +721,8 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     if (!q) return reply('*Please provide an anime name to search 🎬*');
 
     const result = await searchAnimeClub(q);
-    if (result.error) {
-      return reply(`*🚩 Search error:* ${result.error}`);
-    }
-    if (!result.results || result.results.length === 0) {
-      return reply('*No results found ❌*');
-    }
+    if (result.error) return reply(`*🚩 Search error:* ${result.error}`);
+    if (!result.results || result.results.length === 0) return reply('*No results found ❌*');
 
     const rows = result.results.slice(0, 30).map(item => ({
       title: item.title,
@@ -748,7 +750,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 });
 
 // ============================================================
-// COMMAND: animeinfo – show anime info & numbered episode list
+// COMMAND: animeinfo – show poster + episode list (or movie)
 // ============================================================
 cmd({
   pattern: 'animeinfo',
@@ -765,72 +767,73 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
       return reply(`*🚩 Could not fetch anime details:* ${data.error || 'Unknown error'}`);
     }
 
-    // Build info caption
+    // ---- Send poster + info ----
     let caption = `*🎬 ${data.title}*\n\n`;
-    if (data.description) {
-      caption += `${data.description.slice(0, 300)}...\n\n`;
-    }
-    caption += `_Total Episodes: ${data.episodes.length}_\n\n📌 Reply with the episode number to get download links.`;
+    if (data.description) caption += `${data.description.slice(0, 300)}...\n\n`;
 
-    // Send poster
-    if (data.poster) {
-      await conn.sendMessage(from, {
-        image: { url: data.poster },
-        caption,
-        footer: config.FOOTER || 'VISPER MD'
-      }, { quoted: mek });
-    } else {
-      await reply(caption);
-    }
-
-    // If episodes exist, send numbered list
     if (data.episodes && data.episodes.length > 0) {
-      // Store episode URLs in memory for this chat
+      caption += `_Total Episodes: ${data.episodes.length}_\n\n📌 Reply with the episode number to get download links.`;
+
+      // Send poster
+      if (data.poster) {
+        await conn.sendMessage(from, {
+          image: { url: data.poster },
+          caption,
+          footer: config.FOOTER || 'VISPER MD'
+        }, { quoted: mek });
+      } else {
+        await reply(caption);
+      }
+
+      // Store episode URLs
       const urls = data.episodes.map(ep => ep.url);
-      episodeStore.set(from, { urls, timestamp: Date.now() });
+      episodeStore.set(from, {
+        type: 'episode',
+        urls,
+        title: data.title,
+        poster: data.poster,
+        description: data.description,
+        timestamp: Date.now()
+      });
 
-      // Build numbered list message (max 50)
-      const listItems = data.episodes.slice(0, 50).map((ep, index) => {
-        return `${index + 1}. ${ep.title}`;
-      }).join('\n');
-
+      // Send numbered episode list
+      const listItems = data.episodes.slice(0, 50).map((ep, i) => `${i + 1}. ${ep.title}`).join('\n');
       const listMsg = `📺 *Episodes*\n\n${listItems}\n\n_Reply with the number (e.g., \`1\`) to get download links._\n\n${config.FOOTER || 'VISPER MD'}`;
-
       await conn.sendMessage(from, { text: listMsg }, { quoted: mek });
+
     } else {
       // No episodes – try direct downloads (movie/special)
       const movieData = await getDirectDownloads(q);
-      if (movieData.error) {
-        return reply(`*🚩 No episodes or download links found for this title.*\nError: ${movieData.error}`);
+      if (movieData.error || !movieData.downloadLinks || movieData.downloadLinks.length === 0) {
+        return reply('*🚩 No episodes or download links found for this title.*');
       }
 
-      if (!movieData.downloadLinks || movieData.downloadLinks.length === 0) {
-        return reply('*🚩 This appears to be a movie/special, but no download links were found.*');
+      caption += `_This appears to be a movie or special._\n\n📌 Reply with the number to get download links.`;
+
+      // Send poster
+      if (movieData.poster) {
+        await conn.sendMessage(from, {
+          image: { url: movieData.poster },
+          caption,
+          footer: config.FOOTER || 'VISPER MD'
+        }, { quoted: mek });
+      } else {
+        await reply(caption);
       }
 
-      const buttons = movieData.downloadLinks
-        .filter(link => link.finalUrl)
-        .map(link => ({
-          buttonId: `${prefix}animeget ${link.finalUrl}±${movieData.title}±${movieData.poster}±${link.quality}±${link.platform}`,
-          buttonText: { displayText: `${link.platform} - ${link.quality}` },
-          type: 1
-        }));
+      // Store movie download links
+      episodeStore.set(from, {
+        type: 'movie',
+        urls: [q], // store the show URL
+        title: movieData.title,
+        poster: movieData.poster,
+        description: movieData.description,
+        timestamp: Date.now()
+      });
 
-      if (buttons.length === 0) {
-        return reply('*🚩 No valid download links found (failed to resolve).*');
-      }
-
-      const movieCaption = `*🎬 ${movieData.title}*\n\n${movieData.description ? movieData.description.slice(0, 300) + '...' : ''}\n\n*Select a download option below.*`;
-
-      const buttonMessage = {
-        image: { url: movieData.poster || 'https://via.placeholder.com/300x450?text=No+Poster' },
-        caption: movieCaption,
-        footer: config.FOOTER || 'VISPER MD',
-        buttons,
-        headerType: 4
-      };
-
-      await conn.buttonMessage(from, buttonMessage, mek);
+      // Send "Reply 1" message
+      const listMsg = `📺 *Movie / Special*\n\nThis title has no episodes.\n\nReply with \`1\` to get download links.\n\n${config.FOOTER || 'VISPER MD'}`;
+      await conn.sendMessage(from, { text: listMsg }, { quoted: mek });
     }
   } catch (e) {
     console.error(e);
@@ -850,7 +853,7 @@ cmd({
 },
 async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
-    if (!q || isNaN(q)) return reply('*Please provide a valid episode number.*');
+    if (!q || isNaN(q)) return reply('*Please provide a valid number.*');
 
     const num = parseInt(q, 10);
     const store = episodeStore.get(from);
@@ -862,42 +865,71 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
       return reply('*Episode list expired. Please search again.*');
     }
 
-    const urls = store.urls;
-    if (num < 1 || num > urls.length) {
-      return reply(`*Invalid number. Please choose between 1 and ${urls.length}.*`);
+    let downloadLinks = [];
+    let title = store.title;
+    let poster = store.poster;
+    let description = store.description;
+
+    if (store.type === 'episode') {
+      const urls = store.urls;
+      if (num < 1 || num > urls.length) {
+        return reply(`*Invalid number. Please choose between 1 and ${urls.length}.*`);
+      }
+      const epUrl = urls[num - 1];
+      const data = await getEpisodeDownloads(epUrl);
+      if (data.error || !data.downloadLinks || data.downloadLinks.length === 0) {
+        return reply(`*🚩 No download links found for this episode.*\n${data.error || ''}`);
+      }
+      downloadLinks = data.downloadLinks;
+      title = data.title || title;
+      poster = data.poster || poster;
+      description = data.description || description;
+    } else if (store.type === 'movie') {
+      if (num !== 1) return reply('*For movies, please reply with 1.*');
+      const movieUrl = store.urls[0];
+      const data = await getDirectDownloads(movieUrl);
+      if (data.error || !data.downloadLinks || data.downloadLinks.length === 0) {
+        return reply(`*🚩 No download links found for this movie.*\n${data.error || ''}`);
+      }
+      downloadLinks = data.downloadLinks;
+      title = data.title || title;
+      poster = data.poster || poster;
+      description = data.description || description;
+    } else {
+      return reply('*Unknown type. Please search again.*');
     }
 
-    const episodeUrl = urls[num - 1];
-    // Optionally clear store after use: episodeStore.delete(from);
-
-    const data = await getEpisodeDownloads(episodeUrl);
-    if (data.error || !data.downloadLinks || data.downloadLinks.length === 0) {
-      return reply(`*🚩 No download links found for this episode.*\n${data.error || ''}`);
-    }
-
-    const caption = `*🎬 ${data.title}*\n\n📅 Season ${data.season || '?'} – Episode ${data.episode || '?'}\n\n📝 ${data.description ? data.description.slice(0, 200) + '...' : ''}\n\n*Choose your download option below.*`;
-
-    const buttons = data.downloadLinks
-      .filter(link => link.finalUrl)
-      .map(link => ({
-        buttonId: `${prefix}animeget ${link.finalUrl}±${data.title}±${data.poster}±${link.quality}±${link.platform}`,
-        buttonText: { displayText: `${link.platform} - ${link.quality}` },
-        type: 1
-      }));
-
-    if (buttons.length === 0) {
+    // Filter valid links
+    const validLinks = downloadLinks.filter(link => link.finalUrl);
+    if (validLinks.length === 0) {
       return reply('*No valid download links (all failed to resolve).*');
     }
 
-    const buttonMessage = {
-      image: { url: data.poster || 'https://via.placeholder.com/300x450?text=No+Poster' },
-      caption: caption,
-      footer: config.FOOTER || 'VISPER MD',
-      buttons,
-      headerType: 4
-    };
+    // Store in downloadStore for the next step
+    downloadStore.set(from, {
+      links: validLinks,
+      title,
+      poster,
+      description,
+      timestamp: Date.now()
+    });
 
-    await conn.buttonMessage(from, buttonMessage, mek);
+    // Build numbered download list
+    const listItems = validLinks.map((link, i) =>
+      `${i + 1}. ${link.platform || 'Download'} – ${link.quality || 'Unknown'}`
+    ).join('\n');
+
+    const msg = `*🎬 ${title}*\n\n📝 ${description ? description.slice(0, 200) + '...' : ''}\n\n*Download Options*\n\n${listItems}\n\n_Reply with the number to download._\n\n${config.FOOTER || 'VISPER MD'}`;
+
+    if (poster) {
+      await conn.sendMessage(from, {
+        image: { url: poster },
+        caption: msg,
+        footer: config.FOOTER || 'VISPER MD'
+      }, { quoted: mek });
+    } else {
+      await reply(msg);
+    }
   } catch (e) {
     console.error(e);
     reply('*🚩 Error fetching download links!*');
@@ -905,76 +937,47 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 });
 
 // ============================================================
-// COMMAND: animedl – (still works for direct URL)
+// COMMAND: dl – reply with number to download file
 // ============================================================
 cmd({
-  pattern: 'animedl',
+  pattern: 'dl',
   react: '⬇️',
-  desc: 'Get download links for an episode (direct URL)',
-  filename: __filename
-},
-async (conn, m, mek, { from, q, prefix, reply }) => {
-  try {
-    if (!q) return reply('*Please provide an episode URL!*');
-
-    const data = await getEpisodeDownloads(q);
-    if (data.error || !data.downloadLinks || data.downloadLinks.length === 0) {
-      return reply(`*🚩 No download links found for this episode.*\n${data.error || ''}`);
-    }
-
-    const caption = `*🎬 ${data.title}*\n\n📅 Season ${data.season || '?'} – Episode ${data.episode || '?'}\n\n📝 ${data.description ? data.description.slice(0, 200) + '...' : ''}\n\n*Choose your download option below.*`;
-
-    const buttons = data.downloadLinks
-      .filter(link => link.finalUrl)
-      .map(link => ({
-        buttonId: `${prefix}animeget ${link.finalUrl}±${data.title}±${data.poster}±${link.quality}±${link.platform}`,
-        buttonText: { displayText: `${link.platform} - ${link.quality}` },
-        type: 1
-      }));
-
-    if (buttons.length === 0) {
-      return reply('*No valid download links (all failed to resolve).*');
-    }
-
-    const buttonMessage = {
-      image: { url: data.poster || 'https://via.placeholder.com/300x450?text=No+Poster' },
-      caption: caption,
-      footer: config.FOOTER || 'VISPER MD',
-      buttons,
-      headerType: 4
-    };
-
-    await conn.buttonMessage(from, buttonMessage, mek);
-  } catch (e) {
-    console.error(e);
-    reply('*🚩 Error fetching download links!*');
-  }
-});
-
-// ============================================================
-// COMMAND: animeget – final download (send file)
-// ============================================================
-cmd({
-  pattern: 'animeget',
-  react: '📥',
-  dontAddCommandList: true,
+  desc: 'Download the selected file (use after .ep)',
+  use: '.dl <number>',
   filename: __filename
 },
 async (conn, m, mek, { from, q, reply }) => {
   try {
-    if (!q) return reply('*📍 Invalid request!*');
+    if (!q || isNaN(q)) return reply('*Please provide a valid number.*');
 
-    const [fileUrl, title, poster, quality, platform] = q.split('±');
-    if (!fileUrl) return reply('*⚠️ Invalid download URL!*');
+    const num = parseInt(q, 10);
+    const store = downloadStore.get(from);
+    if (!store) {
+      return reply('*No download list found. Please use `.ep` first.*');
+    }
+    if (Date.now() - store.timestamp > STORE_TTL) {
+      downloadStore.delete(from);
+      return reply('*Download list expired. Please search again.*');
+    }
+
+    const links = store.links;
+    if (num < 1 || num > links.length) {
+      return reply(`*Invalid number. Please choose between 1 and ${links.length}.*`);
+    }
+
+    const link = links[num - 1];
+    if (!link.finalUrl) {
+      return reply('*This link is invalid. Try another number.*');
+    }
 
     const loading = await conn.sendMessage(from, {
-      text: '*📤 Uploading your anime... Please wait.*'
+      text: '*📤 Uploading... Please wait.*'
     }, { quoted: mek });
 
     let thumb = null;
-    if (poster && poster !== 'undefined') {
+    if (store.poster && store.poster !== 'undefined') {
       try {
-        const response = await axios.get(poster, { responseType: 'arraybuffer' });
+        const response = await axios.get(store.poster, { responseType: 'arraybuffer' });
         thumb = await sharp(Buffer.from(response.data))
           .resize(300, 300, { fit: 'cover' })
           .jpeg({ quality: 80 })
@@ -982,19 +985,98 @@ async (conn, m, mek, { from, q, reply }) => {
       } catch (_) {}
     }
 
-    const fileName = `${title || 'anime'} - ${quality || 'unknown'}.mp4`.replace(/[^\w\s.-]/g, '');
+    const fileName = `${store.title || 'anime'} - ${link.quality || 'unknown'}.mp4`
+      .replace(/[^\w\s.-]/g, '');
 
     const targetJid = config.JID || from;
 
     await conn.sendMessage(targetJid, {
-      document: { url: fileUrl },
+      document: { url: link.finalUrl },
       mimetype: 'video/mp4',
       fileName: fileName,
       jpegThumbnail: thumb,
-      caption: `*🎬 ${title || 'Anime'}*\n\n📦 *${platform || 'Download'}* – *${quality || 'Unknown'}*\n\n${config.NAME || 'VISPER MD'}`
+      caption: `*🎬 ${store.title || 'Anime'}*\n\n📦 *${link.platform || 'Download'}* – *${link.quality || 'Unknown'}*\n\n${config.NAME || 'VISPER MD'}`
     });
 
-    // Clean up loading
+    // Clean up
+    if (targetJid === from) {
+      await conn.sendMessage(from, { delete: loading.key });
+      await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
+    } else {
+      await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
+      await conn.sendMessage(from, { delete: loading.key });
+    }
+
+    // Optionally clear stores
+    downloadStore.delete(from);
+    episodeStore.delete(from);
+  } catch (e) {
+    console.error(e);
+    reply('*❌ Error while sending file:* ' + e.message);
+  }
+});
+
+// Keep old commands for backward compatibility
+cmd({
+  pattern: 'animedl',
+  react: '⬇️',
+  desc: 'Get download links for an episode (direct URL)',
+  filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+  // redirect to .ep? But we keep it simple
+  if (!q) return reply('*Please provide an episode URL!*');
+  // Just show info
+  const data = await getEpisodeDownloads(q);
+  if (data.error || !data.downloadLinks || data.downloadLinks.length === 0) {
+    return reply(`*🚩 No download links found.*\n${data.error || ''}`);
+  }
+  const caption = `*🎬 ${data.title}*\n\n📅 Season ${data.season || '?'} – Episode ${data.episode || '?'}\n\n📝 ${data.description ? data.description.slice(0, 200) + '...' : ''}\n\n*Choose your download option below.*`;
+  const buttons = data.downloadLinks.filter(l => l.finalUrl).map(l => ({
+    buttonId: `${prefix}animeget ${l.finalUrl}±${data.title}±${data.poster}±${l.quality}±${l.platform}`,
+    buttonText: { displayText: `${l.platform} - ${l.quality}` },
+    type: 1
+  }));
+  if (buttons.length === 0) return reply('*No valid download links.*');
+  const buttonMessage = {
+    image: { url: data.poster || 'https://via.placeholder.com/300x450?text=No+Poster' },
+    caption,
+    footer: config.FOOTER || 'VISPER MD',
+    buttons,
+    headerType: 4
+  };
+  await conn.buttonMessage(from, buttonMessage, mek);
+});
+
+cmd({
+  pattern: 'animeget',
+  react: '📥',
+  dontAddCommandList: true,
+  filename: __filename
+},
+async (conn, m, mek, { from, q, reply }) => {
+  // This is kept for compatibility with old buttons
+  try {
+    if (!q) return reply('*📍 Invalid request!*');
+    const [fileUrl, title, poster, quality, platform] = q.split('±');
+    if (!fileUrl) return reply('*⚠️ Invalid download URL!*');
+    const loading = await conn.sendMessage(from, { text: '*📤 Uploading...*' }, { quoted: mek });
+    let thumb = null;
+    if (poster && poster !== 'undefined') {
+      try {
+        const response = await axios.get(poster, { responseType: 'arraybuffer' });
+        thumb = await sharp(Buffer.from(response.data)).resize(300, 300, { fit: 'cover' }).jpeg({ quality: 80 }).toBuffer();
+      } catch (_) {}
+    }
+    const fileName = `${title || 'anime'} - ${quality || 'unknown'}.mp4`.replace(/[^\w\s.-]/g, '');
+    const targetJid = config.JID || from;
+    await conn.sendMessage(targetJid, {
+      document: { url: fileUrl },
+      mimetype: 'video/mp4',
+      fileName,
+      jpegThumbnail: thumb,
+      caption: `*🎬 ${title || 'Anime'}*\n\n📦 *${platform || 'Download'}* – *${quality || 'Unknown'}*\n\n${config.NAME || 'VISPER MD'}`
+    });
     if (targetJid === from) {
       await conn.sendMessage(from, { delete: loading.key });
       await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
@@ -1004,9 +1086,10 @@ async (conn, m, mek, { from, q, reply }) => {
     }
   } catch (e) {
     console.error(e);
-    reply('*❌ Error while sending file:* ' + e.message);
+    reply('*❌ Error:* ' + e.message);
   }
 });
+
 
 
 
