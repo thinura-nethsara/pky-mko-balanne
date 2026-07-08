@@ -8,6 +8,7 @@ const fileType = require('file-type');
 const fg = require('api-dylux');
 const { searchMoviesublk } = require('../lib/moviesublk_tv_search');
 const { getMoviesublkInfo } = require('../lib/moviesublk_tv_info');
+const { searchAnimeClub, getShowInfo, getEpisodeDownloads } = require('../lib/animeclub');
 
 
 // ==================== GLOBAL VARIABLES ====================
@@ -66,6 +67,7 @@ async (conn, mek, m, { from, prefix, q, isMe, isSudo, isOwner, reply }) => {
     const sources = [
       { name: 'CINESUBZ', cmd: 'cinesubz' },
       { name: 'CINESUBZ TV', cmd: 'cinetv' },
+      { name: 'ANIMECLUB2TV', cmd: 'animeclub2tv' },
       { name: 'SINHALASUB', cmd: 'sinhalasub' },
       { name: 'SINHALASUB TV' , cmd: 'sinhalasubtv' },
       { name: 'SUBLK', cmd: 'sublk' },
@@ -684,6 +686,231 @@ async (conn, m, mek, { from, q, reply }) => {
     isUploadingTv = false;
   }
 });
+
+
+// ============================================================
+// COMMAND: anime – search animeclub2.com
+// ============================================================
+cmd({
+  pattern: 'animeclub2tv',
+  react: '🔍',
+  category: 'anime',
+  alias: ['anim'],
+  desc: 'Search anime on AnimeClub2',
+  use: '.anime <title>',
+  filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+  try {
+    if (!q) return reply('*Please provide an anime name to search 🎬*');
+
+    const result = await searchAnimeClub(q);
+    if (!result.results || result.results.length === 0) {
+      return reply('*No results found ❌*');
+    }
+
+    const rows = result.results.slice(0, 30).map(item => ({
+      title: item.title,
+      rowId: `${prefix}animeinfo ${item.url}`
+    }));
+
+    const sections = [{
+      title: `📺 Search Results (${rows.length})`,
+      rows
+    }];
+
+    const listMessage = {
+      text: `🎌 *ANIMECLUB2 SEARCH*\n\n🔎 Query: *${q}*\n\n_Select an anime to see episodes._`,
+      footer: config.FOOTER || 'VISPER MD',
+      title: 'AnimeClubTV Downloader',
+      buttonText: '📂 View Results',
+      sections
+    };
+
+    await conn.listMessage(from, listMessage, mek);
+  } catch (e) {
+    console.error(e);
+    reply('*🚩 Error occurred while searching!*');
+  }
+});
+
+// ============================================================
+// COMMAND: animeinfo – show anime details & episodes
+// ============================================================
+cmd({
+  pattern: 'animeinfo',
+  react: '📺',
+  desc: 'Show anime info and episode list',
+  filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+  try {
+    if (!q) return reply('*Please provide a valid anime URL!*');
+
+    const data = await getShowInfo(q);
+    if (data.error || !data.title) {
+      return reply('*🚩 Could not fetch anime details!*');
+    }
+
+    // Send poster + info
+    const caption = `*🎬 ${data.title}*\n\n${data.description ? data.description.slice(0, 300) + '...' : ''}\n\n_Total Episodes: ${data.episodes.length}_\n\n📌 Select an episode below.`;
+
+    // Send the poster image
+    if (data.poster) {
+      await conn.sendMessage(from, {
+        image: { url: data.poster },
+        caption,
+        footer: config.FOOTER || 'VISPER MD'
+      }, { quoted: mek });
+    } else {
+      await reply(caption);
+    }
+
+    // Build episode list
+    if (data.episodes.length === 0) {
+      return reply('*No episodes found.*');
+    }
+
+    const rows = data.episodes.slice(0, 50).map(ep => ({
+      title: ep.title,
+      rowId: `${prefix}animedl ${ep.url}`
+    }));
+
+    const sections = [{
+      title: `📺 Episodes (${rows.length})`,
+      rows
+    }];
+
+    const listMessage = {
+      text: `*Select an episode to get download links.*`,
+      footer: config.FOOTER || 'VISPER MD',
+      title: 'Episodes',
+      buttonText: '📂 View Episodes',
+      sections
+    };
+
+    await conn.listMessage(from, listMessage, mek);
+  } catch (e) {
+    console.error(e);
+    reply('*🚩 Error fetching anime details!*');
+  }
+});
+
+// ============================================================
+// COMMAND: animedl – show episode download options
+// ============================================================
+cmd({
+  pattern: 'animedl',
+  react: '⬇️',
+  desc: 'Get download links for an episode',
+  filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+  try {
+    if (!q) return reply('*Please provide an episode URL!*');
+
+    const data = await getEpisodeDownloads(q);
+    if (data.error || !data.downloadLinks || data.downloadLinks.length === 0) {
+      return reply('*🚩 No download links found for this episode!*');
+    }
+
+    const caption = `*🎬 ${data.title}*\n\n📅 Season ${data.season || '?'} – Episode ${data.episode || '?'}\n\n📝 ${data.description ? data.description.slice(0, 200) + '...' : ''}\n\n*Choose your download option below.*`;
+
+    // Prepare buttons
+    const buttons = [];
+    data.downloadLinks.forEach(link => {
+      if (link.finalUrl) {
+        buttons.push({
+          buttonId: `${prefix}animeget ${link.finalUrl}±${data.title}±${data.poster}±${link.quality}±${link.platform}`,
+          buttonText: { displayText: `${link.platform} - ${link.quality}` },
+          type: 1
+        });
+      }
+    });
+
+    if (buttons.length === 0) {
+      return reply('*No valid download links (all failed to resolve).*');
+    }
+
+    const buttonMessage = {
+      image: { url: data.poster || 'https://via.placeholder.com/300x450?text=No+Poster' },
+      caption: caption,
+      footer: config.FOOTER || 'VISPER MD',
+      buttons,
+      headerType: 4
+    };
+
+    await conn.buttonMessage(from, buttonMessage, mek);
+  } catch (e) {
+    console.error(e);
+    reply('*🚩 Error fetching download links!*');
+  }
+});
+
+// ============================================================
+// COMMAND: animeget – final download (send file)
+// ============================================================
+cmd({
+  pattern: 'animeget',
+  react: '📥',
+  dontAddCommandList: true,
+  filename: __filename
+},
+async (conn, m, mek, { from, q, reply }) => {
+  try {
+    if (!q) return reply('*📍 Invalid request!*');
+
+    const [fileUrl, title, poster, quality, platform] = q.split('±');
+    if (!fileUrl) return reply('*⚠️ Invalid download URL!*');
+
+    // Send loading message
+    const loading = await conn.sendMessage(from, {
+      text: '*📤 Uploading your anime... Please wait.*'
+    }, { quoted: mek });
+
+    // Prepare thumbnail
+    let thumb = null;
+    if (poster && poster !== 'undefined') {
+      try {
+        const response = await axios.get(poster, { responseType: 'arraybuffer' });
+        thumb = await sharp(Buffer.from(response.data))
+          .resize(300, 300, { fit: 'cover' })
+          .jpeg({ quality: 80 })
+          .toBuffer();
+      } catch (_) {}
+    }
+
+    const fileName = `${title || 'anime'} - ${quality || 'unknown'}.mp4`.replace(/[^\w\s.-]/g, '');
+
+    // Optionally forward to config.JID if set
+    const targetJid = config.JID || from;
+
+    await conn.sendMessage(targetJid, {
+      document: { url: fileUrl },
+      mimetype: 'video/mp4',
+      fileName: fileName,
+      jpegThumbnail: thumb,
+      caption: `*🎬 ${title || 'Anime'}*\n\n📦 *${platform || 'Download'}* – *${quality || 'Unknown'}*\n\n${config.NAME || 'VISPER MD'}`
+    });
+
+    // Clean up loading
+    if (targetJid === from) {
+      await conn.sendMessage(from, { delete: loading.key });
+      await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
+    } else {
+      await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
+      await conn.sendMessage(from, { delete: loading.key });
+    }
+  } catch (e) {
+    console.error(e);
+    reply('*❌ Error while sending file:* ' + e.message);
+  }
+});
+
+
+
+
+
 
 // ============================================================
 // COMMAND: sinhalasub – Search from sinhalasub.lk
