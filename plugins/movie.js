@@ -8,7 +8,10 @@ const fileType = require('file-type');
 const fg = require('api-dylux');
 const { searchMoviesublk } = require('../lib/moviesublk_tv_search');
 const { getMoviesublkInfo } = require('../lib/moviesublk_tv_info');
-const { searchAnimeClub, getShowInfo, getEpisodeDownloads, getDirectDownloads } = require('../lib/animeclub');
+const { searchAnimeClub } = require('../lib/animeclub-search');
+const { getShowInfo } = require('../lib/animeclub-info-episode');
+const { getEpisodeDownloads, getDirectDownloads } = require('../lib/animeclub-dl');
+
 
 
 // ==================== GLOBAL VARIABLES ====================
@@ -690,6 +693,11 @@ async (conn, m, mek, { from, q, reply }) => {
 
 
 
+
+// Temporary storage: chatId -> { urls: [], timestamp: number }
+const episodeStore = new Map();
+const STORE_TTL = 5 * 60 * 1000; // 5 minutes
+
 // ============================================================
 // COMMAND: anime – search animeclub2.com
 // ============================================================
@@ -740,7 +748,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 });
 
 // ============================================================
-// COMMAND: animeinfo – show anime details & episodes
+// COMMAND: animeinfo – show anime info & numbered episode list
 // ============================================================
 cmd({
   pattern: 'animeinfo',
@@ -762,7 +770,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     if (data.description) {
       caption += `${data.description.slice(0, 300)}...\n\n`;
     }
-    caption += `_Total Episodes: ${data.episodes.length}_\n\n📌 Select an episode below.`;
+    caption += `_Total Episodes: ${data.episodes.length}_\n\n📌 Reply with the episode number to get download links.`;
 
     // Send poster
     if (data.poster) {
@@ -775,27 +783,20 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
       await reply(caption);
     }
 
-    // If episodes exist, show list
+    // If episodes exist, send numbered list
     if (data.episodes && data.episodes.length > 0) {
-      const rows = data.episodes.slice(0, 50).map(ep => ({
-        title: ep.title,
-        rowId: `${prefix}animedl ${ep.url}`
-      }));
+      // Store episode URLs in memory for this chat
+      const urls = data.episodes.map(ep => ep.url);
+      episodeStore.set(from, { urls, timestamp: Date.now() });
 
-      const sections = [{
-        title: `📺 Episodes (${rows.length})`,
-        rows
-      }];
+      // Build numbered list message (max 50)
+      const listItems = data.episodes.slice(0, 50).map((ep, index) => {
+        return `${index + 1}. ${ep.title}`;
+      }).join('\n');
 
-      const listMessage = {
-        text: `*Select an episode to get download links.*`,
-        footer: config.FOOTER || 'VISPER MD',
-        title: 'Episodes',
-        buttonText: '📂 View Episodes',
-        sections
-      };
+      const listMsg = `📺 *Episodes*\n\n${listItems}\n\n_Reply with the number (e.g., \`1\`) to get download links._\n\n${config.FOOTER || 'VISPER MD'}`;
 
-      await conn.listMessage(from, listMessage, mek);
+      await conn.sendMessage(from, { text: listMsg }, { quoted: mek });
     } else {
       // No episodes – try direct downloads (movie/special)
       const movieData = await getDirectDownloads(q);
@@ -838,12 +839,78 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 });
 
 // ============================================================
-// COMMAND: animedl – show episode download options
+// COMMAND: ep – reply with number to get download links
+// ============================================================
+cmd({
+  pattern: 'ep',
+  react: '🔢',
+  desc: 'Get download links for an episode (use after .animeinfo)',
+  use: '.ep <number>',
+  filename: __filename
+},
+async (conn, m, mek, { from, q, prefix, reply }) => {
+  try {
+    if (!q || isNaN(q)) return reply('*Please provide a valid episode number.*');
+
+    const num = parseInt(q, 10);
+    const store = episodeStore.get(from);
+    if (!store) {
+      return reply('*No episode list found. Please use `.animeinfo` first.*');
+    }
+    if (Date.now() - store.timestamp > STORE_TTL) {
+      episodeStore.delete(from);
+      return reply('*Episode list expired. Please search again.*');
+    }
+
+    const urls = store.urls;
+    if (num < 1 || num > urls.length) {
+      return reply(`*Invalid number. Please choose between 1 and ${urls.length}.*`);
+    }
+
+    const episodeUrl = urls[num - 1];
+    // Optionally clear store after use: episodeStore.delete(from);
+
+    const data = await getEpisodeDownloads(episodeUrl);
+    if (data.error || !data.downloadLinks || data.downloadLinks.length === 0) {
+      return reply(`*🚩 No download links found for this episode.*\n${data.error || ''}`);
+    }
+
+    const caption = `*🎬 ${data.title}*\n\n📅 Season ${data.season || '?'} – Episode ${data.episode || '?'}\n\n📝 ${data.description ? data.description.slice(0, 200) + '...' : ''}\n\n*Choose your download option below.*`;
+
+    const buttons = data.downloadLinks
+      .filter(link => link.finalUrl)
+      .map(link => ({
+        buttonId: `${prefix}animeget ${link.finalUrl}±${data.title}±${data.poster}±${link.quality}±${link.platform}`,
+        buttonText: { displayText: `${link.platform} - ${link.quality}` },
+        type: 1
+      }));
+
+    if (buttons.length === 0) {
+      return reply('*No valid download links (all failed to resolve).*');
+    }
+
+    const buttonMessage = {
+      image: { url: data.poster || 'https://via.placeholder.com/300x450?text=No+Poster' },
+      caption: caption,
+      footer: config.FOOTER || 'VISPER MD',
+      buttons,
+      headerType: 4
+    };
+
+    await conn.buttonMessage(from, buttonMessage, mek);
+  } catch (e) {
+    console.error(e);
+    reply('*🚩 Error fetching download links!*');
+  }
+});
+
+// ============================================================
+// COMMAND: animedl – (still works for direct URL)
 // ============================================================
 cmd({
   pattern: 'animedl',
   react: '⬇️',
-  desc: 'Get download links for an episode',
+  desc: 'Get download links for an episode (direct URL)',
   filename: __filename
 },
 async (conn, m, mek, { from, q, prefix, reply }) => {
@@ -940,7 +1007,6 @@ async (conn, m, mek, { from, q, reply }) => {
     reply('*❌ Error while sending file:* ' + e.message);
   }
 });
-
 
 
 
