@@ -792,18 +792,20 @@ const isPre = preUsers
 
 	    
 //============================================================================ 
-const banbn = await fetchJson(`https://raw.githubusercontent.com/nextlinemddb0/visper-x-db/refs/heads/main/Main/ban_number.json`)
-const plynYnna = banbn.split(",")
-const isBanUser = [ ...plynYnna ]
-      .map((v) => v.replace(/[^0-9]/g, "") + "@lid")
-      .includes(sender)
+const banbn = await fetchJson(
+  "https://raw.githubusercontent.com/nextlinemddb0/visper-x-db/refs/heads/main/Main/ban_number.json"
+);
 
+const plynYnna = Array.isArray(banbn)
+  ? banbn
+  : String(banbn || "").split(",");
 
-  let gpId = `${config.JID_BLOCK}`;
-const gpIdz = gpId.split(",")
-const isBanGrp = [ ...gpIdz ]
-      
-      .includes(from)
+const isBanUser = plynYnna
+  .map(v => String(v).replace(/[^0-9]/g, "") + "@lid")
+  .includes(sender);
+
+const gpIdz = String(config.JID_BLOCK || "").split(",");
+const isBanGrp = gpIdz.includes(from);
 
 //=======================================================================================================================================================================
 
