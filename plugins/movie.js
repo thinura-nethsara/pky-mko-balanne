@@ -8,7 +8,7 @@ const fileType = require('file-type');
 const fg = require('api-dylux');
 const { searchMoviesublk } = require('../lib/moviesublk_tv_search');
 const { getMoviesublkInfo } = require('../lib/moviesublk_tv_info');
-const { searchAnimeClub, getShowInfo, getEpisodeDownloads } = require('../lib/animeclub');
+const { searchAnimeClub, getShowInfo, getEpisodeDownloads } = require('../lib/animeclubtv');
 
 
 // ==================== GLOBAL VARIABLES ====================
