@@ -15,7 +15,7 @@ module.exports = {
     SUDO: '',
     DB_NAME: 'pramaaaataaaaahaaaaggaaaajjaa',
     LANG: 'SI',
-    OWNER_NUMBER: '94758260318',
+    OWNER_NUMBER: '94766863255',
     TG_GROUP: 'https://t.me/+Zm865mJ_TL0yNGVl',
     YT_API_KEY: 'key_4797e0dcedd66cca',
     YT_API_BASE: 'https://mr-thinuzz-api-build.zone.id/api/ytmp4/download',
