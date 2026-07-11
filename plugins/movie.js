@@ -322,7 +322,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
     if (!q) return await reply('*Please enter a TV series name! 📺*');
 
-    const searchUrl = `${BASE_URL}cinesubz/search?query=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+    const searchUrl = `${BASE_URL}cinesubz/search?query=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const { data } = await axios.get(searchUrl, { timeout: 30000 });
 
     if (!data?.status || !data?.data?.all?.length) {
@@ -363,7 +363,7 @@ cmd({
 },
 async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
-    const infoUrl = `${BASE_URL}cinesubz/tvshow?url=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+    const infoUrl = `${BASE_URL}cinesubz/tvshow?url=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const { data } = await axios.get(infoUrl, { timeout: 30000 });
 
     const series = data.data;
@@ -439,7 +439,7 @@ cmd({
 },
 async (conn, m, mek, { from, q, reply }) => {
   try {
-    const infoUrl = `${BASE_URL}cinesubz/tvshow?url=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+    const infoUrl = `${BASE_URL}cinesubz/tvshow?url=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const { data } = await axios.get(infoUrl, { timeout: 30000 });
 
     const movie = data.data;
@@ -487,7 +487,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
     const [epUrl, imgLink, title, mainUrl] = q.split('±');
 
-    const epInfoUrl = `${BASE_URL}cinesubz/episode?url=${encodeURIComponent(epUrl)}&apiKey=${API_KEY}`;
+    const epInfoUrl = `${BASE_URL}cinesubz/episode?url=${encodeURIComponent(epUrl)}&apiKey=${config.APIKEY}`;
     const { data: convData } = await axios.get(epInfoUrl, { timeout: 30000 });
 
     if (!convData?.status || !convData?.data?.downloadUrl?.length) {
@@ -526,7 +526,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
     const [mainUrl, imgLink, title, seasonNum] = q.split('±');
 
-    const seriesUrl = `${BASE_URL}cinesubz/tvshow?url=${encodeURIComponent(mainUrl)}&apiKey=${API_KEY}`;
+    const seriesUrl = `${BASE_URL}cinesubz/tvshow?url=${encodeURIComponent(mainUrl)}&apiKey=${config.APIKEY}`;
     const { data: seriesData } = await axios.get(seriesUrl, { timeout: 30000 });
 
     const targetSeason = seriesData.data.episodesDetails.find(s => s.season.toString() === seasonNum.toString());
@@ -535,7 +535,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     }
     const firstEpUrl = targetSeason.episodes[0].url;
 
-    const epInfoUrl = `${BASE_URL}cinesubz/episode?url=${encodeURIComponent(firstEpUrl)}&apiKey=${API_KEY}`;
+    const epInfoUrl = `${BASE_URL}cinesubz/episode?url=${encodeURIComponent(firstEpUrl)}&apiKey=${config.APIKEY}`;
     const { data: convData } = await axios.get(epInfoUrl, { timeout: 30000 });
 
     if (!convData?.status || !convData?.data?.downloadUrl?.length) {
@@ -577,7 +577,7 @@ async (conn, m, mek, { from, q, reply }) => {
     isUploadingTv = true;
     await reply(`*🚀 Starting download all episodes of Season ${seasonNum} in ${selectedQuality}...*`);
 
-    const seriesUrl = `${BASE_URL}cinesubz/tvshow?url=${encodeURIComponent(mainUrl)}&apiKey=${API_KEY}`;
+    const seriesUrl = `${BASE_URL}cinesubz/tvshow?url=${encodeURIComponent(mainUrl)}&apiKey=${config.APIKEY}`;
     const { data: seriesData } = await axios.get(seriesUrl, { timeout: 30000 });
 
     const targetSeason = seriesData.data.episodesDetails.find(s => s.season.toString() === seasonNum.toString());
@@ -590,14 +590,14 @@ async (conn, m, mek, { from, q, reply }) => {
         const epTitle = `${title} S${String(seasonNum).padStart(2, '0')}E${String(ep.number).padStart(2, '0')}`;
 
         // ✅ FIXED: correct endpoint
-        const epInfoUrl = `${BASE_URL}cinesubz/episode?url=${encodeURIComponent(ep.url)}&apiKey=${API_KEY}`;
+        const epInfoUrl = `${BASE_URL}cinesubz/episode?url=${encodeURIComponent(ep.url)}&apiKey=${config.APIKEY}`;
         const { data: qData } = await axios.get(epInfoUrl, { timeout: 30000 });
 
         if (!qData?.status || !qData?.data?.downloadUrl?.length) continue;
 
         const matchingDl = qData.data.downloadUrl.find(d => d.quality.trim() === selectedQuality.trim()) || qData.data.downloadUrl[0];
 
-        const dlUrl = `${BASE_URL}cinesubz/download?url=${encodeURIComponent(matchingDl.link)}&apiKey=${API_KEY}`;
+        const dlUrl = `${BASE_URL}cinesubz/download?url=${encodeURIComponent(matchingDl.link)}&apiKey=${config.APIKEY}`;
         const { data: apiRes } = await axios.get(dlUrl, { timeout: 60000 });
 
         if (!apiRes?.status || !apiRes?.data?.downloadUrls?.length) continue;
@@ -650,7 +650,7 @@ async (conn, m, mek, { from, q, reply }) => {
   try {
     const [processedUrl, imgLink, title, mainUrl, quality] = q.split('±');
 
-    const dlUrl = `${BASE_URL}cinesubz/download?url=${encodeURIComponent(processedUrl)}&apiKey=${API_KEY}`;
+    const dlUrl = `${BASE_URL}cinesubz/download?url=${encodeURIComponent(processedUrl)}&apiKey=${config.APIKEY}`;
     const { data: apiRes } = await axios.get(dlUrl, { timeout: 60000 });
 
     if (!apiRes?.status || !apiRes?.data?.downloadUrls?.length) {
@@ -1464,7 +1464,7 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
 
     if (!q) return reply('*Please give me a movie name 🎬*');
 
-    const searchUrl = `${BASE_URL}lksubs/search?q=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+    const searchUrl = `${BASE_URL}lksubs/search?q=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const { data: result } = await axios.get(searchUrl, { timeout: 30000 });
 
     if (!result.status || !result.results?.length) {
@@ -1504,7 +1504,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply('*Please provide a movie link!*');
 
-    const infoUrl = `${BASE_URL}lksubs/info?url=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+    const infoUrl = `${BASE_URL}lksubs/info?url=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const { data: res } = await axios.get(infoUrl, { timeout: 30000 });
 
     if (!res.status || !res.data) {
@@ -1583,7 +1583,7 @@ async (conn, m, mek, { from, q, reply }) => {
   try {
     if (!q) return reply('*Please provide a link!*');
 
-    const infoUrl = `${BASE_URL}lksubs/info?url=${encodeURIComponent(q)}&apiKey=${API_KEY}`;
+    const infoUrl = `${BASE_URL}lksubs/info?url=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const { data: res } = await axios.get(infoUrl, { timeout: 30000 });
 
     if (!res.status || !res.data) {
@@ -1648,7 +1648,7 @@ async (conn, m, mek, { from, q, reply }) => {
     isSubLkUploading = true;
 
     if (type === 'sub') {
-      const dlUrl = `${BASE_URL}lksubs/download?link_url=${encodeURIComponent(linkUrl)}&apiKey=${API_KEY}`;
+      const dlUrl = `${BASE_URL}lksubs/download?link_url=${encodeURIComponent(linkUrl)}&apiKey=${config.APIKEY}`;
       const { data: dlRes } = await axios.get(dlUrl, { timeout: 30000 });
 
       if (!dlRes.status || !dlRes.data || !dlRes.data.final_url) {
@@ -1670,7 +1670,7 @@ async (conn, m, mek, { from, q, reply }) => {
     }
 
     // Video download
-    const dlUrl = `${BASE_URL}lksubs/download?link_url=${encodeURIComponent(linkUrl)}&apiKey=${API_KEY}`;
+    const dlUrl = `${BASE_URL}lksubs/download?link_url=${encodeURIComponent(linkUrl)}&apiKey=${config.APIKEY}`;
     const { data: dlRes } = await axios.get(dlUrl, { timeout: 30000 });
 
     if (!dlRes.status || !dlRes.data || !dlRes.data.final_url) {
@@ -1723,7 +1723,7 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
 
     if (!q) return reply('*Please give movie or tv name 🎬*');
 
-    const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/search?keyword=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
+    const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/search?keyword=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const { data: result } = await axios.get(api);
 
     if (!result.status || !result.results?.length) {
@@ -1769,7 +1769,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
     if (!q) return reply('*Please provide movie id!*');
 
-    const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/info?id=${q}&apiKey=key_4797e0dcedd66cca`;
+    const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/info?id=${q}&apiKey=${config.APIKEY}`;
     const { data: res } = await axios.get(api);
 
     if (!res.status || !res.movie) {
@@ -1842,7 +1842,7 @@ async (conn, m, mek, { from, q, reply }) => {
   try {
     if (!q) return reply('*Please provide a link!*');
 
-    const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/info?id=${q}&apiKey=key_13be1374312cdd0a`;
+    const api = `https://mr-thinuzz-api-build.zone.id/api/moviepro/info?id=${q}&apiKey=${config.APIKEY}`;
     const { data: res } = await axios.get(api);
 
     if (!res.status || !res.movie) {
@@ -1942,7 +1942,7 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
     }
     if (!q) return reply('*Please give a movie or cartoon name 🎬*');
 
-    const api = `https://mr-thinuzz-api-build.zone.id/api/sincartoons/search?query=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
+    const api = `https://mr-thinuzz-api-build.zone.id/api/sincartoons/search?query=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const { data: result } = await axios.get(api);
 
     if (!result.status || !result.data?.all?.length) {
@@ -1990,7 +1990,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 
     const movieUrl = decodeURIComponent(q);
 
-    const api = `https://mr-thinuzz-api-build.zone.id/api/sincartoons/movie?url=${encodeURIComponent(movieUrl)}&apiKey=key_4797e0dcedd66cca`;
+    const api = `https://mr-thinuzz-api-build.zone.id/api/sincartoons/movie?url=${encodeURIComponent(movieUrl)}&apiKey=${config.APIKEY}`;
     const { data: res } = await axios.get(api);
 
     if (!res.status) {
@@ -2358,7 +2358,7 @@ async (conn, m, mek, { from, q, prefix, isSudo, isOwner, isMe, reply }) => {
     }
     if (!q) return reply('*Please give me a movie name 🎬*');
 
-    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/subzlk/search?query=${encodeURIComponent(q)}&apiKey=key_4797e0dcedd66cca`;
+    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/subzlk/search?query=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const { data: result } = await axios.get(apiUrl);
 
     if (!result.status || !result.data?.length) {
@@ -2417,7 +2417,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
       movieUrl = 'https://subz.lk' + (movieUrl.startsWith('/') ? '' : '/') + movieUrl;
     }
 
-    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/subzlk/movie?url=${encodeURIComponent(movieUrl)}&apiKey=key_4797e0dcedd66cca`;
+    const apiUrl = `https://mr-thinuzz-api-build.zone.id/api/subzlk/movie?url=${encodeURIComponent(movieUrl)}&apiKey=${config.APIKEY}`;
     const { data: res } = await axios.get(apiUrl);
 
     // 🧪 Validate response
@@ -2525,7 +2525,7 @@ async (conn, mek, m, { from, q, reply }) => {
     if (!linkUrl) return reply('*⚠️ Invalid download link!*');
 
     // Step 1: Get GDrive URL from subzlk download API
-    const dlApi = `https://mr-thinuzz-api-build.zone.id/api/subzlk/download?link_url=${encodeURIComponent(linkUrl)}&apiKey=key_4797e0dcedd66cca`;
+    const dlApi = `https://mr-thinuzz-api-build.zone.id/api/subzlk/download?link_url=${encodeURIComponent(linkUrl)}&apiKey=${config.APIKEY}`;
     const { data: dlRes } = await axios.get(dlApi);
     if (!dlRes || !dlRes.status || !dlRes.data?.download_url) {
       console.error('Download API response:', dlRes);
