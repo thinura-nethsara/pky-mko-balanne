@@ -120,7 +120,7 @@ cmd({
         const pr = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
         const isFree = pr.mvfree === "true";
 
-        if (!isFree && !isMe && !isPre) {
+        if (!isFree && !isMe && !isPre !isSudo) {
             await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
             return await reply("*`You are not a premium user⚠️`*\n\n*Send a message to one of the 2 numbers below and buy Lifetime premium 🎉.*\n\n_Price : 200 LKR_\n\n*Contact : 0778500326 , 0722617699*");
         }
