@@ -70,7 +70,7 @@ async (conn, mek, m, { from, prefix, q, isMe, isSudo, isOwner, reply }) => {
     const sources = [
       { name: 'CINESUBZ', cmd: 'cinesubz' },
       { name: 'CINESUBZ TV', cmd: 'cinetv' },
-                                           { name: 'AWAFILM', cmd:'awafilm' },
+                                           { name: 'AWAFILM', cmd:'awafim' },
       { name: 'ANIMECLUB2TV', cmd: 'animeclub2tv' },
       { name: 'SINHALASUB', cmd: 'sinhalasub' },
       { name: 'SINHALASUB TV' , cmd: 'sinhalasubtv' },
@@ -120,7 +120,7 @@ cmd({
         const pr = (await axios.get('https://mv-visper-full-db.pages.dev/Main/main_var.json')).data;
         const isFree = pr.mvfree === "true";
 
-        if (!isFree && !isMe && !isPre !isSudo) {
+        if (!isFree && !isMe && !isPre && !isSudo) {
             await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
             return await reply("*`You are not a premium user⚠️`*\n\n*Send a message to one of the 2 numbers below and buy Lifetime premium 🎉.*\n\n_Price : 200 LKR_\n\n*Contact : 0778500326 , 0722617699*");
         }
