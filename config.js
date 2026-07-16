@@ -17,8 +17,5 @@ module.exports = {
     LANG: 'SI',
     OWNER_NUMBER: '94766863255',
     TG_GROUP: 'https://t.me/+Zm865mJ_TL0yNGVl',
-    YT_API_KEY: 'key_4797e0dcedd66cca',
-    YT_API_BASE: 'https://mr-thinuzz-api-build.zone.id/api/ytmp4/download',
-    CINESUBZ_API_KEY: 'key_13be1374312cdd0a',
-    CINESUBZ_BASE_URL: 'https://mr-thinuzz-api-build.vercel.app/api/cinesubz'
+    
 };
