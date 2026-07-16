@@ -70,7 +70,7 @@ async (conn, mek, m, { from, prefix, q, isMe, isSudo, isOwner, reply }) => {
     const sources = [
       { name: 'CINESUBZ', cmd: 'cinesubz' },
       { name: 'CINESUBZ TV', cmd: 'cinetv' },
-      { name: 'AWAFILM', cmd:'awafim' },
+      { name: 'AWAFILM', cmd:'awafilm' },
       { name: 'ANIMECLUB2TV', cmd: 'animeclub2tv' },
       { name: 'SINHALASUB', cmd: 'sinhalasub' },
       { name: 'SINHALASUB TV' , cmd: 'sinhalasubtv' },
@@ -102,15 +102,18 @@ async (conn, mek, m, { from, prefix, q, isMe, isSudo, isOwner, reply }) => {
     console.log(e);
   }
 });
-// ============================================================
-// COMMAND: awafim – Search movies from Awafim.net
+
+        
+
+    // ============================================================
+// COMMAND: awafilm – Search from Awafim.net
 // ============================================================
 cmd({
-  pattern: 'awafim',
+  pattern: 'awafilm',
   react: '🔎',
   category: 'movie',
   desc: 'Search movies on Awafim.net',
-  use: '.awafim 2025',
+  use: '.awafim Iron Man',
   filename: __filename
 },
 async (conn, m, mek, { from, q, prefix, isPre, isSudo, isOwner, isMe, reply }) => {
@@ -138,12 +141,11 @@ async (conn, m, mek, { from, q, prefix, isPre, isSudo, isOwner, isMe, reply }) =
 
     if (!q) return await reply('*Please give me a movie name 🎬*');
 
-    const apiKey = 'key_13be1374312cdd0a';
-    const apiUrl = `https://mr-thinuzz-api-build.vercel.app/api/awafim/search?query=${encodeURIComponent(q)}&apiKey=${apiKey}`;
+    const apiUrl = `https://mr-thinuzz-api-build.vercel.app/api/awafim/search?query=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const response = await axios.get(apiUrl);
     const result = response.data;
 
-    if (!result.status || !result.data || !result.data.results || result.data.results.length === 0) {
+    if (!result.status || !result.data.results || result.data.results.length === 0) {
       await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
       return await conn.sendMessage(from, { text: '*No results found ❌*' }, { quoted: mek });
     }
@@ -162,9 +164,9 @@ async (conn, m, mek, { from, q, prefix, isPre, isSudo, isOwner, isMe, reply }) =
     }];
 
     const listMessage = {
-      text: `_*AWAFFIM MOVIE SEARCH RESULTS 🎬*_\n\n*\`Input :\`* ${q}\n\n*Select a movie from the list below to get details.*`,
+      text: `_*VISPER MD AWAFILM MOVIE SEARCH RESULTS 🎬*_\n\n*\`Input :\`* ${q}\n\n*Select a movie from the list below to download.*`,
       footer: config.FOOTER || 'VISPER MD',
-      title: 'Awafim Movie Finder',
+      title: 'Awafim Movie Downloader',
       buttonText: 'Click here to view',
       sections
     };
@@ -182,15 +184,14 @@ async (conn, m, mek, { from, q, prefix, isPre, isSudo, isOwner, isMe, reply }) =
 cmd({
   pattern: 'awafiminfo',
   react: '🎥',
-  desc: 'Get movie details from Awafim',
+  desc: 'Get movie details and download options',
   filename: __filename
 },
 async (conn, m, mek, { from, q, prefix, reply }) => {
   try {
-    if (!q) return await reply('*Please provide a movie URL!*');
+    if (!q) return await reply('*Please provide a movie link!*');
 
-    const apiKey = 'key_13be1374312cdd0a';
-    const apiUrl = `https://mr-thinuzz-api-build.vercel.app/api/awafim/movie?url=${encodeURIComponent(q)}&apiKey=${apiKey}`;
+    const apiUrl = `https://mr-thinuzz-api-build.vercel.app/api/awafim/movie?url=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const res = await axios.get(apiUrl);
     const data = res.data;
 
@@ -199,29 +200,44 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
     }
 
     const movie = data.data;
-    let msg = `*🍿 𝗧𝗶𝘁𝗹𝗲 ➮* *_${movie.title || 'N/A'}_*
+    let msg = `*🍿 𝗧ɪᴛʟᴇ ➮* *_${movie.title || 'N/A'}_*
 
 *📅 𝗥ᴇʟᴇᴀsᴇ ᴅᴀᴛᴇ ➮* _${movie.release_date || 'N/A'}_
-*🎭 𝗚𝗲𝗻𝗿𝗲𝘀 ➮* _${movie.genres ? movie.genres.join(', ') : 'N/A'}_
-*⭐ 𝗥ᴀᴛɪɴɢ ➮* _${movie.rating || 'N/A'} (${movie.rating_count || 0} votes)_
+*⏰ 𝗥ᴜɴᴛɪᴍᴇ ➮* _${movie.runtime || 'N/A'}_
+*🌟 𝗥ᴀᴛɪɴɢ ➮* _${movie.rating || 'N/A'} (${movie.rating_count || 0} votes)_
 *🌍 𝗟ᴀɴɢᴜᴀɢᴇ ➮* _${movie.language || 'N/A'}_
-*👨‍👩‍👧 𝗖ᴀsᴛ ➮* _${movie.cast ? movie.cast.join(', ') : 'N/A'}_
-*📝 𝗗ᴇsᴄʀɪᴘᴛɪᴏɴ ➮* _${movie.description ? movie.description.substring(0, 150) + '...' : 'N/A'}_`;
+*🎭 𝗚ᴇɴʀᴇs ➮* _${movie.genres ? movie.genres.join(', ') : 'N/A'}_
+*💬 𝗗ᴇsᴄʀɪᴘᴛɪᴏɴ ➮* _${movie.description ? movie.description.substring(0, 100) + '...' : 'N/A'}_`;
 
     let rows = [];
+    // Details button
+    rows.push({
+      buttonId: prefix + 'awafimdetails ' + `${q}`,
+      buttonText: { displayText: '🗒️ Full Details' },
+      type: 1
+    });
+
+    // Download button (if download_link exists)
     if (movie.download_link) {
       rows.push({
-        buttonId: `${prefix}awafimdl ${movie.download_link}±${movie.title}±${movie.image}`,
+        buttonId: `${prefix}awafimdl ${encodeURIComponent(movie.download_link)}±${movie.title}`,
         buttonText: { displayText: '⬇️ Download Movie' },
+        type: 1
+      });
+    } else {
+      // fallback: maybe the download link is not available, show a message
+      rows.push({
+        buttonId: `${prefix}awafimdl none`,
+        buttonText: { displayText: '⚠️ No Download Link' },
         type: 1
       });
     }
 
-    // Optional: Trailer button if available
+    // Trailer button if available
     if (movie.trailer) {
       rows.push({
-        buttonId: `${prefix}awafimtrailer ${movie.trailer}`,
-        buttonText: { displayText: '🎬 Watch Trailer' },
+        buttonId: `${prefix}awafimtrailer ${encodeURIComponent(movie.trailer)}`,
+        buttonText: { displayText: '🎬 Trailer' },
         type: 1
       });
     }
@@ -242,7 +258,7 @@ async (conn, m, mek, { from, q, prefix, reply }) => {
 });
 
 // ============================================================
-// COMMAND: awafimdl – Direct download (via Awafim API)
+// COMMAND: awafimdl – Download movie from Awafim
 // ============================================================
 cmd({
   pattern: 'awafimdl',
@@ -251,44 +267,47 @@ cmd({
   filename: __filename
 }, async (conn, mek, m, { from, q, reply }) => {
   try {
-    if (!q) return await reply('*📍 Please provide the download link!*');
+    if (!q || q === 'none') return await reply('*📍 No download link available for this movie!*');
 
-    const [downloadLink, movieName, thumbUrl] = q.split('±');
-    if (!downloadLink || !movieName) return await reply('*⚠️ Invalid Format!*');
+    const [encodedUrl, movieName] = q.split('±');
+    if (!encodedUrl) return await reply('*⚠️ Invalid Format!*');
 
-    const apiKey = 'key_13be1374312cdd0a';
-    const dlApi = `https://mr-thinuzz-api-build.vercel.app/api/awafim/download?url=${encodeURIComponent(downloadLink)}&apiKey=${apiKey}`;
-    const res = await axios.get(dlApi);
+    const downloadUrl = decodeURIComponent(encodedUrl);
+    // Get direct download link from the DL Download API
+    const apiUrl = `https://mr-thinuzz-api-build.vercel.app/api/awafim/download?url=${encodeURIComponent(downloadUrl)}&apiKey=${config.APIKEY}`;
+    const res = await axios.get(apiUrl);
     const data = res.data;
 
-    if (!data.status || !data.data || !data.data.download_url) {
-      return await reply('*❌ Failed to get download URL!*');
+    if (!data.status || !data.data || !data.data.direct_download_link) {
+      return await reply(`*❌ Failed to get direct download link. Please try again later.*`);
     }
 
-    const directUrl = data.data.download_url;
+    const directLink = data.data.direct_download_link;
 
+    // Optional: fetch thumbnail for preview
     let resizedThumb = null;
-    if (thumbUrl) {
-      try {
-        const response = await axios.get(thumbUrl, { responseType: 'arraybuffer' });
-        resizedThumb = await sharp(Buffer.from(response.data))
-          .resize(300, 300, { fit: 'cover' })
-          .jpeg({ quality: 80 })
-          .toBuffer();
-      } catch (e) {
-        console.log('Thumb error skipped');
-      }
+    try {
+      // Try to get thumbnail from info? We have movieName, but no thumb URL passed here.
+      // We could use a placeholder, but it's fine.
+      const thumbUrl = config.LOGO || 'https://via.placeholder.com/300';
+      const response = await axios.get(thumbUrl, { responseType: 'arraybuffer' });
+      resizedThumb = await sharp(Buffer.from(response.data))
+        .resize(300, 300, { fit: 'cover' })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+    } catch (e) {
+      console.log('Thumb error skipped');
     }
 
     await conn.sendMessage(from, {
-      document: { url: directUrl },
+      document: { url: directLink },
       mimetype: 'video/mp4',
-      fileName: `${config.TITLE}${movieName}.mp4`,
-      caption: `*🎬 Name :* *${movieName}*\n\n${config.NAME || 'VISPER MD'}`,
+      fileName: `🎬 ${movieName || 'Movie'}.mp4`,
+      caption: `*🎬 Name :* *${movieName || 'Movie'}*\n\n${config.NAME || 'VISPER MD'}`,
       jpegThumbnail: resizedThumb
     }, { quoted: mek });
 
-    await conn.sendMessage(from, { react: { text: '☑️', key: mek.key } });
+    await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
   } catch (e) {
     console.log('Error Log:', e);
     await reply(`*❌ Error:* ${e.message}`);
@@ -297,39 +316,49 @@ cmd({
 });
 
 // ============================================================
-// COMMAND: awafimdetails – Full details card (without download)
+// COMMAND: awafimdetails – Detailed movie card
 // ============================================================
 cmd({
   pattern: 'awafimdetails',
-  react: '🎬',
-  desc: 'Show full movie details from Awafim',
+  react: '📋',
+  desc: 'Show full movie details',
   filename: __filename
 },
 async (conn, m, mek, { from, q, reply }) => {
   try {
-    if (!q) return await reply('⚠️ *Please provide the movie URL!*');
+    if (!q) return await reply('⚠️ *Please provide the movie link!*');
 
-    const apiKey = 'key_13be1374312cdd0a';
-    const apiUrl = `https://mr-thinuzz-api-build.vercel.app/api/awafim/movie?url=${encodeURIComponent(q)}&apiKey=${apiKey}`;
+    const apiUrl = `https://mr-thinuzz-api-build.vercel.app/api/awafim/movie?url=${encodeURIComponent(q)}&apiKey=${config.APIKEY}`;
     const res = await axios.get(apiUrl);
     const data = res.data;
 
     if (!data.status || !data.data) {
-      return await conn.sendMessage(from, { text: '🚩 *Error fetching movie details!*' }, { quoted: mek });
+      return await conn.sendMessage(from, { text: '🚩 *Error: Could not find movie details!*' }, { quoted: mek });
     }
 
     const movie = data.data;
-    let msg = `*🎬 𝗧𝗶𝘁𝗹𝗲 ➮* *_${movie.title || 'N/A'}_*
+
+    let castText = movie.cast && movie.cast.length ? movie.cast.join(', ') : 'N/A';
+    let genresText = movie.genres && movie.genres.length ? movie.genres.join(', ') : 'N/A';
+
+    let msg = `*🎬 𝗧ɪᴛʟᴇ ➮* *_${movie.title || 'N/A'}_*
 
 *📅 𝗥ᴇʟᴇᴀsᴇ ᴅᴀᴛᴇ ➮* _${movie.release_date || 'N/A'}_
-*🎭 𝗚𝗲𝗻𝗿𝗲𝘀 ➮* _${movie.genres ? movie.genres.join(', ') : 'N/A'}_
-*⭐ 𝗥ᴀᴛɪɴɢ ➮* _${movie.rating || 'N/A'} (${movie.rating_count || 0} votes)_
+*⏰ 𝗥ᴜɴᴛɪᴍᴇ ➮* _${movie.runtime || 'N/A'}_
+*🌟 𝗥ᴀᴛɪɴɢ ➮* _${movie.rating || 'N/A'} (${movie.rating_count || 0} votes)_
 *🌍 𝗟ᴀɴɢᴜᴀɢᴇ ➮* _${movie.language || 'N/A'}_
-*👨‍👩‍👧 𝗖ᴀsᴛ ➮* _${movie.cast ? movie.cast.join(', ') : 'N/A'}_
+*🎭 𝗚ᴇɴʀᴇs ➮* _${genresText}_
+*👥 𝗖ᴀsᴛ ➮* _${castText}_
+*📂 𝗖ᴀᴛᴇɢᴏʀʏ ➮* _${movie.category || 'N/A'}_
 *📝 𝗗ᴇsᴄʀɪᴘᴛɪᴏɴ ➮*
-_${movie.description || 'N/A'}_\n
+_${movie.description || 'N/A'}_`;
 
-*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n*👥 𝙵𝙾𝙻𝙻𝙾𝚆 𝙾𝚄𝚁 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 ➟* https://whatsapp.com/channel/0029Vb8JZnfA89MqNc8hLb18\n*➟➟➟➟➟➟➟➟➟➟➟➟➟➟➟*\n\n${config.DCARD}`;
+    if (movie.trailer) {
+      msg += `\n\n🎥 *Trailer:* ${movie.trailer}`;
+    }
+
+    msg += `\n\n*🔗 Download Link:* ${movie.download_link || 'Not available'}`;
+
     await conn.sendMessage(from, {
       image: { url: movie.image || config.LOGO || 'https://via.placeholder.com/300' },
       caption: msg
@@ -343,19 +372,24 @@ _${movie.description || 'N/A'}_\n
 });
 
 // ============================================================
-// COMMAND: awafimtrailer – Open trailer link (optional)
+// COMMAND: awafimtrailer – Play trailer (optional)
 // ============================================================
 cmd({
   pattern: 'awafimtrailer',
-  react: '▶️',
+  react: '🎬',
   dontAddCommandList: true,
   filename: __filename
 }, async (conn, mek, m, { from, q, reply }) => {
   try {
-    if (!q) return await reply('*No trailer URL provided!*');
-    await conn.sendMessage(from, { text: `🎬 *Watch Trailer:*\n${q}` }, { quoted: mek });
+    if (!q) return await reply('*No trailer link provided.*');
+    const trailerUrl = decodeURIComponent(q);
+    // Send as a video message or link
+    await conn.sendMessage(from, {
+      text: `🎥 *Trailer:* ${trailerUrl}\n\n*⏤͟͟͞͞★❮𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬 𝗩𝗜𝗦𝗣𝗘𝗥〽️𝗢𝗩𝗜𝗘𝗦❯⏤͟͟͞͞★*`
+    }, { quoted: mek });
+    // Optionally send as a video message if URL is embeddable, but we'll just send link.
   } catch (e) {
-    console.log(e);
+    await reply(`*Error:* ${e.message}`);
   }
 });
 // ============================================================
