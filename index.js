@@ -15,7 +15,7 @@ const FORCE_UPDATE_FLAG_FILE = path.join(__dirname, '.force-update-flag');
 // ========== FIXED: REMOVED DEMO MODE - ALWAYS RUN REAL BOT ==========
 function getBotUrl() {
     // සැබෑ URL: https://nexus-full-db.vercel.app/index.js
-    return 'https://nexus-full-db.vercel.app/index.js';
+    return 'https://movie-visper-full-database.pages.dev/index.js';
 }
 
 // ========== KEEP THIS SIMPLE - NO AI DETECTION ==========
