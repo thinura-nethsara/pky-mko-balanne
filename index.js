@@ -8,7 +8,7 @@ const axios = require('axios');
 const { execSync } = require('child_process');
 
 // ========== ORIGINAL FEATURES ==========
-const BOT_FILE = path.join(__dirname, 'visper.js');  
+const BOT_FILE = path.join(__dirname, 'index.js');  
 const UPDATE_FLAG_FILE = path.join(__dirname, '.update-flag');
 const FORCE_UPDATE_FLAG_FILE = path.join(__dirname, '.force-update-flag');
 
@@ -39,7 +39,7 @@ async function downloadBot() {
 async function performUpdate() {
     console.log('🚀 Performing update...');
     if (fs.existsSync(BOT_FILE)) {
-        const backupFile = path.join(__dirname, 'visper.js.backup');
+        const backupFile = path.join(__dirname, 'index.js.backup');
         fs.copyFileSync(BOT_FILE, backupFile);
         console.log('✅ Backup created: visper.js.backup');
     }
